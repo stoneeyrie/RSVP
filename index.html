@@ -1758,7 +1758,7 @@ async function renderStatsPanel() {
         const thumbHtml = thumbSrc ? `<img src="${thumbSrc}" class="stats-book-thumb" alt="">` : `<div class="stats-book-thumb" style="background:#222;border-radius:4px;"></div>`;
         const isGhost   = entry._archived && entry._fromBackup === true;
         const archBadge = isGhost
-            ? `<span class="stats-backup-badge">⏳ Wartet auf Import</span>`
+            ? `<span class="stats-backup-badge">⚠ Nicht importiert</span>`
             : entry._archived
                 ? `<span class="stats-archive-badge">gelöscht</span>`
                 : '';
@@ -2575,7 +2575,8 @@ function renderLibraryList() {
             return statusOk && authorOk;
         });
 
-        if(filteredBooks.length === 0) { libraryList.innerHTML = `<div style="text-align:center; color:#666; font-size:13px; padding:30px;">Keine Bücher in dieser Kategorie.</div>`; return; }
+        if(filteredBooks.length === 0 && ghostEntries.length === 0) { libraryList.innerHTML = `<div style="text-align:center; color:#666; font-size:13px; padding:30px;">Keine Bücher in dieser Kategorie.</div>`; return; }
+        if(filteredBooks.length === 0 && ghostEntries.length > 0) { /* keine normalen Bücher, aber Ghosts vorhanden → weiter */ }
 
         filteredBooks.forEach(book => {
             const card = document.createElement('div'); card.className = `library-book-card ${activeBookId === book.id ? "active" : ""}`;
@@ -2668,7 +2669,7 @@ function renderLibraryList() {
         });
 
         // ── Ghost-Sektion: Bücher aus Backup die noch nicht importiert wurden ──
-        const showGhosts = currentLibraryFilter === 'all' && ghostEntries.length > 0;
+        const showGhosts = ghostEntries.length > 0;
         if (showGhosts) {
             const section = document.createElement('div');
             section.className = 'lib-ghost-section-header';
@@ -2676,7 +2677,7 @@ function renderLibraryList() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="fill:#f39c12;">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                 </svg>
-                Wartet auf Import (${ghostEntries.length})`;
+                Nicht importiert (${ghostEntries.length})`;
             libraryList.appendChild(section);
 
             ghostEntries.forEach(ghost => {
@@ -2698,9 +2699,10 @@ function renderLibraryList() {
 
                 card.innerHTML = `
                     <div class="book-cover-placeholder">
+                        ${ghost.coverThumb ? `<img src="${ghost.coverThumb}" class="book-cover-img" alt="Cover">` : ''}
                         <div class="cover-content-overlay">
-                            <div class="cover-author">${displayAuthor}</div>
-                            <div class="cover-title">${displayTitle}</div>
+                            <div class="cover-author" style="${ghost.coverThumb ? 'display:none;' : ''}">${displayAuthor}</div>
+                            <div class="cover-title" style="${ghost.coverThumb ? 'display:none;' : ''}">${displayTitle}</div>
                             <div class="cover-footer-brand">RSVP</div>
                         </div>
                     </div>
@@ -2708,7 +2710,7 @@ function renderLibraryList() {
                         <div>
                             <div class="book-title-meta-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                                 ${displayTitle}
-                                <span class="lib-ghost-badge">⏳ Wartet auf Import</span>
+                                <span class="lib-ghost-badge">⚠ Nicht importiert</span>
                             </div>
                             <div class="book-author-meta-sub">${displayAuthor}</div>
                         </div>
@@ -2722,7 +2724,7 @@ function renderLibraryList() {
                             </span>
                             ${gSecs >= 60 ? `<span class="book-stat-item has-data">${timeStr} ${wpmStr}</span>` : ''}
                         </div>
-                        <div class="lib-ghost-hint">Buch importieren um Lesestand zu übernehmen</div>
+                        <div class="lib-ghost-hint">Buch importieren um Lesestand &amp; Statistik zu übernehmen</div>
                     </div>`;
 
                 // Kein Click-Handler – Ghost-Karten sind nicht anklickbar
@@ -3002,7 +3004,7 @@ async function exportBackup() {
     const backup = {
         version: 3,
         exportedAt: new Date().toISOString(),
-        books: books.map(b => ({
+        books: await Promise.all(books.map(async b => ({
             title:            b.title            || '',
             author:           b.author           || '',
             lastIndex:        b.lastIndex        || 0,
@@ -3013,7 +3015,8 @@ async function exportBackup() {
             totalReadSeconds: b.totalReadSeconds || 0,
             readingLog:       b.readingLog       || {},
             wpmHistory:       b.wpmHistory       || [],
-        })),
+            coverThumb:       b.thumbnail        || await resizeCoverImage(b.cover, 72) || null,
+        }))),
         archivedStats: archived.map(a => ({
             id:               a.id,
             title:            a.title            || '',
@@ -3119,7 +3122,7 @@ async function importBackup(event) {
                             pct:              entry.totalWords > 0
                                 ? Math.min(100, Math.round((entry.lastIndex||0) / entry.totalWords * 100))
                                 : 0,
-                            coverThumb:       null,
+                            coverThumb:       entry.coverThumb || null,
                             _fromBackup:      true,   // Ghost-Flag
                         });
                         tx.oncomplete = resolve; tx.onerror = resolve;
@@ -3229,7 +3232,7 @@ async function importBackup(event) {
 
         const parts = [];
         if (matched > 0)          parts.push(`✓ ${matched} Buch${matched !== 1 ? 'er' : ''} aktualisiert`);
-        if (skipped > 0)          parts.push(`${skipped} Buch${skipped !== 1 ? 'er' : ''} nicht gefunden → in Bibliothek als "Wartet auf Import" markiert`);
+        if (skipped > 0)          parts.push(`${skipped} Buch${skipped !== 1 ? 'er' : ''} nicht gefunden → in Bibliothek als "Nicht importiert" markiert`);
         if (archivedRestored > 0) parts.push(`${archivedRestored} archivierte Einträge neu hinzugefügt`);
         if (archivedMerged > 0)   parts.push(`${archivedMerged} archivierte Einträge zusammengeführt`);
         alert(parts.length > 0 ? parts.join('\n') : 'Keine passenden Daten gefunden.');
