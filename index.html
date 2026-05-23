@@ -1,0 +1,3046 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	
+    <title>RSVP Speed Reader Pro v2.9.6</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+  <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --accent: #3498db;
+            --accent-green: #2ecc71;
+            --highlight-red: #ff4d4d;
+            --switch-off: #444;
+            --input-bg: #2d2d2d;
+            --radius-main: 14px;
+            --cover-txt-color: #94a3b8;
+            --border-color: #2b2b2b;
+            --scrollbar-thumb: #444;
+        }
+
+        /* --- AMOLED Black Mode Overrides --- */
+        body.amoled-mode {
+            --bg-color: #000000;
+            --card-bg: #000000;
+            --input-bg: #111111;
+            --border-color: #000000;
+            --scrollbar-thumb: #222;
+        }
+        
+        body.amoled-mode #reader-card {
+            box-shadow: none;
+            border: 1px solid #000000;
+        }
+
+        body.amoled-mode .sidebar-panel {
+            background: #000000;
+            border: 1px solid #222222;
+        }
+
+        body.amoled-mode .setting-toggle-card,
+        body.amoled-mode .info-section,
+        body.amoled-mode .library-book-card {
+            background: #000000;
+            border: 1px solid #222222;
+        }
+
+        body.amoled-mode .quick-input-card,
+        body.amoled-mode .info-stat-card {
+            background: #050505;
+            border: 1px solid #222222;
+        }
+
+        /* --- Globales Custom Scrollbar Design --- */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 10px;
+        }
+        
+        /* Firefox Support */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) transparent;
+        }
+
+        /* --- Basis Layout --- */
+        html, body {
+            height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: var(--bg-color);
+            touch-action: pan-y; transition: background-color 0.2s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-main); min-width: 350px;
+        }
+
+        #reader-card {
+            background: var(--card-bg); padding: 20px; border-radius: var(--radius-main);
+            width: 95%; max-width: 650px; height: 95vh; 
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6); box-sizing: border-box;
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* --- Top Bar & Progress --- */
+        .top-bar {
+            display: flex; align-items: center; margin-bottom: 8px; gap: 12px; flex-shrink: 0;
+        }
+
+        .hamburger-btn {
+            background: transparent; border: none; color: var(--text-main); cursor: pointer;
+            padding: 5px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;
+        }
+        .hamburger-btn:hover { color: var(--accent); }
+
+        .progress-header {
+            display: flex; justify-content: space-between; align-items: center;
+            color: #888; font-size: 13px; flex: 1; min-width: 0; gap: 12px;
+        }
+        
+        .title-wrapper { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+        #author-label { font-size: 11px; color: #aaa; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #time-label { font-weight: 600; color: #fff; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .progress-stats-right {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; font-size: 11px;
+        }
+        .time-row-style { color: #aaa; white-space: nowrap; display: none; }
+        .time-row-style.show-stat { display: block; }
+        .time-row-style span { font-weight: 600; color: #fff; font-family: monospace; }
+
+        .progress-row-container {
+            display: none; align-items: center; gap: 10px; margin-bottom: 8px; flex-shrink: 0;
+        }
+        .progress-row-container.bar-visible {
+            display: flex;
+        }
+        #progress-container {
+            flex: 1; height: 6px; background: #333; border-radius: 5px; overflow: hidden;
+        }
+        #progress-bar {
+            height: 100%; background: var(--accent); width: 0%; transition: width 0.15s linear;
+        }
+        #percent-label { font-weight: bold; color: var(--accent); font-size: 13px; min-width: 38px; text-align: right; }
+
+        .reader-subheader-bar {
+            display: none; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 0; gap: 8px;
+        }
+        .reader-subheader-bar.bar-active {
+            display: flex; margin-bottom: 12px;
+        }
+		
+		.btn-mode {
+            display: none; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 0; gap: 8px;
+        }
+        .btn-mode.bar-active {
+            display: flex; margin-bottom: 12px;
+        }
+        .chapter-inline-btn {
+            background: #2a2a2a; border: 1px solid #3d3d3d; color: #aaa; cursor: pointer;
+            padding: 5px 12px; font-size: 12px; border-radius: 6px; display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s ease; font-weight: 500;
+        }
+        body.amoled-mode .chapter-inline-btn { background: #111; border-color: #333; }
+        .chapter-inline-btn:hover { background: #333; color: #fff; border-color: var(--accent); }
+        .chapter-inline-btn svg { fill: currentColor; }
+        
+        .chapter-inline-btn.active-mode {
+            background: rgba(52, 152, 219, 0.2); color: #fff; border-color: var(--accent);
+        }
+
+        #main-reader-view {
+            display: none; flex-direction: column; justify-content: center; flex: 1; min-height: 0; position: relative;
+        }
+        #main-reader-view.view-active { display: flex; }
+
+        /* --- RSVP Display --- */
+        #word-display {
+            height: 140px; background: #000; border-radius: var(--radius-main);
+            margin-bottom: 12px; position: relative; overflow: hidden;
+            font-weight: bold; border: 1px solid #333; flex-shrink: 0; z-index: 1;
+        }
+
+        #anchor-guide {
+            position: absolute; left: 35%; top: 0; bottom: 0; width: 2px;
+            background: rgba(255, 255, 255, 0.1); z-index: 5;
+        }
+
+        #word-canvas {
+            position: absolute; top: 50%; left: 35%; transform: translateY(-50%); white-space: nowrap;
+        }
+        .highlight { color: var(--highlight-red); }
+
+        /* --- Absolut rahmenloser & vollflächiger eReader-Modus --- */
+        #page-display-container {
+            display: none; flex: 1; min-height: 0; margin-bottom: 12px;
+            box-sizing: border-box; border: none !important; box-shadow: none !important; background: transparent !important;
+        }
+        
+        #page-text-content {
+            width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden;
+            column-fill: auto; gap: 40px;
+            font-size: 16.5px; line-height: 1.65; color: var(--text-main);
+            text-align: justify; box-sizing: border-box; border: none !important;
+            box-shadow: none !important; background: transparent !important;
+        }
+        #page-text-content p { margin-top: 0; margin-bottom: 1.1em; text-indent: 1em; }
+        #page-text-content p:first-of-type { text-indent: 0; }
+        #page-text-content h1, #page-text-content h2, #page-text-content h3 { color: var(--accent); margin-top: 0; break-after: avoid; }
+        #page-text-content em, #page-text-content i { font-style: italic; }
+        #page-text-content strong, #page-text-content b { font-weight: bold; }
+        
+        body.amoled-mode #page-text-content { color: #ffffff; }
+
+        /* --- Sidebars (Überarbeitet für native Full-Height App-Optik) --- */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7); z-index: 999;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .sidebar-panel {
+            position: fixed;
+            top: 0;
+            height: 100% !important; /* Vollflächig von oben nach unten */
+            width: 280px;
+            background: #161616; z-index: 1000; box-shadow: 0 0 25px rgba(0,0,0,0.5);
+            transition: transform 0.25s ease-in-out, background-color 0.2s ease; 
+            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+        }
+        
+        .sidebar-panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; border-bottom: 1px solid #2a2a2a; padding-bottom: 15px; flex-shrink: 0;
+        }
+        body.amoled-mode .sidebar-panel-header { border-bottom-color: #222222; }
+        .sidebar-panel-title { font-size: 15px; font-weight: bold; color: #fff; letter-spacing: 0.5px; }
+        .sidebar-panel-close { background: transparent; border: none; color: #666; cursor: pointer; display: flex; align-items: center; padding: 2px; }
+        .sidebar-panel-close:hover { color: var(--highlight-red); }
+
+        /* Linke Sidebar: dockt exakt links an */
+        .sidebar-left { 
+            left: 0;
+            transform: translateX(-100%); 
+            border-radius: 0; /* cleane Kanten für den Vollbild-Look */
+        }
+        .sidebar-left.active { transform: translateX(0); }
+
+        /* Rechte Sidebar: dockt exakt rechts an */
+        .sidebar-right { 
+            right: 0;
+            transform: translateX(100%); 
+            border-radius: 0; /* cleane Kanten für den Vollbild-Look */
+        }
+        .sidebar-right.active { transform: translateX(0); }
+
+        /* Mobile Optimierung: Panels nehmen bei kleinen Bildschirmen mehr Platz ein */
+        @media (max-width: 480px) {
+            .sidebar-panel { width: 85%; }
+        }
+
+        .sidebar-menu { display: flex; flex-direction: column; gap: 8px; }
+        .menu-item-btn {
+            background: transparent; border: 1px solid transparent; color: #aaa;
+            padding: 12px 14px; border-radius: 8px; cursor: pointer; text-align: left;
+            font-size: 14px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;
+        }
+        .menu-item-btn:hover:not(:disabled) { background: #222; color: #fff; }
+        body.amoled-mode .menu-item-btn:hover:not(:disabled) { background: #111; }
+        .menu-item-btn.active-panel { background: rgba(52, 152, 219, 0.15); color: white; border-color: var(--accent); font-weight: bold; }
+        .menu-item-btn svg { fill: currentColor; }
+        
+        .menu-item-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            color: #555;
+        }
+
+        /* --- Kapitelübersicht --- */
+        .chapter-list-scroll {
+            flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; padding-right: 2px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .chapter-list-scroll::-webkit-scrollbar { width: 4px; }
+        .chapter-list-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        
+        .chapter-item {
+            padding: 14px 16px; background: #222; border: 1px solid #333; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s ease; font-size: 13.5px; color: #ccc;
+        }
+        body.amoled-mode .chapter-item { background: #0a0a0a; border-color: #222; }
+        .chapter-item:hover { background: #2a2a2a; color: #fff; border-color: var(--accent); }
+        body.amoled-mode .chapter-item:hover { background: #111; }
+        .chapter-item.active { background: rgba(52, 152, 219, 0.15); color: #fff; border-color: var(--accent); font-weight: bold; }
+
+        /* --- Dynamischer Listenbereich --- */
+        .dynamic-content-area {
+            display: none; flex: 1; overflow-y: auto; margin-bottom: 15px;
+            scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; padding-right: 2px; position: relative;
+        }
+        .dynamic-content-area.view-active { display: block; }
+        .dynamic-content-area::-webkit-scrollbar { width: 6px; }
+        .dynamic-content-area::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+
+        .app-panel { display: none; height: 100%; }
+        .app-panel.open { display: block; }
+
+        /* --- Optimierter Schnellstart Textbox-Container --- */
+        #faststart-textbox-container {
+            display: none; position: relative; width: 100%; height: 110px; margin-bottom: 12px; flex-shrink: 0;
+            overflow: hidden; border-radius: var(--radius-main);
+        }
+        #faststart-textbox-container.textbox-active { display: block; }
+        
+        textarea {
+            width: 100%; height: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: white;
+            padding: 12px 52px 12px 12px;
+            border-radius: var(--radius-main); box-sizing: border-box;
+            font-family: inherit; resize: none; outline: none; font-size: 13px; transition: background-color 0.2s;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) transparent;
+        }
+        
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+        
+        .floating-trash-btn {
+            position: absolute; top: 10px; right: 16px;
+            background: rgba(0,0,0,0.65); border: 1px solid var(--border-color);
+            color: #aaa; border-radius: 6px; padding: 6px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: all 0.2s ease; z-index: 10;
+            backdrop-filter: blur(2px);
+        }
+        .floating-trash-btn:hover { color: var(--highlight-red); border-color: var(--highlight-red); background: rgba(231, 76, 60, 0.15); }
+
+        .reader-quick-settings {
+            display: flex; gap: 10px; margin-bottom: 12px; flex-shrink: 0;
+        }
+        .quick-input-card {
+            display: flex; align-items: center; justify-content: space-between; flex: 1;
+            background: #181818; padding: 8px 12px; border-radius: 8px; font-size: 13px;
+            border: 1px solid var(--border-color); transition: background-color 0.2s;
+        }
+        .quick-input-card span { color: #aaa; font-weight: 500; }
+
+        /* --- Autor-Dropdown in der Bibliothek --- */
+        .lib-author-filter-row { display: none; margin-bottom: 10px; }
+        .lib-author-filter-row.visible { display: block; }
+        .lib-author-select {
+            width: 100%; background: #1a1a1a; border: 1px solid #333;
+            color: #ccc; padding: 8px 12px; border-radius: 8px;
+            font-size: 13px; font-family: inherit; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center;
+            padding-right: 32px; transition: border-color 0.2s;
+        }
+        .lib-author-select:focus { outline: none; border-color: var(--accent); }
+        body.amoled-mode .lib-author-select { background-color: #050505; border-color: #222; }
+        .lib-author-select.active-filter { border-color: var(--accent); color: #fff; }
+        .lib-filter-author-btn {
+            background: transparent; border: 1px solid #333; color: #888;
+            padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;
+            display: flex; align-items: center; gap: 5px; transition: all 0.2s; white-space: nowrap;
+        }
+        .lib-filter-author-btn:hover { border-color: var(--accent); color: #fff; }
+        .lib-filter-author-btn.active { background: rgba(52,152,219,0.15); border-color: var(--accent); color: #fff; }
+        .lib-filter-author-btn svg { fill: currentColor; }
+
+        /* --- Buchkarten-Statistik --- */
+        .book-stats-row {
+            display: flex; align-items: center; gap: 10px;
+            margin-top: 5px; flex-wrap: wrap;
+        }
+        .book-stat-item {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 10.5px; color: #666;
+        }
+        .book-stat-item svg { fill: #555; flex-shrink: 0; }
+        .book-stat-item.has-data { color: #999; }
+        .book-stat-item.has-data svg { fill: #3498db; }
+
+        /* --- Backup / Restore in Einstellungen --- */
+        .backup-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+        .backup-btn {
+            flex: 1; padding: 10px 8px; border-radius: 8px; border: 1px solid #333;
+            background: #1a1a1a; color: #ccc; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .backup-btn:hover { border-color: var(--accent); color: #fff; }
+        .backup-btn svg { fill: currentColor; flex-shrink: 0; }
+        .backup-btn.restore-btn:hover { border-color: var(--accent-green); }
+        body.amoled-mode .backup-btn { background: #050505; border-color: #222; }
+        .backup-info-text { font-size: 11.5px; color: #666; line-height: 1.5; margin-top: 8px; }
+        .backup-info-text strong { color: #888; }
+
+        /* --- Panel: Bibliothek --- */
+        .lib-header-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; gap: 10px;
+        }
+        .lib-tabs { display: flex; gap: 4px; background: #111; padding: 4px; border-radius: 6px; }
+        body.amoled-mode .lib-tabs { background: #050505; border: 1px solid #222; }
+        .lib-tab {
+            background: transparent; border: none; color: #777; font-size: 11px; padding: 4px 8px;
+            border-radius: 4px; cursor: pointer; transition: all 0.2s;
+        }
+        .lib-tab.active { background: #2a2a2a; color: #fff; font-weight: bold; }
+        body.amoled-mode .lib-tab.active { background: #222; }
+        
+        .btn-import {
+            background: var(--accent); color: white; border: none; padding: 6px 12px;
+            border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+        
+        #library-list { 
+            display: flex; flex-direction: column; gap: 12px; padding: 2px; width: 100%; box-sizing: border-box;
+        }
+        
+        .library-book-card {
+            background: #1a1a1a; border: 1px solid var(--border-color); border-radius: 12px; padding: 10px;
+            display: flex; flex-direction: row; align-items: stretch; gap: 14px; position: relative;
+            cursor: pointer; transition: all 0.2s ease-in-out; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            max-width: 100%; min-width: 0; box-sizing: border-box;
+        }
+        .library-book-card:hover { transform: translateY(-1px); border-color: #444; box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+        .library-book-card.active { border-color: var(--accent); background: rgba(52, 152, 219, 0.04); }
+        body.amoled-mode .library-book-card.active { background: rgba(52, 152, 219, 0.08); }
+
+        .book-cover-placeholder {
+            width: 75px; height: 105px; flex-shrink: 0; background: linear-gradient(135deg, #2c3e50, #1a252f);
+            border-radius: 6px; position: relative; display: flex; flex-direction: column; justify-content: space-between;
+            padding: 6px; box-sizing: border-box; border-left: 2px solid rgba(255,255,255,0.15);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 2px 3px 6px rgba(0,0,0,0.3); overflow: hidden;
+        }
+        
+        .book-cover-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        
+        .cover-content-overlay { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+        .library-book-card.active .book-cover-placeholder { background: linear-gradient(135deg, #1f3a52, #0d1b2a); border-left-color: var(--accent); }
+        .cover-author { font-size: 8px; text-transform: uppercase; color: var(--cover-txt-color); font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cover-title { font-size: 9px; font-weight: 700; color: #ffffff; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+        .cover-footer-brand { font-size: 6px; color: rgba(255,255,255,0.3); text-align: right; font-weight: bold; }
+
+        .book-details-block { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; flex: 1; padding: 2px 24px 2px 0; }
+        .book-title-meta-row { font-size: 14px; font-weight: 600; color: #fff; white-space: normal; word-break: break-word; line-height: 1.3; margin-bottom: 4px; }
+        .book-author-meta-sub { font-size: 12px; color: #aaa; margin-bottom: auto; white-space: normal; word-break: break-word; }
+        
+        .book-meta-badges-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+        .lib-type-badge { font-size: 9px; font-weight: bold; padding: 2px 5px; border-radius: 4px; background: #2a2a2a; color: #b3b3b3; text-transform: uppercase; }
+        body.amoled-mode .lib-type-badge { background: #111; border: 1px solid #333; }
+        .lib-status-tag { font-size: 9px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .status-new { background: rgba(52, 152, 219, 0.15); color: #3498db; }
+        .status-reading { background: rgba(241, 196, 15, 0.15); color: #f1c40f; }
+        .status-finished { background: rgba(46, 204, 113, 0.15); color: #2ecc71; }
+        .lib-progress { font-size: 12px; color: #aaa; font-family: monospace; font-weight: bold; margin-left: auto; }
+
+        .lib-delete-card-btn { 
+            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: 1px solid var(--border-color); color: #888; 
+            cursor: pointer; padding: 5px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            opacity: 0.3; transition: all 0.2s; z-index: 10;
+        }
+        .library-book-card:hover .lib-delete-card-btn { opacity: 1; }
+        .lib-delete-card-btn:hover { color: var(--highlight-red); border-color: var(--highlight-red); background: rgba(231,76,60,0.2); }
+
+        /* --- Panel: Einstellungen --- */
+        .settings-grid { display: flex; flex-direction: column; gap: 10px; padding-top: 5px; }
+        .setting-toggle-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #222; padding: 12px 14px; border-radius: 8px; gap: 20px;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .setting-text-group { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+        .setting-title { font-size: 14px; font-weight: 600; color: #fff; }
+        .setting-desc { font-size: 11.5px; color: #888; line-height: 1.3; }
+        .inline-setting-input { display: inline-flex; align-items: center; gap: 5px; margin-left: 2px; }
+
+        input[type="number"] { background: #111; border: 1px solid #555; color: white; padding: 4px; border-radius: 4px; width: 55px; text-align: center; font-size: 13px; }
+        body.amoled-mode input[type="number"] { border-color: #444; background: #000; }
+        
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--switch-off); transition: .2s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* --- Settings Cluster Header --- */
+        .settings-cluster-header {
+            display: flex; align-items: center; gap: 7px;
+            font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px;
+            text-transform: uppercase; color: #3498db;
+            padding: 4px 2px 2px 2px; margin-top: 4px;
+        }
+        .settings-cluster-header svg { fill: #3498db; flex-shrink: 0; opacity: 0.85; }
+        body.amoled-mode .settings-cluster-header { color: #3498db; }
+
+        /* --- Panel: Was ist RSVP --- */
+        .info-container { padding: 5px; display: flex; flex-direction: column; gap: 16px; color: #ccc; font-size: 13.5px; line-height: 1.5; }
+        .info-section { background: #222; padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); transition: background-color 0.2s; }
+        .info-title { font-size: 15px; font-weight: bold; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .info-title svg { fill: var(--accent); }
+        .info-highlight-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .info-stat-card { background: #181818; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid var(--border-color); transition: background-color 0.2s; }
+        .info-stat-num { font-size: 20px; font-weight: bold; color: var(--accent-green); margin-bottom: 2px; }
+        .info-stat-lbl { font-size: 11px; color: #888; }
+
+        /* --- Hauptsteuerung --- */
+        #main-controls { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; margin-top: 5px;
+        }
+        .btn-main { grid-column: span 3; padding: 12px; font-weight: bold; background: var(--accent); color: white; border: none; border-radius: var(--radius-main); cursor: pointer; font-size: 1.1rem; }
+        .btn-nav { background: #333; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12.5px; }
+        body.amoled-mode .btn-nav { background: #111; border: 1px solid #333; }
+        .btn-nav:hover { background: #444; }
+        body.amoled-mode .btn-nav:hover { background: #222; }
+
+		/* NEU: Zentrierter Container für die Modus-Buttons */
+		#mode-controls {
+			display: flex;
+			justify-content: center;
+			align-items: center; /* Wichtig für die vertikale Zentrierung des Strichs */
+			gap: 15px;           /* Abstand zum Trennstrich */
+			margin-top: 15px;
+			flex-shrink: 0;
+		}
+		
+		.btn-mode {
+			background: transparent; /* Hintergrund weg */
+			border: none;            /* Rahmen weg */
+			color: #888;             /* Dezentes Grau */
+			cursor: pointer;
+			padding: 8px 0;          /* Padding reduziert */
+			font-size: 13px;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			transition: color 0.2s;
+		}
+		
+		.btn-mode:hover {
+			color: #fff;             /* Weiß beim Drüberfahren */
+		}
+		
+		/* Der vertikale Trennstrich */
+		.mode-divider {
+			width: 1px;
+			height: 14px;
+			background-color: #444;  /* Dezentes Dunkelgrau */
+		}
+		.bar-active { display: flex; justify-content: center; } /* Nur wenn aktiv sichtbar */
+		.bar-active .btn-mode { display: flex; } /* Kinder-Buttons sichtbar */
+        
+        body.amoled-mode .btn-mode { background: #111; border-color: #333; }
+
+        #file-input { display: none; }
+
+        /* --- Panel: Was ist RSVP (erweitert) --- */
+        .info-container { padding: 2px; display: flex; flex-direction: column; gap: 12px; color: #ccc; font-size: 13.5px; line-height: 1.5; }
+        .info-section { background: #222; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color); transition: background-color 0.2s; }
+        body.amoled-mode .info-section { background: #000; border-color: #222; }
+        .info-title { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .info-title svg { fill: var(--accent); flex-shrink: 0; }
+
+        .info-body { font-size: 13px; color: #bbb; line-height: 1.6; }
+        .info-body strong { color: #e0e0e0; }
+
+        .info-highlight-box { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+        .info-stat-card { background: #181818; padding: 12px 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); transition: background-color 0.2s; }
+        body.amoled-mode .info-stat-card { background: #050505; border-color: #222; }
+        .info-stat-num { font-size: 22px; font-weight: bold; color: var(--accent-green); margin-bottom: 3px; font-family: monospace; }
+        .info-stat-lbl { font-size: 10.5px; color: #888; line-height: 1.3; }
+
+        .info-pro-con-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .info-pro-col, .info-con-col { display: flex; flex-direction: column; gap: 6px; }
+        .info-pro-item, .info-con-item {
+            display: flex; align-items: flex-start; gap: 7px;
+            font-size: 12px; color: #bbb; line-height: 1.4;
+        }
+        .info-pro-item::before { content: "✓"; color: var(--accent-green); font-weight: bold; flex-shrink: 0; margin-top: 1px; }
+        .info-con-item::before { content: "!"; color: #f39c12; font-weight: bold; flex-shrink: 0; margin-top: 1px; font-size: 13px; }
+        .info-col-label { font-size: 10px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; margin-bottom: 2px; }
+        .info-col-label.green { color: var(--accent-green); }
+        .info-col-label.orange { color: #f39c12; }
+
+        .info-wpm-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        .info-wpm-table th { color: #888; font-weight: 600; text-align: left; padding: 5px 8px; border-bottom: 1px solid #333; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-wpm-table td { padding: 7px 8px; border-bottom: 1px solid #2a2a2a; color: #ccc; }
+        .info-wpm-table tr:last-child td { border-bottom: none; }
+        .info-wpm-table tr td:first-child { color: #fff; font-weight: 500; }
+        .wpm-bar-cell { width: 40%; }
+        .wpm-bar-bg { background: #333; border-radius: 4px; height: 6px; overflow: hidden; }
+        .wpm-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+
+        .info-tip-row { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+        .info-tip-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px; background: #1a1a1a; border-radius: 8px; border: 1px solid #2d2d2d; }
+        body.amoled-mode .info-tip-item { background: #050505; border-color: #222; }
+        .info-tip-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+        .info-tip-text { font-size: 12px; color: #bbb; line-height: 1.5; }
+        .info-tip-text strong { color: #e0e0e0; }
+
+        .info-version-badge {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px; background: rgba(52,152,219,0.07); border: 1px solid rgba(52,152,219,0.2);
+            border-radius: 8px; font-size: 11.5px; color: #888; margin-top: 4px;
+        }
+        .info-version-badge span { color: var(--accent); font-weight: bold; }
+
+        /* --- Statistik Panel --- */
+        .stats-kpi-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+        }
+        .stats-kpi-card {
+            background: #181818; padding: 14px 8px; border-radius: 10px; text-align: center;
+            border: 1px solid var(--border-color); transition: background-color 0.2s;
+        }
+        body.amoled-mode .stats-kpi-card { background: #050505; border-color: #222; }
+        .stats-kpi-num { font-size: 20px; font-weight: bold; color: var(--accent); margin-bottom: 4px; font-family: monospace; }
+        .stats-kpi-lbl { font-size: 10px; color: #888; line-height: 1.3; }
+
+        .stats-book-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+        .stats-book-row { position: relative; }
+        .stats-book-del-btn {
+            position: absolute; top: 10px; right: 10px;
+            background: transparent; border: none; cursor: pointer;
+            color: #444; padding: 4px; border-radius: 4px;
+            line-height: 1; transition: color 0.2s;
+        }
+        .stats-book-del-btn:hover { color: #e74c3c; }
+        .stats-book-row:hover .stats-book-del-btn { color: #666; }
+
+        .stats-book-row {
+            background: #181818; border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 12px 14px; transition: background-color 0.2s;
+        }
+        body.amoled-mode .stats-book-row { background: #050505; border-color: #222; }
+        .stats-book-title { font-size: 13px; font-weight: 600; color: #e0e0e0; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stats-book-author { font-size: 11px; color: #888; margin-bottom: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stats-book-bar-track { height: 5px; background: #2d2d2d; border-radius: 3px; overflow: hidden; margin-bottom: 7px; }
+        body.amoled-mode .stats-book-bar-track { background: #1a1a1a; }
+        .stats-book-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+        .stats-book-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #888; gap: 8px; }
+        .stats-empty { text-align: center; color: #555; font-size: 13px; padding: 50px 20px; line-height: 1.7; }
+
+        /* --- Statistik: Timeline Jahr/Monat --- */
+        .stats-timeline { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+        .stats-year-block { border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+        body.amoled-mode .stats-year-block { border-color: #222; }
+        .stats-year-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; cursor: pointer; user-select: none;
+            font-size: 13px; font-weight: 600; color: #ccc; background: #181818;
+        }
+        body.amoled-mode .stats-year-header { background: #050505; }
+        .stats-year-header:hover { background: #1e1e1e; }
+        .stats-year-total { font-size: 12px; color: var(--accent); font-family: monospace; }
+        .stats-year-arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
+        .stats-year-months { padding: 6px 14px 10px; background: #141414; display: none; }
+        body.amoled-mode .stats-year-months { background: #030303; }
+        .stats-year-block.open .stats-year-months { display: block; }
+        .stats-year-block.open .stats-year-arrow { transform: rotate(90deg); }
+        .stats-month-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+        .stats-month-name { width: 30px; font-size: 11px; color: #888; flex-shrink: 0; }
+        .stats-month-bar-track { flex: 1; height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden; }
+        .stats-month-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); min-width: 2px; }
+        .stats-month-time { width: 52px; text-align: right; font-size: 11px; color: #aaa; flex-shrink: 0; font-family: monospace; }
+        .stats-book-archived { opacity: 0.75; }
+        .stats-archive-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; color: #888; background: #252525; border: 1px solid #333; border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; flex-shrink: 0; }
+        body.amoled-mode .stats-archive-badge { background: #111; border-color: #222; }
+        .stats-book-thumb { width: 28px; height: 42px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+        .stats-book-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+        .stats-book-header-text { flex: 1; min-width: 0; }
+
+        /* Stats Tabs */
+        .stats-tab-bar { display: flex; gap: 6px; margin-bottom: 16px; background: #111; border-radius: 10px; padding: 4px; border: 1px solid var(--border-color); }
+        body.amoled-mode .stats-tab-bar { background: #000; border-color: #222; }
+        .stats-tab { flex: 1; padding: 8px 6px; border-radius: 7px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #888; transition: all 0.18s; }
+        .stats-tab.active { background: var(--accent); color: #fff; }
+
+        /* Book row with thumbnail */
+        .stats-book-row-inner { display: flex; gap: 10px; }
+        .stats-book-thumb { width: 40px; min-width: 40px; height: 60px; border-radius: 4px; object-fit: cover; background: #252525; }
+        .stats-book-thumb-placeholder { width: 40px; min-width: 40px; height: 60px; border-radius: 4px; background: #252525; border: 1px solid #333; display: flex; align-items: center; justify-content: center; }
+        .stats-book-content { flex: 1; min-width: 0; }
+        .stats-deleted-badge { font-size: 9px; background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
+
+        /* Verlauf (year/month) */
+        .verlauf-year-section { margin-bottom: 20px; }
+        .verlauf-year-header { font-size: 14px; font-weight: 700; color: #e0e0e0; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border-color); }
+        .verlauf-month-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .verlauf-month-name { font-size: 12px; color: #aaa; width: 68px; flex-shrink: 0; }
+        .verlauf-bar-wrap { flex: 1; height: 7px; background: #2d2d2d; border-radius: 4px; overflow: hidden; }
+        body.amoled-mode .verlauf-bar-wrap { background: #1a1a1a; }
+        .verlauf-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+        .verlauf-month-time { font-size: 11px; color: #888; width: 56px; flex-shrink: 0; text-align: right; }
+        .verlauf-month-books { font-size: 10px; color: #666; width: 32px; flex-shrink: 0; text-align: right; }
+        .verlauf-empty { text-align: center; color: #555; font-size: 13px; padding: 30px 20px; }
+
+    </style>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RSVP Reader">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body>
+
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<div id="sidebar-menu" class="sidebar-panel sidebar-left">
+    <div class="sidebar-panel-header">
+        <span class="sidebar-panel-title">Menü Navigation</span>
+        <button id="sidebar-close-btn" class="sidebar-panel-close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+    </div>
+    <div class="sidebar-menu">
+        <button id="nav-faststart" class="menu-item-btn" onclick="navigateToFaststart()">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            Freier Text
+        </button>
+        <button id="nav-active-book" class="menu-item-btn" onclick="jumpToActiveBook()" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H4c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h16c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zM8 8l7 4-7 4V8z"/></svg>
+            Aktuelles Buch
+        </button>
+        <button id="nav-library" class="menu-item-btn" onclick="switchUIMode('library', 'library')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+            Meine Bibliothek
+        </button>
+        <button id="nav-settings" class="menu-item-btn" onclick="switchUIMode('library', 'settings')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c1.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0-.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Einstellungen
+        </button>
+        <button id="nav-about" class="menu-item-btn" onclick="switchUIMode('library', 'about')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Was ist RSVP?
+        </button>
+        <button id="nav-stats" class="menu-item-btn" onclick="switchUIMode('library', 'stats')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+            Meine Statistik
+        </button>
+        <button id="nav-support" class="menu-item-btn" onclick="switchUIMode('library', 'support')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 3H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h4v2h8v-2h4c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 14H4V5h16v12zm-2-6.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm-6 0c0 .83-.67 1.5-1.5 1.5S8 11.33 8 10.5 8.67 9 9.5 9s1.5.67 1.5 1.5z"/></svg>
+            Unterstützen
+        </button>
+    </div>
+</div>
+
+<div id="chapter-side-panel" class="sidebar-panel sidebar-right">
+    <div class="sidebar-panel-header">
+        <span class="sidebar-panel-title">Buchkapitel</span>
+        <button id="chapter-panel-close-btn" class="sidebar-panel-close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+    </div>
+    <div id="chapter-list-scroll" class="chapter-list-scroll"></div>
+</div>
+
+<div id="reader-card">
+    <div class="top-bar">
+        <button id="hamburger-trigger" class="hamburger-btn" title="Menü öffnen">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <div class="progress-header">
+            <div class="title-wrapper">
+                <span id="author-label"></span>
+                <span id="time-label">Freier Text</span>
+            </div>
+            <div class="progress-stats-right">
+                <div id="global-chapter-counter" class="time-row-style"></div>
+                <div id="global-time-counter" class="time-row-style"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="progress-row-container" class="progress-row-container">
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <span id="percent-label">0%</span>
+    </div>
+
+    <div id="main-reader-view" class="view-active">
+        <div id="word-display">
+            <div id="anchor-guide"></div>
+            <div id="word-canvas">
+                <span id="txt-left"></span><span id="txt-center" class="highlight"></span><span id="txt-right"></span>
+            </div>
+        </div>
+
+        <div id="page-display-container">
+            <div id="page-text-content"></div>
+        </div>
+
+        <div class="reader-quick-settings">
+            <div class="quick-input-card"><span>WPM (Tempo)</span><input type="number" id="wpm" value="300"></div>
+            <div class="quick-input-card"><span>Schrift (px)</span><input type="number" id="font-size" value="50"></div>
+        </div>
+
+        <div id="faststart-textbox-container" class="textbox-active">
+            <button id="btn-clear-floating" class="floating-trash-btn" title="Text komplett löschen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            </button>
+            <textarea id="input-text" placeholder="Füge hier deinen Text für den Schnellstart ein..."></textarea>
+        </div>
+
+        <div id="main-controls">
+            <button id="main-btn" class="btn-main">START</button>
+            <button id="btn-back" class="btn-nav">-10 Wörter</button>
+            <button id="btn-reset" class="btn-nav">Neustart</button>
+            <button id="btn-fwd" class="btn-nav">+10 Wörter</button>
+        </div>
+		
+		<div id="mode-controls">
+        <button id="reader-chapter-toggle" class="btn-mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="4" cy="6" r="2"/><rect x="8" y="5" width="14" height="2"/>
+                <circle cx="4" cy="12" r="2"/><rect x="8" y="11" width="14" height="2"/>
+                <circle cx="4" cy="18" r="2"/><rect x="8" y="17" width="14" height="2"/>
+            </svg>
+            Kapitelübersicht
+        </button>
+		<div class="mode-divider"></div>
+        <button id="reader-mode-toggle" class="btn-mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <span>eReader-Modus</span>
+        </button>
+    </div>
+	
+    </div>
+
+    <div id="main-dynamic-view" class="dynamic-content-area">
+        <div id="panel-library" class="app-panel">
+            <div class="lib-header-row">
+                <div class="lib-tabs">
+                    <button class="lib-tab active" onclick="filterLibrary('all', this)">Alle</button>
+                    <button class="lib-tab" onclick="filterLibrary('new', this)">Neu</button>
+                    <button class="lib-tab" onclick="filterLibrary('reading', this)">Begonnen</button>
+                    <button class="lib-tab" onclick="filterLibrary('finished', this)">Beendet</button>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <button id="btn-author-filter" class="lib-filter-author-btn" onclick="toggleAuthorFilter()" title="Nach Autor filtern">
+                        <svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                        Autor
+                    </button>
+                    <button class="btn-import" onclick="document.getElementById('file-input').click()">Importieren</button>
+                </div>
+            </div>
+            <div id="lib-author-filter-row" class="lib-author-filter-row">
+                <select id="lib-author-select" class="lib-author-select" onchange="onAuthorSelectChange(this)">
+                    <option value="">— Alle Autoren —</option>
+                </select>
+            </div>
+            <div id="library-list"></div>
+        </div>
+
+        <div id="panel-settings" class="app-panel">
+            <div class="settings-grid">
+
+                <!-- CLUSTER: Allgemein -->
+                <div class="settings-cluster-header">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    Allgemein
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Auto-Resume</span>
+                        <span class="setting-desc">Lädt beim Start automatisch das zuletzt gelesene Buch.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="resume-book-toggle"><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: Darstellung -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    Darstellung
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">AMOLED Black Mode</span>
+                        <span class="setting-desc">Setzt alle Hintergründe auf reines Schwarz – spart bei OLED-Displays maximal Akku.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="amoled-mode-toggle"><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Fortschrittsbalken anzeigen</span>
+                        <span class="setting-desc">Zeigt den Lese-Fortschrittsbalken mit Prozentangabe im Reader an.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-progress-bar-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Reset-Button bei Büchern</span>
+                        <span class="setting-desc">Zeigt den Neustart-Button auch an, wenn ein Buch aus der Bibliothek geladen ist.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-reset-button-toggle" checked><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: Zeitanzeigen -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                    Zeitanzeigen
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Kapitel: Gelesene / Gesamtzeit</span>
+                        <span class="setting-desc">Zeigt aktuelle und Gesamtdauer des aktuellen Kapitels oben rechts.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-chapter-time-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Kapitel: Verbleibende Restzeit</span>
+                        <span class="setting-desc">Zeigt die noch verbleibende Lesezeit im aktuellen Kapitel.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-chapter-remaining-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Buch: Gelesene / Gesamtzeit</span>
+                        <span class="setting-desc">Zeigt aktuelle und Gesamtdauer des gesamten Buches.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-book-time-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Buch: Verbleibende Restzeit</span>
+                        <span class="setting-desc">Zeigt die noch verbleibende Lesezeit für das gesamte Buch.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-book-remaining-toggle" checked><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: RSVP-Modus -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>
+                    RSVP-Modus
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Intelligente Satzpausen</span>
+                        <span class="setting-desc">Verlängert die Anzeigezeit bei Satzzeichen (. ! ?) automatisch um das 1,8-fache.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="pause-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Silbentrennung erlauben</span>
+                        <span class="setting-desc">Trennt lange Wörter an Bindestrichen auf und zeigt sie Silbe für Silbe.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="hyphen-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Extra-Zeit für lange Wörter</span>
+                        <span class="setting-desc">Gibt Wörtern ab <span class="inline-setting-input"><input type="number" id="long-word-trigger" value="8"> Zeichen</span> das 1,4-fache an Anzeigezeit.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="long-word-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Automatischer Rücksprung</span>
+                        <span class="setting-desc">Springt beim Öffnen um <span class="inline-setting-input"><input type="number" id="rewind-amount" value="10"> Wörter</span> zurück, um den Einstieg zu erleichtern.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="rewind-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Stopp nach Kapitelende</span>
+                        <span class="setting-desc">Hält die Wiedergabe automatisch am Ende eines Kapitels an und zeigt den Namen des nächsten Kapitels im Reader an.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="stop-at-chapter-end"><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: Backup & Restore -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                    Backup &amp; Restore
+                </div>
+                <div class="setting-toggle-card" style="flex-direction:column;align-items:flex-start;gap:0;">
+                    <div class="setting-text-group" style="width:100%;">
+                        <span class="setting-title">Lesedaten sichern &amp; übertragen</span>
+                        <span class="setting-desc">Exportiert Lesefortschritt, letzten Lesetag und Ø-WPM aller Bücher als JSON. Beim Import auf einem neuen Gerät werden die Daten anhand von Titel &amp; Autor automatisch zugeordnet.</span>
+                    </div>
+                    <div class="backup-btn-row">
+                        <button class="backup-btn" onclick="exportBackup()">
+                            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                            Exportieren
+                        </button>
+                        <button class="backup-btn restore-btn" onclick="document.getElementById('backup-file-input').click()">
+                            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6-7.83L10.41 5.59 9 4.17 12 1.17l3 3-1.41 1.42L13 4.17v8.5h-2v-8.5z"/></svg>
+                            Importieren
+                        </button>
+                        <input type="file" id="backup-file-input" accept=".json" style="display:none;" onchange="importBackup(event)">
+                    </div>
+                    <div class="backup-info-text">
+                        <strong>Was wird gesichert:</strong> Fortschritt, letzter Lesetag, Ø-WPM, Gesamtlesezeit.<br>
+                        <strong>Was nicht:</strong> Buchinhalte (urheberrechtlich geschützt).
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="panel-about" class="app-panel">
+            <div class="info-container">
+
+                <!-- Was ist RSVP -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        Was ist RSVP Speed Reading?
+                    </div>
+                    <div class="info-body">
+                        <strong>Rapid Serial Visual Presentation (RSVP)</strong> ist eine kognitionswissenschaftliche Lesetechnik, bei der Wörter einzeln und nacheinander an einem fixen Punkt auf dem Bildschirm erscheinen. Entwickelt wurde das Konzept in den 1970er-Jahren von Forschern wie <strong>Lawrence Forster</strong> (MIT, 1970) und später insbesondere von <strong>Keith Rayner</strong>, dessen jahrzehntelange Augenbewegungsforschung die Grundlagen des schnellen Lesens maßgeblich geprägt hat.
+                        <br><br>
+                        Der Kern des Prinzips: Beim normalen Lesen verbringt das Auge bis zu <strong>30 % der Zeit mit sogenannten Sakkaden</strong> – ruckartigen Sprüngen zwischen Wörtern. RSVP eliminiert diese Bewegungen vollständig, indem der Text zur Fixierung kommt, nicht umgekehrt.
+                    </div>
+                </div>
+
+                <!-- Wie das Gehirn liest -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7zm-1-11h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        Wie das Gehirn beim Lesen arbeitet
+                    </div>
+                    <div class="info-body">
+                        Das menschliche Gehirn verarbeitet Sprache nicht Buchstabe für Buchstabe, sondern erkennt Wörter als visuelle Muster – ein Effekt, der als <strong>Worterkennung durch Mustererkennung</strong> (parallel letter recognition, Grainger &amp; Jacobs, 1996) bekannt ist. RSVP nutzt genau diesen Mechanismus.
+                        <br><br>
+                        Dabei spielen drei Prozesse eine Rolle:
+                    </div>
+                    <div class="info-tip-row" style="margin-top:10px;">
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">👁️</div>
+                            <div class="info-tip-text"><strong>Fixation:</strong> Das Auge hält 200–250 ms auf einem Punkt. RSVP erzwingt eine konstante Fixation – keine Energie wird für Augenbewegungen verschwendet.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🧠</div>
+                            <div class="info-tip-text"><strong>Lexikalischer Zugriff:</strong> Wörter werden aus dem mentalen Lexikon abgerufen. Bei geübten Lesern geschieht dies in unter 150 ms pro Wort (Perfetti, 1985).</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🔗</div>
+                            <div class="info-tip-text"><strong>Satzintegration:</strong> Das Arbeitsgedächtnis verknüpft aufeinanderfolgende Wörter zu Bedeutung. RSVP trainiert diesen Puffer, effizienter zu arbeiten.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lesegeschwindigkeiten -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.81 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5V2.05z"/></svg>
+                        Lesegeschwindigkeiten im Vergleich
+                    </div>
+                    <table class="info-wpm-table">
+                        <thead><tr><th>Niveau</th><th>WPM</th><th class="wpm-bar-cell">Tempo</th></tr></thead>
+                        <tbody>
+                            <tr><td>Langsamer Leser</td><td>150–200</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:20%;background:#e74c3c;"></div></div></td></tr>
+                            <tr><td>Durchschnitt</td><td>200–300</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:35%;background:#f39c12;"></div></div></td></tr>
+                            <tr><td>Geübter Leser</td><td>300–400</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:50%;"></div></div></td></tr>
+                            <tr><td>RSVP-Einsteiger</td><td>400–500</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:65%;"></div></div></td></tr>
+                            <tr><td>RSVP geübt</td><td>500–700</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:82%;background:var(--accent-green);"></div></div></td></tr>
+                            <tr><td>RSVP Fortgeschritten</td><td>700–1000+</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:100%;background:var(--accent-green);"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                    <div class="info-body" style="margin-top:9px; font-size:11.5px; color:#777;">
+                        Quelle: Rayner et al. (2016), „So Much to Read, So Little Time", Psychological Science in the Public Interest.
+                    </div>
+                </div>
+
+                <!-- Vorteile & Grenzen -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        Stärken &amp; ehrliche Grenzen
+                    </div>
+                    <div class="info-pro-con-grid">
+                        <div class="info-pro-col">
+                            <div class="info-col-label green">Stärken</div>
+                            <div class="info-pro-item">Eliminiert Sakkaden – bis zu 30 % Zeitgewinn allein dadurch</div>
+                            <div class="info-pro-item">Erzwingt Fokus – Ablenkung durch Rückspringen im Text entfällt</div>
+                            <div class="info-pro-item">Ideal für lineare Texte, Sachbücher und Romane</div>
+                            <div class="info-pro-item">Trainingseffekt: das Arbeitsgedächtnis wächst mit der Übung</div>
+                            <div class="info-pro-item">Kein Gerät außer dem Smartphone nötig</div>
+                        </div>
+                        <div class="info-con-col">
+                            <div class="info-col-label orange">Grenzen</div>
+                            <div class="info-con-item">Kein Zurückspringen möglich – Verständnis leidet bei sehr hohem Tempo</div>
+                            <div class="info-con-item">Komplexe Fachtexte erfordern Verlangsamung</div>
+                            <div class="info-con-item">Anfangs ungewohnt – Eingewöhnungszeit von 1–2 Wochen einplanen</div>
+                            <div class="info-con-item">Nicht geeignet für Texte, die visuell navigiert werden (Tabellen, Formeln)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORP Erklärung -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        Der rote Buchstabe – Optimal Recognition Point
+                    </div>
+                    <div class="info-body">
+                        Der rot hervorgehobene Buchstabe in dieser App markiert den <strong>Optimal Recognition Point (ORP)</strong> – auch bekannt als „Optimal Viewing Position" (O'Regan &amp; Lévy-Schoen, 1987). Studien zeigen, dass das Gehirn ein Wort am schnellsten verarbeitet, wenn das Auge <strong>leicht links von der Wortmitte</strong> fixiert – bei einem 4-buchstabigen Wort etwa auf Position 2, bei einem 10-buchstabigen auf Position 3–4.
+                        <br><br>
+                        Durch die konstante Ausrichtung am ORP muss das Gehirn <strong>keine Korrektur-Sakkade</strong> mehr durchführen, und die Erkennungslatenz sinkt messbar.
+                    </div>
+                </div>
+
+                <!-- Tipps -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        Tipps für den Einstieg
+                    </div>
+                    <div class="info-tip-row">
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🐢</div>
+                            <div class="info-tip-text"><strong>Starte bei 200–250 WPM</strong> – auch wenn es langsam wirkt. Lass das Gehirn die Technik verinnerlichen, bevor du steigerst.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">📈</div>
+                            <div class="info-tip-text"><strong>Steigere in 25er-Schritten</strong>, sobald du merkst, dass du bei deiner aktuellen Geschwindigkeit entspannt mitkommst – nicht wenn du dich durchbeißt.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">⏱️</div>
+                            <div class="info-tip-text"><strong>15–20 Minuten täglich</strong> sind effektiver als seltene Marathonsitzungen. Das Gehirn konsolidiert Lesetechniken im Schlaf.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">📚</div>
+                            <div class="info-tip-text"><strong>Starte mit Romanen oder leichten Sachbüchern</strong> – dichte Fachtexte erfordern mehr kognitive Kapazität und eignen sich für den Anfang weniger gut.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🔁</div>
+                            <div class="info-tip-text"><strong>Nutze den Auto-Rücksprung</strong> (in den Einstellungen aktivierbar) – ein kurzer Rücksprung beim Öffnen hilft, den Faden sofort wieder aufzunehmen.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats & Version -->
+                <div class="info-highlight-box">
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">~250</div>
+                        <div class="info-stat-lbl">Ø WPM normales Lesen</div>
+                    </div>
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">30 %</div>
+                        <div class="info-stat-lbl">Zeit durch Sakkaden verschwendet</div>
+                    </div>
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">150 ms</div>
+                        <div class="info-stat-lbl">Minimale Wort-Erkennungszeit</div>
+                    </div>
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">700+</div>
+                        <div class="info-stat-lbl">WPM mit RSVP möglich</div>
+                    </div>
+                </div>
+
+                <div class="info-version-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="fill:var(--accent);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    RSVP Speed Reader Pro &nbsp;·&nbsp; <span>v2.9.6</span> &nbsp;·&nbsp; Alle Daten bleiben lokal auf deinem Gerät
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Support Panel -->
+        <div id="panel-support" class="app-panel">
+            <div class="info-container">
+                
+                <!-- Danke Header -->
+                <div class="info-section">
+                    <div style="text-align:center; padding:20px 0 10px 0;">
+                        <h2 style="margin:0; font-size:24px; color:var(--accent);">Danke, dass du diese App nutzt!</h2>
+                    </div>
+                    <div class="info-body" style="text-align:center;">
+                        Diese App ist und bleibt <strong>100% kostenlos, werbefrei und ohne Datensammlung</strong>. 
+                        Alle deine Bücher und Einstellungen bleiben lokal auf deinem Gerät – kein Cloud-Upload, kein Tracking.
+                        <br><br>
+                        Falls dir die App gefällt und du das Projekt unterstützen möchtest, freue ich mich über einen kleinen Kaffee! ☕
+                    </div>
+                </div>
+
+                <!-- Buy Me a Coffee -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 3H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h4v2h8v-2h4c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 14H4V5h16v12zm-2-6.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm-6 0c0 .83-.67 1.5-1.5 1.5S8 11.33 8 10.5 8.67 9 9.5 9s1.5.67 1.5 1.5z"/></svg>
+                        Buy Me a Coffee
+                    </div>
+                    <div class="info-body" style="text-align:center; padding:20px 0;">
+                        <!-- HIER DEINEN LINK EINFÜGEN -->
+                        <a href="https://buymeacoffee.com/DEIN_USERNAME" 
+                           target="_blank" 
+                           style="display:inline-block; padding:14px 32px; background:#FFDD00; color:#000; text-decoration:none; border-radius:8px; font-weight:bold; font-size:16px; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 12px rgba(255,221,0,0.3);"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255,221,0,0.4)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255,221,0,0.3)';">
+                            ☕ Kauf mir einen Kaffee
+                        </a>
+                        <div style="margin-top:12px; font-size:12px; color:#888;">
+                            Jeder Beitrag hilft, diese App weiterzuentwickeln!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alternative Unterstützung -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        Andere Wege zu helfen
+                    </div>
+                    <div class="info-tip-row">
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">⭐</div>
+                            <div class="info-tip-text"><strong>Bewerte die App</strong> – Eine gute Bewertung im App Store hilft anderen, diese kostenlose App zu entdecken.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">📢</div>
+                            <div class="info-tip-text"><strong>Empfehle sie weiter</strong> – Erzähle Freunden und Familie von dieser App, wenn sie dir gefällt!</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">💡</div>
+                            <div class="info-tip-text"><strong>Schicke Feedback</strong> – Ideen für neue Features sind immer willkommen und helfen, die App besser zu machen.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Panel -->
+        <div id="panel-stats" class="app-panel">
+            <div id="stats-content"></div>
+        </div>
+
+    </div>
+</div>
+<input type="file" id="file-input" accept=".txt,.epub,.pdf">
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+let words = [], currentIndex = 0, timer = null, isPlaying = false;
+let chapterOffsets = [];
+let db = null;
+let activeBookId = "schnellstart"; 
+let activeBookTitle = "Freier Text";
+let activeBookAuthor = "";
+let currentLibraryFilter = "all";
+let currentAuthorFilter = "";
+
+let isPageMode = false;
+let currentPageScrollOffset = 0;
+let pageScrollWidth = 0;
+
+let indexOnPageModeEnter = 0;
+let initialPageOnEnter = 0;
+let chapterOnPageModeEnter = 0;
+let pageRenderTimeout = null;
+
+let totalSessionSeconds = 0; 
+let lastTickTime = null;     
+
+let hyphenFragments = null;
+let hyphenFragmentIdx = 0;
+
+// Cache für realistische Zeitschätzung (berücksichtigt Pause- & Langwort-Modifier)
+let estimatedTimeCache = null;
+let estimatedTimeCacheKey = '';
+
+// Flag für die präzise Index-Korrektur beim Umschalten
+let isCurrentlyInRSVPFlow = false;
+
+// Flag für das automatische Seiten-Snapping
+let isSnapping = false;
+
+const canvas = document.getElementById('word-canvas');
+const tLeft = document.getElementById('txt-left');
+const tCenter = document.getElementById('txt-center');
+const tRight = document.getElementById('txt-right');
+const input = document.getElementById('input-text');
+
+const wpmIn = document.getElementById('wpm');
+const fsIn = document.getElementById('font-size');
+const mainBtn = document.getElementById('main-btn');
+const authorLabel = document.getElementById('author-label');
+const timeLabel = document.getElementById('time-label');
+const percentLabel = document.getElementById('percent-label');
+const globalTimeCounter = document.getElementById('global-time-counter');
+const globalChapterCounter = document.getElementById('global-chapter-counter');
+const progressBar = document.getElementById('progress-bar');
+const progressRowContainer = document.getElementById('progress-row-container');
+
+const pauseMode = document.getElementById('pause-mode');
+const hyphenMode = document.getElementById('hyphen-mode');
+const longWordMode = document.getElementById('long-word-mode');
+const longWordTrigger = document.getElementById('long-word-trigger');
+const rewindMode = document.getElementById('rewind-mode');
+const rewindAmount = document.getElementById('rewind-amount');
+const stopAtChapterEnd = document.getElementById('stop-at-chapter-end');
+
+const resumeToggle = document.getElementById('resume-book-toggle');
+
+// Toggles für Zeitanzeigen (Jetzt erweitert um getrennte Restzeiten)
+const showChapterTimeToggle = document.getElementById('show-chapter-time-toggle');
+const showChapterRemainingToggle = document.getElementById('show-chapter-remaining-toggle');
+const showBookTimeToggle = document.getElementById('show-book-time-toggle');
+const showBookRemainingToggle = document.getElementById('show-book-remaining-toggle');
+const showProgressBarToggle = document.getElementById('show-progress-bar-toggle');
+const amoledModeToggle = document.getElementById('amoled-mode-toggle');
+
+const viewReader = document.getElementById('main-reader-view');
+const viewDynamic = document.getElementById('main-dynamic-view');
+const textboxContainer = document.getElementById('faststart-textbox-container');
+
+const sideChapterPanel = document.getElementById('chapter-side-panel');
+//const chapterSubheaderBar = document.getElementById('reader-subheader-bar');
+const chapterSubheaderBar = document.getElementById('mode-controls');
+const chapterToggleBtn = document.getElementById('reader-chapter-toggle');
+const chapterPanelCloseBtn = document.getElementById('chapter-panel-close-btn');
+const chapterListScroll = document.getElementById('chapter-list-scroll');
+
+const sidebarMenu = document.getElementById('sidebar-menu');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const hamburgerTrigger = document.getElementById('hamburger-trigger');
+const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+
+const wordDisplay = document.getElementById('word-display');
+const pageDisplayContainer = document.getElementById('page-display-container');
+const pageTextContent = document.getElementById('page-text-content');
+const readerModeToggle = document.getElementById('reader-mode-toggle');
+
+// ZUSÄTZLICHER TRIGGER: Falls du den eReader-Button unten in einer Toolbar platziert hast
+const readerModeToggleBottom = document.getElementById('reader-mode-toggle-bottom');
+
+const appPanels = { library: document.getElementById('panel-library'), settings: document.getElementById('panel-settings'), about: document.getElementById('panel-about'), support: document.getElementById('panel-support'), stats: document.getElementById('panel-stats') };
+const navButtons = { faststart: document.getElementById('nav-faststart'), library: document.getElementById('nav-library'), settings: document.getElementById('nav-settings'), about: document.getElementById('nav-about'), support: document.getElementById('nav-support'), stats: document.getElementById('nav-stats'), activeBook: document.getElementById('nav-active-book') };
+const libraryList = document.getElementById('library-list');
+const fileInput = document.getElementById('file-input');
+const measurer = document.createElement("canvas").getContext("2d");
+
+function openLeftMenu() { closeRightMenu(); sidebarMenu.classList.add('active'); sidebarOverlay.classList.add('active'); }
+function closeLeftMenu() { sidebarMenu.classList.remove('active'); checkOverlayState(); }
+function openRightMenu() {
+    if (chapterOffsets.length === 0) return; stopEngineOnly(); closeLeftMenu();
+    renderReaderChapterList(); sideChapterPanel.classList.add('active'); sidebarOverlay.classList.add('active');
+}
+function closeRightMenu() { sideChapterPanel.classList.remove('active'); checkOverlayState(); }
+function closeAllMenus() { closeLeftMenu(); closeRightMenu(); }
+function checkOverlayState() { if (!sidebarMenu.classList.contains('active') && !sideChapterPanel.classList.contains('active')) sidebarOverlay.classList.remove('active'); }
+function cleanBookTitle(title) { if (!title) return ""; return title.split(/[-–—:]/)[0].trim(); }
+
+function switchUIMode(mode, targetPanel = '') {
+    Object.keys(navButtons).forEach(k => { if(navButtons[k]) navButtons[k].classList.remove('active-panel'); });
+    closeAllMenus();
+
+    if (mode === 'reader') {
+        viewDynamic.classList.remove('view-active'); Object.keys(appPanels).forEach(k => appPanels[k].classList.remove('open')); viewReader.classList.add('view-active');
+        if (activeBookId === 'schnellstart') {
+            if(navButtons.faststart) navButtons.faststart.classList.add('active-panel');
+            if (isPageMode) togglePageMode();
+            textboxContainer.classList.add('textbox-active'); chapterSubheaderBar.classList.remove('bar-active');
+			document.getElementById('mode-controls').style.display = 'none'; // Hier zwingend ausblenden
+        } else {
+            if(navButtons.activeBook) navButtons.activeBook.classList.add('active-panel');
+            textboxContainer.classList.remove('textbox-active');
+            if(chapterOffsets.length > 0) chapterSubheaderBar.classList.add('bar-active'); else chapterSubheaderBar.classList.remove('bar-active');
+			document.getElementById('mode-controls').style.display = 'flex'; // Hier wieder einblenden
+        }
+        updateProgressUI(false); 
+    } else if (mode === 'library') {
+        viewReader.classList.remove('view-active'); viewDynamic.classList.add('view-active'); chapterSubheaderBar.classList.remove('bar-active'); progressRowContainer.classList.remove('bar-visible');
+        Object.keys(appPanels).forEach(k => {
+            if (k === targetPanel) { appPanels[k].classList.add('open'); if(navButtons[k]) navButtons[k].classList.add('active-panel'); } else appPanels[k].classList.remove('open');
+        });
+        if (targetPanel === 'library') { authorLabel.innerText = ""; timeLabel.innerText = "Meine Bibliothek"; stopEngineOnly(); saveSessionStats().then(() => renderLibraryList()); }
+        if (targetPanel === 'settings') { authorLabel.innerText = ""; timeLabel.innerText = "Einstellungen"; }
+        if (targetPanel === 'about') { authorLabel.innerText = ""; timeLabel.innerText = "Was ist RSVP?"; }
+        if (targetPanel === 'support') { authorLabel.innerText = ""; timeLabel.innerText = "Unterstützen"; }
+        if (targetPanel === 'stats') { authorLabel.innerText = ""; timeLabel.innerText = "Meine Statistik"; stopEngineOnly(); saveSessionStats().then(() => renderStatsPanel()); }
+        percentLabel.innerText = "0%"; progressBar.style.width = "0%"; globalTimeCounter.innerHTML = ""; globalChapterCounter.innerHTML = "";
+    }
+}
+
+async function navigateToFaststart() { stopEngineOnly(); await loadLibraryBook("schnellstart", true); }
+async function jumpToActiveBook() { stopEngineOnly(); closeLeftMenu(); const lastActiveBook = await getAppState('rsvp-last-library-book-id'); if (lastActiveBook && lastActiveBook !== "schnellstart") await loadLibraryBook(lastActiveBook, true); else switchUIMode('reader'); }
+async function updateActiveBookMenuState() { const lastActiveBook = await getAppState('rsvp-last-library-book-id'); const btn = document.getElementById('nav-active-book'); if (btn) { if (lastActiveBook && lastActiveBook !== "schnellstart") btn.disabled = false; else btn.disabled = true; } }
+
+function getActiveChapterIndex() {
+    if (chapterOffsets.length === 0) return -1;
+    for (let i = chapterOffsets.length - 1; i >= 0; i--) { if (chapterOffsets[i].start <= currentIndex) return i; }
+    return 0;
+}
+
+/* --- IndexedDB --- */
+function initDB() { return new Promise((resolve) => { const request = indexedDB.open("RSVPReaderPremiumDB", 2); request.onupgradeneeded = (e) => { let database = e.target.result; if (!database.objectStoreNames.contains("library")) database.createObjectStore("library", { keyPath: "id" }); if (!database.objectStoreNames.contains("appState")) database.createObjectStore("appState"); if (!database.objectStoreNames.contains("statsArchive")) database.createObjectStore("statsArchive", { keyPath: "id" }); }; request.onsuccess = (e) => { db = e.target.result; resolve(true); }; request.onerror = () => resolve(false); }); }
+function saveBookToDB(bookObj) { return new Promise((resolve) => { if (!db) return resolve(); const tx = db.transaction("library", "readwrite"); tx.objectStore("library").put(bookObj); tx.oncomplete = () => resolve(); }); }
+function getAllBooksFromDB() { return new Promise((resolve) => { if (!db) return resolve([]); const req = db.transaction("library", "readonly").objectStore("library").getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => resolve([]); }); }
+function getBookFromDB(id) { return new Promise((resolve) => { if (!db || id === "schnellstart") return resolve(null); const req = db.transaction("library", "readonly").objectStore("library").get(id); req.onsuccess = () => resolve(req.result || null); req.onerror = () => resolve(null); }); }
+function deleteBookFromDB(id) { return new Promise((resolve) => { if (!db) return resolve(); const tx = db.transaction("library", "readwrite"); tx.objectStore("library").delete(id); tx.oncomplete = () => resolve(); }); }
+function saveAppState(key, val) { return new Promise((resolve) => { if (!db) { localStorage.setItem(key, JSON.stringify(val)); return resolve(); } const tx = db.transaction("appState", "readwrite"); tx.objectStore("appState").put(val, key); tx.oncomplete = () => resolve(); }); }
+function getAppState(key) { return new Promise((resolve) => { if (!db) { const val = localStorage.getItem(key); try { resolve(val ? JSON.parse(val) : null); } catch { resolve(val); } return; } const req = db.transaction("appState", "readonly").objectStore("appState").get(key); req.onsuccess = () => resolve(req.result); req.onerror = () => resolve(null); }); }
+function saveToStatsArchive(entry) { return new Promise((resolve) => { if (!db) return resolve(); const tx = db.transaction("statsArchive", "readwrite"); tx.objectStore("statsArchive").put(entry); tx.oncomplete = () => resolve(); }); }
+function deleteFromStatsArchive(id) {
+    return new Promise((resolve) => {
+        if (!db) return resolve();
+        const tx = db.transaction("statsArchive", "readwrite");
+        tx.objectStore("statsArchive").delete(id);
+        tx.oncomplete = resolve; tx.onerror = resolve;
+    });
+}
+
+function getAllStatsArchive() { return new Promise((resolve) => { if (!db) return resolve([]); const req = db.transaction("statsArchive", "readonly").objectStore("statsArchive").getAll(); req.onsuccess = () => resolve(req.result || []); req.onerror = () => resolve([]); }); }
+
+function buildBookData(htmlString, startIdx) {
+    let tempDiv = document.createElement('div');
+    if (!/<[a-z][\s\S]*>/i.test(htmlString)) {
+        tempDiv.innerHTML = `<p>${htmlString.replace(/\n/g, '<br>')}</p>`;
+    } else {
+        tempDiv.innerHTML = htmlString;
+    }
+
+    let walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    let chapterWords = [];
+    let currentHtmlIndex = startIdx;
+    let nodesToReplace = [];
+
+    while ((node = walker.nextNode())) {
+        let text = node.nodeValue;
+        let tokens = text.split(/(\s+)/);
+        let newHtml = "";
+        let hasWords = false;
+
+        for (let token of tokens) {
+            if (token.trim().length > 0) {
+                chapterWords.push(token);
+                newHtml += `<span data-word-idx="${currentHtmlIndex}">${token}</span>`;
+                currentHtmlIndex++;
+                hasWords = true;
+            } else {
+                newHtml += token; 
+            }
+        }
+        if (hasWords) nodesToReplace.push({ oldNode: node, newHtml: newHtml });
+    }
+
+    for (let item of nodesToReplace) {
+        let wrapper = document.createElement('span');
+        wrapper.innerHTML = item.newHtml;
+        let parent = item.oldNode.parentNode;
+        while (wrapper.firstChild) {
+            parent.insertBefore(wrapper.firstChild, item.oldNode);
+        }
+        parent.removeChild(item.oldNode);
+    }
+
+    return { html: tempDiv.innerHTML, words: chapterWords, nextIndex: currentHtmlIndex };
+}
+
+function formatDuration(seconds) {
+    if (seconds < 0 || isNaN(seconds)) seconds = 0;
+    const h = Math.floor(seconds / 3600); const m = Math.floor((seconds % 3600) / 60); const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}h ${m}m ${s.toString().padStart(2, '0')}s`; return `${m}m ${s.toString().padStart(2, '0')}s`;
+}
+
+// --- Realistische Zeitschätzung: simuliert exakt die step()-Engine-Logik -------
+// Baut einmalig ein kumulatives Zeitarray auf (ms von Wort 0 bis Wort i)
+// und cached es – wird automatisch bei Einstellungs- oder Buchänderung neu gebaut.
+function getEstimateKey() {
+    return `${wpmIn.value}|${pauseMode.checked}|${longWordMode.checked}|${longWordTrigger.value}|${hyphenMode.checked}|${words.length}`;
+}
+
+function buildEstimatedTimeCumulative() {
+    const key = getEstimateKey();
+    if (estimatedTimeCache && estimatedTimeCacheKey === key) return estimatedTimeCache;
+
+    const wpm     = parseInt(wpmIn.value) || 300;
+    const baseMs  = 60000 / wpm;
+    const isPause    = pauseMode.checked;
+    const isLongWord = longWordMode.checked;
+    const lwTrigger  = parseInt(longWordTrigger.value) || 8;
+    const isHyphen   = hyphenMode.checked;
+
+    // cumul[i] = Gesamtdauer in ms von Index 0 bis (nicht einschließlich) Index i
+    const cumul = new Array(words.length + 1);
+    cumul[0] = 0;
+    let running = 0;
+
+    for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        // Silbentrennung: Wort mit "-" → mehrere Fragmente, jedes zählt als eigener Tick
+        let fragments;
+        if (isHyphen && word.includes('-') && word.length > 5) {
+            fragments = word.split(/(?<=-)/);
+        } else {
+            fragments = [word];
+        }
+        for (const frag of fragments) {
+            let ms = baseMs;
+            if (isLongWord && frag.length > lwTrigger) ms *= 1.4;
+            if (isPause && /[.!?]/.test(frag))         ms *= 1.8;
+            running += ms;
+        }
+        cumul[i + 1] = running;
+    }
+
+    estimatedTimeCache    = cumul;
+    estimatedTimeCacheKey = key;
+    return cumul;
+}
+
+// Gibt die geschätzte Lesezeit in Sekunden für den Bereich [fromIdx, toIdx) zurück
+function estimateSeconds(fromIdx, toIdx) {
+    if (words.length === 0) return 0;
+    const cumul = buildEstimatedTimeCumulative();
+    const from = Math.max(0, Math.min(fromIdx, words.length));
+    const to   = Math.max(0, Math.min(toIdx,   words.length));
+    return (cumul[to] - cumul[from]) / 1000;
+}
+// -------------------------------------------------------------------------------
+
+// --- Restzeit-Schätzung für Bibliothekskarten (Sampling-basiert) ---------------
+// Verwendet eine Stichprobe von 600 Wörtern, um den Modifier-Faktor zu schätzen.
+// Deutlich schneller als buildEstimatedTimeCumulative für nicht-aktive Bücher.
+function estimateBookRemainingSeconds(bookWords, lastIndex) {
+    if (!bookWords || bookWords.length === 0) return 0;
+    const remaining = bookWords.length - lastIndex;
+    if (remaining <= 0) return 0;
+
+    const wpm        = parseInt(wpmIn.value) || 300;
+    const baseMs     = 60000 / wpm;
+    const isPause    = pauseMode.checked;
+    const isLongWord = longWordMode.checked;
+    const lwTrigger  = parseInt(longWordTrigger.value) || 8;
+    const isHyphen   = hyphenMode.checked;
+
+    // Fast path: keine Modifier aktiv
+    if (!isPause && !isLongWord && !isHyphen) return (remaining * baseMs) / 1000;
+
+    // Stichprobe gleichmäßig über das gesamte Buch verteilen
+    const sampleSize = Math.min(600, bookWords.length);
+    const step = bookWords.length / sampleSize;
+    let pauseCount = 0, longWordCount = 0, extraFragments = 0;
+
+    for (let i = 0; i < sampleSize; i++) {
+        const w = bookWords[Math.floor(i * step)] || '';
+        if (isPause    && /[.!?]/.test(w))              pauseCount++;
+        if (isLongWord && w.length > lwTrigger)          longWordCount++;
+        if (isHyphen   && w.includes('-') && w.length > 5) {
+            extraFragments += w.split(/(?<=-)/).length - 1;
+        }
+    }
+
+    const pauseRatio    = pauseCount    / sampleSize;
+    const longWordRatio = longWordCount / sampleSize;
+    const hyphenRatio   = extraFragments / sampleSize;
+
+    // Durchschnittliche ms pro Wort inkl. aller Modifier
+    const avgMsPerWord = baseMs * (
+        1
+        + (isPause    ? pauseRatio    * 0.8 : 0)
+        + (isLongWord ? longWordRatio * 0.4 : 0)
+        + hyphenRatio
+    );
+
+    return (remaining * avgMsPerWord) / 1000;
+}
+
+// --- Thumbnail-Generierung (Cover auf ~80x120px, JPEG q=0.6, ~3-6KB) ---------
+async function generateThumbnail(dataUrl) {
+    if (!dataUrl) return null;
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const MAX_W = 80, MAX_H = 120;
+            const ratio = Math.min(MAX_W / img.width, MAX_H / img.height);
+            const canvas = document.createElement('canvas');
+            canvas.width  = Math.round(img.width  * ratio);
+            canvas.height = Math.round(img.height * ratio);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+    });
+}
+// -------------------------------------------------------------------------------
+
+// --- Tab-Umschaltung im Statistik-Panel ----------------------------------------
+function showStatsTab(tabId, btn) {
+    document.querySelectorAll('.stats-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.stats-tab').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById('stats-tab-' + tabId);
+    if (target) target.style.display = '';
+    if (btn) btn.classList.add('active');
+}
+// -------------------------------------------------------------------------------
+
+// --- Statistik-Panel rendern --------------------------------------------------
+const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+async function renderStatsPanel() {
+    const container = document.getElementById('stats-content');
+    if (!container) return;
+    container.innerHTML = '<div class="stats-empty">Lade Statistiken…</div>';
+
+    const [books, archived] = await Promise.all([getAllBooksFromDB(), getAllStatsArchive()]);
+    const allEntries = [
+        ...books.map(b => ({ ...b, _archived: false, wordCount: b.words ? b.words.length : 0, pct: b.words && b.words.length > 0 ? Math.min(100, Math.round(((b.lastIndex||0)/b.words.length)*100)) : 0, coverThumb: null })),
+        ...archived.map(a => ({ ...a, _archived: true })),
+    ];
+
+    if (allEntries.length === 0) {
+        container.innerHTML = '<div class="stats-empty">Noch keine Bücher in der Bibliothek.<br>Importiere dein erstes Buch,<br>um hier Statistiken zu sehen.</div>';
+        return;
+    }
+
+    // ── KPI-Aggregate (alle Einträge, inkl. archiviert) ──────────────────────
+    const totalBooks    = allEntries.length;
+    const activeCount   = books.length;
+    const archivedCount = archived.length;
+    const finishedCount = allEntries.filter(e => e.pct >= 99).length;
+    const startedCount  = allEntries.filter(e => (e.lastIndex||0) > 0 && e.pct < 99).length;
+    const totalSecs     = allEntries.reduce((s, e) => s + (e.totalReadSeconds||0), 0);
+    const totalWords    = allEntries.reduce((s, e) => s + (e.lastIndex||0), 0);
+
+    const wpmEntries    = allEntries.filter(e => e.avgWpm && e.sessionCount);
+    const wAvgWpm       = wpmEntries.length > 0
+        ? Math.round(wpmEntries.reduce((s,e)=>s+e.avgWpm*e.sessionCount,0) / wpmEntries.reduce((s,e)=>s+e.sessionCount,0))
+        : 0;
+
+    const tH = Math.floor(totalSecs/3600), tM = Math.floor((totalSecs%3600)/60);
+    const totalTimeStr = totalSecs >= 3600 ? `${tH}h ${tM}m` : totalSecs >= 60 ? `${tM}m` : '< 1m';
+    const wordsStr = totalWords >= 1000000 ? `${(totalWords/1000000).toFixed(1)}M` : totalWords >= 1000 ? `${Math.round(totalWords/1000)}k` : `${totalWords}`;
+
+    let html = `<div class="info-container">
+    <div class="stats-kpi-grid">
+        <div class="stats-kpi-card"><div class="stats-kpi-num">${totalBooks}</div><div class="stats-kpi-lbl">Bücher gesamt</div></div>
+        <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:var(--accent-green);">${finishedCount}</div><div class="stats-kpi-lbl">Beendet</div></div>
+        <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:#f39c12;">${startedCount}</div><div class="stats-kpi-lbl">Begonnen</div></div>
+        <div class="stats-kpi-card"><div class="stats-kpi-num">${totalTimeStr}</div><div class="stats-kpi-lbl">Lesezeit gesamt</div></div>
+        <div class="stats-kpi-card"><div class="stats-kpi-num">${wAvgWpm > 0 ? wAvgWpm : '–'}</div><div class="stats-kpi-lbl">Ø WPM</div></div>
+        <div class="stats-kpi-card"><div class="stats-kpi-num">${wordsStr}</div><div class="stats-kpi-lbl">Wörter gelesen</div></div>
+    </div>`;
+
+    // ── Jahr/Monat-Timeline ──────────────────────────────────────────────────
+    // readingLog aus allen Einträgen zusammenführen: { "YYYY-MM": seconds }
+    const mergedLog = {};
+    for (const e of allEntries) {
+        for (const [ym, sec] of Object.entries(e.readingLog || {})) {
+            mergedLog[ym] = (mergedLog[ym] || 0) + sec;
+        }
+    }
+
+    const logKeys = Object.keys(mergedLog).sort().reverse(); // neueste zuerst
+    if (logKeys.length > 0) {
+        const DE_MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+        const currentYear = new Date().getFullYear().toString();
+
+        // Nach Jahren gruppieren
+        const byYear = {};
+        for (const ym of logKeys) {
+            const [y, m] = ym.split('-');
+            if (!byYear[y]) byYear[y] = {};
+            byYear[y][m] = mergedLog[ym];
+        }
+        const years = Object.keys(byYear).sort().reverse();
+        const maxSec = Math.max(...logKeys.map(k => mergedLog[k]));
+
+        html += `<div class="settings-cluster-header" style="margin-bottom:8px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+            Lesezeit-Timeline
+        </div><div class="stats-timeline">`;
+
+        for (const year of years) {
+            const yearSec = Object.values(byYear[year]).reduce((a,b)=>a+b,0);
+            const yH = Math.floor(yearSec/3600), yM = Math.floor((yearSec%3600)/60);
+            const yearTimeStr = yearSec >= 3600 ? `${yH}h ${yM}m` : yearSec >= 60 ? `${yM}m` : '< 1m';
+            const isCurrentYear = year === currentYear;
+
+            html += `<div class="stats-year-block ${isCurrentYear ? 'open' : ''}" id="year-block-${year}">
+                <div class="stats-year-header" onclick="this.parentElement.classList.toggle('open')">
+                    <span>📅 ${year}</span>
+                    <span style="display:flex;align-items:center;gap:8px;">
+                        <span class="stats-year-total">${yearTimeStr}</span>
+                        <span class="stats-year-arrow">▶</span>
+                    </span>
+                </div>
+                <div class="stats-year-months">`;
+
+            // Alle 12 Monate anzeigen (auch leere)
+            for (let m = 12; m >= 1; m--) {
+                const mKey = m.toString().padStart(2,'0');
+                const sec  = byYear[year][mKey] || 0;
+                if (sec === 0 && !isCurrentYear) continue; // Leere Monate in alten Jahren überspringen
+                const mH = Math.floor(sec/3600), mM = Math.floor((sec%3600)/60);
+                const timeStr = sec >= 3600 ? `${mH}h ${mM}m` : sec >= 60 ? `${mM}m` : sec > 0 ? '< 1m' : '–';
+                const barW = maxSec > 0 ? Math.round((sec / maxSec) * 100) : 0;
+                const isCurrentMonth = isCurrentYear && m === (new Date().getMonth()+1);
+                html += `<div class="stats-month-row">
+                    <span class="stats-month-name" style="${isCurrentMonth ? 'color:var(--accent);font-weight:600;' : ''}">${DE_MONTHS[m-1]}</span>
+                    <div class="stats-month-bar-track"><div class="stats-month-bar-fill" style="width:${barW}%;${isCurrentMonth?'background:var(--accent-green);':''}"></div></div>
+                    <span class="stats-month-time" style="${sec===0?'color:#444;':''}">${timeStr}</span>
+                </div>`;
+            }
+            html += `</div></div>`;
+        }
+        html += `</div>`;
+    }
+
+    // ── Bücherliste ──────────────────────────────────────────────────────────
+    const sorted = [...allEntries].sort((a,b)=>(b.totalReadSeconds||0)-(a.totalReadSeconds||0));
+
+    html += `<div class="settings-cluster-header" style="margin-bottom:8px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+        Alle Bücher <span style="color:#666;font-weight:400;font-size:10px;">(${activeCount} aktiv${archivedCount > 0 ? ` · ${archivedCount} archiviert` : ''})</span>
+    </div><div class="stats-book-list">`;
+
+    for (const entry of sorted) {
+        const isDone = entry.pct >= 99;
+        const bSecs  = entry.totalReadSeconds || 0;
+        const bH = Math.floor(bSecs/3600), bM = Math.floor((bSecs%3600)/60);
+        const spentStr = bSecs >= 3600 ? `${bH}h ${bM}m gelesen` : bSecs >= 60 ? `${bM}m gelesen` : bSecs > 0 ? '< 1m gelesen' : 'Noch nicht gelesen';
+
+        let rightStr = '', rightColor = '#888';
+        if (isDone) { rightStr = '✓ Fertig'; rightColor = 'var(--accent-green)'; }
+        else if (!entry._archived && entry.words && entry.words.length > 0) {
+            const remSec = estimateBookRemainingSeconds(entry.words, entry.lastIndex||0);
+            const rH = Math.floor(remSec/3600), rM = Math.ceil((remSec%3600)/60);
+            rightStr = remSec >= 3600 ? `~${rH}h ${rM}m übrig` : remSec >= 60 ? `~${rM}m übrig` : remSec > 0 ? '< 1m übrig' : '';
+        } else if (entry._archived && entry.wordCount > 0) {
+            const remSec = ((entry.wordCount - (entry.lastIndex||0)) / (wAvgWpm||300)) * 60;
+            const rH = Math.floor(remSec/3600), rM = Math.ceil((remSec%3600)/60);
+            rightStr = !isDone && remSec >= 60 ? (remSec >= 3600 ? `~${rH}h ${rM}m übrig` : `~${rM}m übrig`) : '';
+        }
+
+        const wpmStr    = entry.avgWpm ? ` · Ø ${Math.round(entry.avgWpm)} WPM` : '';
+        const barColor  = isDone ? 'var(--accent-green)' : entry._archived ? '#555' : 'var(--accent)';
+        const thumbSrc  = entry._archived ? entry.coverThumb : (entry.cover || null);
+        const thumbHtml = thumbSrc ? `<img src="${thumbSrc}" class="stats-book-thumb" alt="">` : `<div class="stats-book-thumb" style="background:#222;border-radius:4px;"></div>`;
+        const archBadge = entry._archived ? `<span class="stats-archive-badge">gelöscht</span>` : '';
+        const delDate   = entry._archived && entry.deletedAt ? ` · ${new Date(entry.deletedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})}` : '';
+
+        const delLabel = entry._archived ? 'Statistik-Eintrag löschen' : 'Buch aus Bibliothek löschen';
+        html += `<div class="stats-book-row ${entry._archived ? 'stats-book-archived' : ''}" data-entry-id="${entry.id}" data-archived="${entry._archived}">
+            <button class="stats-book-del-btn" title="${delLabel}" onclick="handleStatsDelete('${entry.id}', ${entry._archived}, '${(entry.title||'').replace(/'/g,"\\'")}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            </button>
+            <div class="stats-book-header">
+                ${thumbHtml}
+                <div class="stats-book-header-text">
+                    <div class="stats-book-title">${entry.title||'Unbenanntes Buch'}${archBadge}</div>
+                    <div class="stats-book-author">${entry.author||'Unbekannter Autor'}${delDate}</div>
+                </div>
+            </div>
+            <div class="stats-book-bar-track"><div class="stats-book-bar-fill" style="width:${entry.pct||0}%;background:${barColor};"></div></div>
+            <div class="stats-book-meta">
+                <span>${entry.pct||0}% · ${spentStr}${wpmStr}</span>
+                <span style="color:${rightColor};flex-shrink:0;">${rightStr}</span>
+            </div>
+        </div>`;
+    }
+
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+// ── Löschen aus Statistik ────────────────────────────────────────────────────
+async function handleStatsDelete(id, isArchived, title) {
+    const msg = isArchived
+        ? `Statistik-Eintrag "${title}" endgültig löschen?
+Diese Aktion kann nicht rückgängig gemacht werden.`
+        : `"${title}" aus der Bibliothek löschen?
+Die Lesestatistik bleibt im Archiv erhalten.`;
+    if (!confirm(msg)) return;
+    if (isArchived === true || isArchived === 'true') {
+        await deleteFromStatsArchive(id);
+    } else {
+        await deleteBookFromDB(id);
+        // Wenn aktives Buch gelöscht wird, auf Schnellstart zurückfallen
+        if (activeBookId === id) {
+            activeBookId = "schnellstart"; activeBookTitle = "Freier Text"; activeBookAuthor = "";
+            chapterOffsets = []; words = []; currentIndex = 0;
+        }
+    }
+    renderLibraryList();
+    renderStatsPanel();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// -------------------------------------------------------------------------------
+
+// --- OPTIMIERT: Flexibel konfigurierbare Zeitanzeige nach Logik getrennt ---
+function updateProgressUI(shouldSaveToDB = true) {
+    return new Promise((resolve) => {
+        if (viewDynamic.classList.contains('view-active')) { progressRowContainer.classList.remove('bar-visible'); return resolve(); }
+        if (showProgressBarToggle.checked && viewReader.classList.contains('view-active')) progressRowContainer.classList.add('bar-visible'); else progressRowContainer.classList.remove('bar-visible');
+
+        const hasText = words.length > 0;
+        if (!hasText) { authorLabel.innerText = ""; timeLabel.innerText = "Freier Text"; percentLabel.innerText = "0%"; globalTimeCounter.innerHTML = ""; globalChapterCounter.innerHTML = ""; progressBar.style.width = "0%"; return resolve(); }
+        
+        const wpm = parseInt(wpmIn.value) || 300; 
+        
+        // Globale Berechnungen – realistisch inkl. Pause- & Langwort-Modifier
+        const totalSecGlobal     = estimateSeconds(0, words.length);
+        const currentSecGlobal   = estimateSeconds(0, currentIndex);
+        const remainingSecGlobal = Math.max(0, totalSecGlobal - currentSecGlobal);
+        
+        const showBookTime = showBookTimeToggle && showBookTimeToggle.checked;
+        const showBookRemaining = showBookRemainingToggle && showBookRemainingToggle.checked;
+        const showChapterTime = showChapterTimeToggle && showChapterTimeToggle.checked;
+        const showChapterRemaining = showChapterRemainingToggle && showChapterRemainingToggle.checked;
+
+        if (activeBookId !== "schnellstart") {
+            authorLabel.innerText = activeBookAuthor ? activeBookAuthor : "Unbekannter Autor";
+            const cleanedTitle = cleanBookTitle(activeBookTitle);
+            const chapIdx = getActiveChapterIndex();
+            
+            if (chapIdx !== -1 && chapterOffsets[chapIdx]) {
+                const currentChap = chapterOffsets[chapIdx]; const nextChap = chapterOffsets[chapIdx + 1];
+                const chapStartIdx = currentChap.start; const chapEndIdx = nextChap ? nextChap.start : words.length;
+                const totalWordsInChapter = chapEndIdx - chapStartIdx; const currentWordsInChapter = Math.max(0, Math.min(currentIndex - chapStartIdx, totalWordsInChapter));
+                
+                // Kapitel-Zeitberechnung – realistisch inkl. Modifier
+                const totalSecChapter     = estimateSeconds(chapStartIdx, chapEndIdx);
+                const currentSecChapter   = estimateSeconds(chapStartIdx, currentIndex);
+                const remainingSecChapter = Math.max(0, totalSecChapter - currentSecChapter);
+                
+                timeLabel.innerText = `${cleanedTitle} › ${currentChap.name}`;
+                
+                // Aufbau der Kapitel-Zeitanzeige anhand der aktiven Toggles
+                let chapStr = "";
+                if (showChapterTime) {
+                    chapStr += `Kapitel: <span>${formatDuration(currentSecChapter)}</span> / <span>${formatDuration(totalSecChapter)}</span>`;
+                }
+                if (showChapterRemaining) {
+                    if (chapStr) chapStr += " ";
+                    chapStr += `<span style="opacity:0.75;">(Noch ${formatDuration(remainingSecChapter)})</span>`;
+                }
+                globalChapterCounter.innerHTML = chapStr;
+                
+                if ((showChapterTime || showChapterRemaining) && chapterOffsets.length > 0) globalChapterCounter.classList.add('show-stat'); else globalChapterCounter.classList.remove('show-stat');
+            } else { timeLabel.innerText = cleanedTitle; globalChapterCounter.innerHTML = ""; globalChapterCounter.classList.remove('show-stat'); }
+            
+            // Aufbau der Buch-Zeitanzeige anhand der aktiven Toggles
+            let bookStr = "";
+            if (showBookTime) {
+                bookStr += `Buch: <span>${formatDuration(currentSecGlobal)}</span> / <span>${formatDuration(totalSecGlobal)}</span>`;
+            }
+            if (showBookRemaining) {
+                if (bookStr) bookStr += " ";
+                bookStr += `<span style="opacity:0.75;">(Noch ${formatDuration(remainingSecGlobal)})</span>`;
+            }
+            globalTimeCounter.innerHTML = bookStr;
+            
+            if (showBookTime || showBookRemaining) globalTimeCounter.classList.add('show-stat'); else globalTimeCounter.classList.remove('show-stat');
+        } else { 
+            authorLabel.innerText = ""; 
+            timeLabel.innerText = "Freier Text"; 
+            globalChapterCounter.innerHTML = ""; 
+            globalChapterCounter.classList.remove('show-stat');
+            
+            let fastStr = "";
+            if (showBookTime) {
+                fastStr += `Text: <span>${formatDuration(currentSecGlobal)}</span> / <span>${formatDuration(totalSecGlobal)}</span>`;
+            }
+            if (showBookRemaining) {
+                if (fastStr) fastStr += " ";
+                fastStr += `<span style="opacity:0.75;">(Noch ${formatDuration(remainingSecGlobal)})</span>`;
+            }
+            globalTimeCounter.innerHTML = fastStr;
+            
+            if (showBookTime || showBookRemaining) globalTimeCounter.classList.add('show-stat'); else globalTimeCounter.classList.remove('show-stat');
+        }
+
+        const percent = words.length > 0 ? (currentIndex / words.length) * 100 : 0;
+        percentLabel.innerText = `${Math.round(Math.min(100, Math.max(0, percent)))}%`; progressBar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+
+        if (!shouldSaveToDB) return resolve();
+        const indexToSave = parseInt(currentIndex) || 0;
+        if (activeBookId === "schnellstart") { saveAppState('rsvp-fast-index', indexToSave).then(() => resolve()); } 
+        else { getBookFromDB(activeBookId).then(book => { if (book) { book.lastIndex = indexToSave; saveBookToDB(book).then(() => resolve()); } else resolve(); }); }
+    });
+}
+
+function render() {
+    if (isPageMode) { renderPageMode(); return; }
+    if (words.length === 0) { tLeft.innerText = ""; tCenter.innerText = ""; tRight.innerText = ""; return; }
+    if (currentIndex >= words.length) { currentIndex = words.length; stopEngineOnly(); updateProgressUI(true); return; }
+    
+    let wordStr = words[currentIndex] || "";
+    if (hyphenMode.checked && wordStr.includes('-') && wordStr.length > 5) {
+        if (!hyphenFragments) {
+            hyphenFragments = wordStr.split(/(?<=-)/);
+            hyphenFragmentIdx = 0;
+        }
+        wordStr = hyphenFragments[hyphenFragmentIdx];
+    } else {
+        hyphenFragments = null;
+    }
+
+    const wordToMeasure = wordStr.replace(/\n/g, '');
+
+    // ORP nach O'Regan & Rayner:
+    // 1. Führende Satzzeichen (», «, „, ", (, - usw.) zählen und als Offset merken
+    // 2. Nur lesbare Zeichen für die Längenberechnung verwenden
+    // 3. ORP-Index auf den bereinigten Kern berechnen, dann Offset addieren
+    const leadingPunct = wordToMeasure.match(/^[»«„""‟''"()\[\]{}\/–—\-]+/u);
+    const leadingOffset = leadingPunct ? leadingPunct[0].length : 0;
+    const stripped = wordToMeasure.replace(/[^\p{L}\p{N}]/gu, '');
+    const readableLen = stripped.length || wordToMeasure.length;
+
+    // Lookup-Tabelle: 0-basierte Indizes (O'Regan et al., zählt ab 1 → hier -1)
+    const orpTable = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];
+    const orpOnStripped = readableLen < orpTable.length
+        ? orpTable[readableLen]
+        : Math.floor(readableLen * 0.3);
+    const focusIdx = orpOnStripped + leadingOffset;
+
+    tLeft.innerText = wordToMeasure.substring(0, focusIdx); tCenter.innerText = wordToMeasure.substring(focusIdx, focusIdx + 1); tRight.innerText = wordToMeasure.substring(focusIdx + 1);
+    
+    measurer.font = `bold ${fsIn.value}px 'Segoe UI', Arial`;
+    const leftW = measurer.measureText(tLeft.innerText).width;
+    const centerW = measurer.measureText(tCenter.innerText).width;
+    
+    canvas.style.left = `calc(35% - ${leftW + (centerW / 2)}px)`; canvas.style.fontSize = fsIn.value + "px"; updateProgressUI(true);
+}
+
+function setupPageSnapStyles() {
+    if (pageDisplayContainer) { pageDisplayContainer.style.overflow = "hidden"; }
+    if (pageTextContent) { 
+        pageTextContent.style.overflowX = "auto"; 
+        pageTextContent.style.overflowY = "hidden"; 
+        pageTextContent.style.display = "block"; 
+        pageTextContent.style.width = "100%"; 
+        pageTextContent.style.webkitOverflowScrolling = "touch";
+    }
+}
+
+function updateFwdButtonText() {
+    if (!isPageMode) return; const fwdBtn = document.getElementById('btn-fwd'); if (!fwdBtn) return;
+    const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+    const colWidth = exactViewportWidth + 40;
+    if (pageTextContent.scrollLeft + colWidth >= pageScrollWidth - 45) { let chapIdx = getActiveChapterIndex(); if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { fwdBtn.innerText = "Nächstes Kapitel"; return; } }
+    fwdBtn.innerText = "Seite vor";
+}
+
+function renderPageMode() {
+    if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
+    let chapIdx = getActiveChapterIndex();
+    if (chapIdx === -1 || !chapterOffsets[chapIdx]) { pageTextContent.innerHTML = "<p style='color:#666;'>Kein Kapitel geladen.</p>"; return; }
+
+    setupPageSnapStyles();
+    let currentChapter = chapterOffsets[chapIdx];
+    pageTextContent.innerHTML = currentChapter.html;
+
+    // --- NEU: Bilder für das Spaltenlayout (eReader-Modus) bändigen ---
+    const bookImgs = pageTextContent.querySelectorAll('img');
+    bookImgs.forEach(img => {
+        img.style.maxWidth = '100%';       
+        img.style.maxHeight = '100%';      
+        img.style.height = 'auto';         
+        img.style.width = 'auto';          
+        img.style.objectFit = 'contain';   
+        img.style.display = 'block';       
+        img.style.margin = '12px auto';    
+        img.style.breakInside = 'avoid';   
+        img.style.webkitBreakInside = 'avoid'; 
+    });
+
+    // Links im Buch scharf schalten und Interceptor aktivieren
+    const bookLinks = pageTextContent.querySelectorAll('a');
+    bookLinks.forEach(link => { 
+        link.style.pointerEvents = 'auto'; 
+        link.style.cursor = 'pointer'; 
+        link.style.textDecoration = 'underline'; 
+        link.style.color = 'var(--accent, #3498db)'; 
+        
+        link.onclick = async (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (href) await handleInternalBookLink(href);
+        };
+    });
+
+    const targetSpan = pageTextContent.querySelector(`span[data-word-idx="${currentIndex}"]`);
+    if (targetSpan) {
+        targetSpan.id = "highlighted-rsvp-word";
+        targetSpan.style.backgroundColor = "rgba(52, 152, 219, 0.35)";
+        targetSpan.style.color = "#ffffff";
+        targetSpan.style.padding = "2px 4px";
+        targetSpan.style.borderRadius = "4px";
+        targetSpan.style.fontWeight = "bold";
+    }
+
+    const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+    const gapWidth = 40;
+    pageTextContent.style.columnWidth = `${exactViewportWidth}px`;
+    pageTextContent.style.columnGap = `${gapWidth}px`;
+    pageTextContent.style.height = `${pageDisplayContainer.clientHeight - 20}px`;
+
+    pageRenderTimeout = setTimeout(() => {
+        if (!isPageMode) return; 
+        pageScrollWidth = pageTextContent.scrollWidth;
+        const colFullWidth = exactViewportWidth + gapWidth;
+
+        if (targetSpan) {
+            const markLeft = targetSpan.offsetLeft;
+            const targetPage = Math.floor(markLeft / colFullWidth);
+            pageTextContent.scrollLeft = targetPage * colFullWidth;
+            currentPageScrollOffset = pageTextContent.scrollLeft;
+            initialPageOnEnter = targetPage;
+        } else { pageTextContent.scrollLeft = 0; }
+        updateProgressUI(false); updateFwdButtonText();
+    }, 60);
+}
+
+// --- NEU: Interner Link-Router für dateiübergreifende und lokale Sprünge ---
+async function handleInternalBookLink(href) {
+    const parts = href.split('#');
+    let fileTarget = parts[0].split('/').pop(); 
+    const hashTarget = parts[1];
+    
+    let targetIndex = -1;
+    
+    if (fileTarget) {
+        const targetChap = chapterOffsets.find(c => c.fileRef === fileTarget);
+        if (targetChap) {
+            targetIndex = targetChap.start;
+            
+            if (hashTarget) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = targetChap.html;
+                const anchorEl = tempDiv.querySelector(`#${hashTarget}`) || tempDiv.querySelector(`[name="${hashTarget}"]`);
+                if (anchorEl) {
+                    const spanWithIdx = anchorEl.hasAttribute('data-word-idx') ? anchorEl : anchorEl.querySelector('[data-word-idx]');
+                    if (spanWithIdx) {
+                        targetIndex = parseInt(spanWithIdx.getAttribute('data-word-idx'));
+                    }
+                }
+            }
+        }
+    } else if (hashTarget) {
+        const anchorEl = pageTextContent.querySelector(`#${hashTarget}`) || pageTextContent.querySelector(`[name="${hashTarget}"]`);
+        if (anchorEl) {
+            const spanWithIdx = anchorEl.hasAttribute('data-word-idx') ? anchorEl : anchorEl.querySelector('[data-word-idx]');
+            if (spanWithIdx) {
+                targetIndex = parseInt(spanWithIdx.getAttribute('data-word-idx'));
+            } else {
+                let walker = document.createTreeWalker(pageTextContent, NodeFilter.SHOW_ELEMENT, null, false);
+                while(walker.nextNode()) { if (walker.currentNode === anchorEl) break; }
+                while(walker.nextNode()) {
+                    if (walker.currentNode.hasAttribute('data-word-idx')) {
+                        targetIndex = parseInt(walker.currentNode.getAttribute('data-word-idx'));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (targetIndex !== -1) {
+        currentIndex = targetIndex;
+        await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+        await updateProgressUI(true);
+        renderPageMode();
+    }
+}
+
+function togglePageMode() {
+    closeAllMenus(); 
+    if (!isPageMode) {
+        if (activeBookId === "schnellstart") return;
+        if (isCurrentlyInRSVPFlow && currentIndex > 0) { indexOnPageModeEnter = currentIndex - 1; } else { indexOnPageModeEnter = currentIndex; }
+        isCurrentlyInRSVPFlow = false; 
+        
+        stopEngineOnly();
+        hyphenFragments = null;
+        isPageMode = true;
+        chapterOnPageModeEnter = getActiveChapterIndex();
+
+        wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
+        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; 
+        
+        if (readerModeToggle) {
+            readerModeToggle.classList.add('active-mode'); 
+            readerModeToggle.querySelector('span').innerText = "RSVP-Modus";
+        }
+        if (readerModeToggleBottom) {
+            readerModeToggleBottom.classList.add('active-mode');
+            const bottomSpan = readerModeToggleBottom.querySelector('span');
+            if (bottomSpan) bottomSpan.innerText = "RSVP-Modus";
+        }
+        
+        currentIndex = indexOnPageModeEnter;
+        renderPageMode();
+    } else {
+        isPageMode = false; 
+        if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
+
+        wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
+        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; 
+        
+        if (readerModeToggle) {
+            readerModeToggle.classList.remove('active-mode'); 
+            readerModeToggle.querySelector('span').innerText = "eReader-Modus";
+        }
+        if (readerModeToggleBottom) {
+            readerModeToggleBottom.classList.remove('active-mode');
+            const bottomSpan = readerModeToggleBottom.querySelector('span');
+            if (bottomSpan) bottomSpan.innerText = "eReader-Modus";
+        }
+        
+        saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+        render(); updateProgressUI(true);
+    }
+}
+
+function updateIndexFromPageScroll() {
+    if (!isPageMode) return; 
+    let chapIdx = getActiveChapterIndex(); if (chapIdx === -1 || chapterOffsets.length === 0) return;
+    
+    const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+    const colFullWidth = exactViewportWidth + 40;
+    let currentPage = Math.round(pageTextContent.scrollLeft / colFullWidth);
+    
+    if (currentPage === initialPageOnEnter && chapIdx === chapterOnPageModeEnter) {
+        currentIndex = indexOnPageModeEnter; currentPageScrollOffset = pageTextContent.scrollLeft; updateProgressUI(true); updateFwdButtonText(); return;
+    }
+    
+    const allSpans = pageTextContent.querySelectorAll('span[data-word-idx]');
+    let wordsOnNewPage = [];
+    
+    for (let el of allSpans) {
+        let elLeft = el.offsetLeft;
+        let elPage = Math.floor(elLeft / colFullWidth);
+        if (elPage === currentPage) wordsOnNewPage.push(parseInt(el.getAttribute('data-word-idx')));
+    }
+    
+    if (wordsOnNewPage.length > 0) {
+        wordsOnNewPage.sort((a, b) => a - b);
+        currentIndex = wordsOnNewPage[0];
+    } else {
+        let currentChapter = chapterOffsets[chapIdx]; let nextChapter = chapterOffsets[chapIdx + 1];
+        let startIdx = currentChapter.start; let endIdx = nextChapter ? nextChapter.start : words.length;
+        let totalWordsInChapter = endIdx - startIdx; let totalPages = Math.max(1, Math.round(pageScrollWidth / colFullWidth));
+        let ratio = currentPage / totalPages; let newOffset = Math.round(totalWordsInChapter * ratio);
+        currentIndex = Math.min(endIdx - 1, Math.max(startIdx, startIdx + newOffset));
+    }
+    
+    currentPageScrollOffset = pageTextContent.scrollLeft; updateProgressUI(true); updateFwdButtonText();
+}
+
+function step() {
+    if (!isPlaying) { lastTickTime = null; return; }
+    const now = performance.now();
+    if (lastTickTime) { const elapsedSeconds = (now - lastTickTime) / 1000; totalSessionSeconds += elapsedSeconds; }
+    lastTickTime = now;
+
+    render(); 
+    if (!isPlaying) { lastTickTime = null; return; } 
+    let delay = 60000 / (parseInt(wpmIn.value) || 300);
+    
+    let currentRenderedString = words[currentIndex] || "";
+    if (hyphenFragments && hyphenFragments[hyphenFragmentIdx]) currentRenderedString = hyphenFragments[hyphenFragmentIdx];
+
+    if (currentRenderedString) {
+        if (longWordMode.checked && currentRenderedString.length > (parseInt(longWordTrigger.value) || 8)) delay *= 1.4;
+        if (pauseMode.checked && /[.!?]/.test(currentRenderedString)) delay *= 1.8;
+    }
+
+    // Stopp nach Kapitelende – Check VOR dem Increment:
+    // currentIndex zeigt noch auf das letzte Wort des Kapitels (gerade gerendert).
+    // Nächster Index wäre chapEnd → jetzt stoppen und Kapitelname anzeigen.
+    if (stopAtChapterEnd && stopAtChapterEnd.checked && chapterOffsets.length > 0) {
+        const nextIdx = (hyphenFragments
+            ? (hyphenFragmentIdx + 1 >= hyphenFragments.length ? currentIndex + 1 : currentIndex)
+            : currentIndex + 1);
+        for (let ci = 0; ci < chapterOffsets.length; ci++) {
+            const chapEnd = ci + 1 < chapterOffsets.length ? chapterOffsets[ci + 1].start : words.length;
+            if (nextIdx === chapEnd) {
+                // Letztes Wort wurde bereits gerendert – jetzt increment + stopp
+                if (hyphenFragments) {
+                    hyphenFragmentIdx++;
+                    if (hyphenFragmentIdx >= hyphenFragments.length) { hyphenFragments = null; currentIndex++; }
+                } else { currentIndex++; }
+                stopEngineOnly();
+                const nextChap = chapterOffsets[ci + 1];
+                const label = nextChap ? (nextChap.name || 'Nächstes Kapitel') : '– Ende –';
+                // Kapitelname an ORP-Linie ausrichten, aktuelle Schriftgröße
+                const fs = fsIn.value + 'px';
+                measurer.font = 'bold ' + fs + " 'Segoe UI', Arial";
+                const labelW = measurer.measureText(label).width;
+                // ORP für Kapitelname: gleiche Lookup-Tabelle wie normale Wörter
+                const lStripped = label.replace(/[^\p{L}\p{N}]/gu, '');
+                const lLen = lStripped.length || label.length;
+                const lOrpTable = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];
+                const lFocusIdx = lLen < lOrpTable.length ? lOrpTable[lLen] : Math.floor(lLen * 0.3);
+                const lLeftW = measurer.measureText(label.substring(0, lFocusIdx)).width;
+                const lCenterW = measurer.measureText(label.substring(lFocusIdx, lFocusIdx + 1)).width;
+                tLeft.innerText = label.substring(0, lFocusIdx);
+                tCenter.innerText = label.substring(lFocusIdx, lFocusIdx + 1);
+                tRight.innerText = label.substring(lFocusIdx + 1);
+                canvas.style.fontSize = fs;
+                canvas.style.left = 'calc(35% - ' + (lLeftW + lCenterW / 2) + 'px)';
+                updateProgressUI(true);
+                return;
+            }
+        }
+    }
+
+    if (hyphenFragments) {
+        hyphenFragmentIdx++;
+        if (hyphenFragmentIdx >= hyphenFragments.length) { hyphenFragments = null; currentIndex++; }
+    } else { currentIndex++; }
+
+    timer = setTimeout(step, delay);
+}
+
+function start() {
+    if(isPlaying) { 
+        stopEngineOnly();
+        // Index zurücksetzen auf das zuletzt angezeigte Wort
+        if (currentIndex > 0) currentIndex--;
+        isCurrentlyInRSVPFlow = false; // RSVP ist nicht mehr aktiv
+        if (rewindMode.checked) saveAppState('rsvp-rewind-permitted-' + activeBookId, true); 
+        updateProgressUI(true); 
+        return; 
+    }
+    isCurrentlyInRSVPFlow = true; 
+    closeRightMenu(); 
+    if (activeBookId === "schnellstart") { let data = buildBookData(input.value, 0); words = data.words; }
+    if(words.length === 0) return;
+    if(currentIndex >= words.length) { mainBtn.innerText = "Neustart nötig"; setTimeout(() => { if(!isPlaying) mainBtn.innerText = "START"; }, 1000); return; }
+    lastTickTime = performance.now(); isPlaying = true; mainBtn.innerText = "STOPP"; mainBtn.style.background = "#e74c3c"; step();
+}
+
+async function stopEngineOnly() {
+    isPlaying = false; clearTimeout(timer); lastTickTime = null;
+    mainBtn.innerText = "START"; mainBtn.style.background = "var(--accent)";
+    // totalSessionSeconds wird NICHT zurückgesetzt – akkumuliert über alle Pausen hinweg.
+    // Gespeichert wird erst beim Buchwechsel (saveSessionStats).
+}
+
+// Cover auf Thumbnail-Größe verkleinern (Canvas, max. ~5 KB als JPEG)
+function resizeCoverImage(dataUrl, maxPx = 72) {
+    return new Promise((resolve) => {
+        if (!dataUrl) return resolve(null);
+        const img = new Image();
+        img.onload = () => {
+            const ratio  = Math.min(maxPx / img.width, (maxPx * 1.5) / img.height);
+            const canvas = document.createElement('canvas');
+            canvas.width  = Math.max(1, Math.round(img.width  * ratio));
+            canvas.height = Math.max(1, Math.round(img.height * ratio));
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = () => resolve(null);
+        img.src = dataUrl;
+    });
+}
+
+async function saveSessionStats() {
+    if (totalSessionSeconds > 2 && activeBookId && activeBookId !== "schnellstart") {
+        const wpmNow = parseInt(document.getElementById('wpm')?.value) || 300;
+        const book = await getBookFromDB(activeBookId);
+        if (book) {
+            const prevSessions = book.sessionCount || 0;
+            const prevAvg = book.avgWpm || wpmNow;
+            book.avgWpm = prevSessions === 0
+                ? wpmNow
+                : Math.round((prevAvg * prevSessions + wpmNow) / (prevSessions + 1));
+            book.sessionCount = prevSessions + 1;
+            book.lastReadDate = new Date().toISOString();
+            book.totalReadSeconds = (book.totalReadSeconds || 0) + totalSessionSeconds;
+            // Monatliches Leseprotokoll direkt im Buch (für Timeline + Archiv)
+            const ym = new Date().toISOString().substring(0, 7); // "YYYY-MM"
+            book.readingLog = book.readingLog || {};
+            book.readingLog[ym] = (book.readingLog[ym] || 0) + Math.round(totalSessionSeconds);
+            await saveBookToDB(book);
+        }
+    }
+    totalSessionSeconds = 0;
+}
+
+fileInput.onchange = async (e) => { 
+    const file = e.target.files[0]; if (!file) return; stopEngineOnly(); 
+    let bookTitle = file.name.replace(/\.[^/.]+$/, ""); let bookAuthor = "Unbekannter Autor"; let docType = "txt"; let coverBase64 = null;
+    let fullTextFallback = ""; let localChapters = []; 
+
+    if (file.name.endsWith('.txt')) { 
+        docType = "txt"; const reader = new FileReader(); 
+        reader.onload = async (e) => { 
+            const bookData = buildBookData(e.target.result, 0);
+            await finalizeBookImport(bookTitle, bookAuthor, bookData.html, bookData.words, [], docType, null); 
+        }; reader.readAsText(file); 
+    } else if (file.name.endsWith('.pdf')) { 
+        docType = "pdf"; const reader = new FileReader(); 
+        reader.onload = async (e) => { 
+            try { 
+                const typedarray = new Uint8Array(e.target.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let rawPdfText = "";
+                for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); rawPdfText += content.items.map(item => item.str).join(" ") + " \n\n "; } 
+                const bookData = buildBookData(rawPdfText, 0);
+                await finalizeBookImport(bookTitle, bookAuthor, bookData.html, bookData.words, [], docType, null); 
+            } catch (err) { alert("Fehler beim Parsen der PDF."); } 
+        }; reader.readAsArrayBuffer(file); 
+    } else if (file.name.endsWith('.epub')) { 
+        docType = "epub"; const reader = new FileReader(); 
+        reader.onload = async (e) => { 
+            try { 
+                const zip = await JSZip.loadAsync(e.target.result); const opfFileKey = Object.keys(zip.files).find(f => f.endsWith('.opf')); if (!opfFileKey) throw new Error("Keine OPF-Manifest-Datei gefunden."); 
+                const opfDir = opfFileKey.includes('/') ? opfFileKey.substring(0, opfFileKey.lastIndexOf('/') + 1) : ""; const opfContent = await zip.files[opfFileKey].async("string"); const opfDoc = new DOMParser().parseFromString(opfContent, "text/xml"); 
+                
+                const titleElements = opfDoc.getElementsByTagName("dc:title"); if (titleElements && titleElements.length > 0) bookTitle = titleElements[0].textContent.trim();
+                const creatorElements = opfDoc.getElementsByTagName("dc:creator"); if (creatorElements && creatorElements.length > 0) bookAuthor = creatorElements[0].textContent.trim();
+
+                const manifestItems = opfDoc.getElementsByTagName("item"); let idToHrefMap = {}; let coverId = null;
+                for(let i=0; i<manifestItems.length; i++) { const id = manifestItems[i].getAttribute("id"); const href = manifestItems[i].getAttribute("href"); const properties = manifestItems[i].getAttribute("properties"); if(id && href) idToHrefMap[id] = href; if (properties === "cover-image") coverId = id; } 
+                if (!coverId) { const metaElements = opfDoc.getElementsByTagName("meta"); for (let i = 0; i < metaElements.length; i++) { if (metaElements[i].getAttribute("name") === "cover") coverId = metaElements[i].getAttribute("content"); } }
+
+                if (coverId && idToHrefMap[coverId]) {
+                    const coverPath = opfDir + idToHrefMap[coverId];
+                    if (zip.files[coverPath]) {
+                        const imgUint8 = await zip.files[coverPath].async("uint8array"); let binary = ''; for (let i = 0; i < imgUint8.byteLength; i++) binary += String.fromCharCode(imgUint8[i]);
+                        const base64Str = btoa(binary); const fileExt = coverPath.split('.').pop().toLowerCase(); const mime = (fileExt === 'png') ? 'image/png' : 'image/jpeg'; coverBase64 = `data:${mime};base64,${base64Str}`;
+                    }
+                }
+                
+                const itemrefs = opfDoc.getElementsByTagName("itemref"); let sortedFileNames = []; 
+                for(let i=0; i<itemrefs.length; i++) { const idref = itemrefs[i].getAttribute("idref"); const relativeHref = idToHrefMap[idref]; if(relativeHref) { const pureHref = relativeHref.split('#')[0]; const fullZipPath = opfDir + pureHref; if(zip.files[fullZipPath] && (fullZipPath.endsWith('.html') || fullZipPath.endsWith('.xhtml'))) { if(!sortedFileNames.includes(fullZipPath)) sortedFileNames.push(fullZipPath); } } } 
+                if(sortedFileNames.length === 0) { sortedFileNames = Object.keys(zip.files).filter(f => f.endsWith('.html') || f.endsWith('.xhtml')); sortedFileNames.sort(); } 
+                
+                let epubChaptersMap = []; const ncxFile = Object.keys(zip.files).find(f => f.endsWith('.ncx')); const navFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith('nav.xhtml') || f.toLowerCase().endsWith('nav.html')); 
+                if (ncxFile) { 
+                    const ncxContent = await zip.files[ncxFile].async("string"); const xmlDoc = new DOMParser().parseFromString(ncxContent, "text/xml"); const navPoints = xmlDoc.getElementsByTagName("navPoint"); 
+                    for (let i = 0; i < navPoints.length; i++) { const src = navPoints[i].getElementsByTagName("content")[0]?.getAttribute("src") || ""; const text = navPoints[i].getElementsByTagName("text")[0]?.textContent || ""; if (src && text) { const pureSrc = src.split('#')[0].split('/').pop(); epubChaptersMap.push({ fileRef: pureSrc, title: text.trim() }); } } 
+                } else if (navFile) { 
+                    const navContent = await zip.files[navFile].async("string"); const doc = new DOMParser().parseFromString(navContent, "text/html"); const links = doc.querySelectorAll('nav a, ol a, ul a'); 
+                    links.forEach(link => { const src = link.getAttribute('href') || ""; const text = link.innerText || ""; if (src && text) { const pureSrc = src.split('#')[0].split('/').pop(); epubChaptersMap.push({ fileRef: pureSrc, title: text.trim() }); } }); 
+                } 
+                
+                let tempFileOffsets = {}; let tempFileHtmls = {}; let globalWords = []; let globalIndex = 0;
+                for (let path of sortedFileNames) { 
+                    const content = await zip.files[path].async("string"); const doc = new DOMParser().parseFromString(content, "text/html"); 
+                    
+                    const imgs = doc.querySelectorAll('img');
+                    for (let img of imgs) {
+                        const src = img.getAttribute('src');
+                        if (src && !/^(https?|data):/i.test(src)) {
+                            let imgPath = path.split('/');
+                            imgPath.pop(); 
+                            const srcParts = src.split('/');
+                            for (let part of srcParts) {
+                                if (part === '.') continue;
+                                if (part === '..') imgPath.pop();
+                                else imgPath.push(part);
+                            }
+                            const fullImgPath = imgPath.join('/');
+                            
+                            let imgFile = zip.files[fullImgPath];
+                            if (!imgFile) {
+                                const filename = src.split('/').pop();
+                                const foundKey = Object.keys(zip.files).find(k => k.endsWith('/' + filename) || k === filename);
+                                if (foundKey) imgFile = zip.files[foundKey];
+                            }
+                            
+                            if (imgFile) {
+                                const imgUint8 = await imgFile.async("uint8array");
+                                let binary = '';
+                                for (let i = 0; i < imgUint8.byteLength; i++) {
+                                    binary += String.fromCharCode(imgUint8[i]);
+                                }
+                                const base64Str = btoa(binary);
+                                const ext = imgFile.name.split('.').pop().toLowerCase();
+                                const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+                                img.setAttribute('src', `data:${mime};base64,${base64Str}`);
+                            }
+                        }
+                    }
+
+                    const chapterHtmlRaw = doc.body.innerHTML || "";
+                    const bookData = buildBookData(chapterHtmlRaw, globalIndex);
+                    const filenameOnly = path.split('/').pop(); 
+                    tempFileOffsets[filenameOnly] = globalIndex; tempFileHtmls[filenameOnly] = bookData.html;
+                    globalWords = globalWords.concat(bookData.words); globalIndex = bookData.nextIndex;
+                    fullTextFallback += (doc.body.innerText || "") + " \n "; 
+                }
+                
+                if (epubChaptersMap.length > 0) { 
+                    epubChaptersMap.forEach(mapItem => { 
+                        if (tempFileOffsets[mapItem.fileRef] !== undefined) { 
+                            let title = mapItem.title; if (title.length > 50) title = title.substring(0, 47) + "..."; 
+                            if (!localChapters.some(c => c.start === tempFileOffsets[mapItem.fileRef])) localChapters.push({ name: title, start: tempFileOffsets[mapItem.fileRef], html: tempFileHtmls[mapItem.fileRef] || "", fileRef: mapItem.fileRef }); 
+                        } 
+                    }); 
+                } else { 
+                    for (let path of sortedFileNames) { 
+                        const filenameOnly = path.split('/').pop(); const offset = tempFileOffsets[filenameOnly]; const html = tempFileHtmls[filenameOnly];
+                        const content = await zip.files[path].async("string"); const doc = new DOMParser().parseFromString(content, "text/html"); 
+                        let heading = doc.body.querySelector('h1, h2, h3'); 
+                        if (heading && heading.innerText.trim()) { 
+                            let title = heading.innerText.trim(); if (title.length > 50) title = title.substring(0, 47) + "..."; 
+                            localChapters.push({ name: title, start: offset, html: html || "", fileRef: filenameOnly }); 
+                        } 
+                    } 
+                } 
+                if (localChapters.length === 0) localChapters.push({ name: "Buchstart", start: 0, html: tempFileHtmls[Object.keys(tempFileHtmls)[0]] || "", fileRef: Object.keys(tempFileHtmls)[0] }); else localChapters.sort((a, b) => a.start - b.start); 
+                await finalizeBookImport(bookTitle, bookAuthor, fullTextFallback, globalWords, localChapters, docType, coverBase64); 
+            } catch (err) { alert("Fehler beim Parsen der EPUB: " + err.message); } 
+        }; reader.readAsArrayBuffer(file); 
+    } 
+};
+
+async function finalizeBookImport(title, author, text, parsedWords, chapters, type, coverData) { 
+    const thumbnail = await generateThumbnail(coverData);
+    const newBook = { id: "book_" + Date.now(), title: title, author: author, text: text, words: parsedWords, chapters: chapters, lastIndex: 0, type: type, cover: coverData, thumbnail: thumbnail }; 
+    await saveBookToDB(newBook); fileInput.value = ""; renderLibraryList();
+    const authorRow = document.getElementById('lib-author-filter-row');
+    if (authorRow && authorRow.classList.contains('visible')) populateAuthorDropdown();
+}
+
+function filterLibrary(filterType, tabEl) {
+    currentLibraryFilter = filterType;
+    document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    renderLibraryList();
+}
+
+function toggleAuthorFilter() {
+    const row = document.getElementById('lib-author-filter-row');
+    const btn = document.getElementById('btn-author-filter');
+    const isVisible = row.classList.contains('visible');
+    if (isVisible) {
+        row.classList.remove('visible');
+        btn.classList.remove('active');
+        currentAuthorFilter = "";
+        document.getElementById('lib-author-select').value = "";
+        document.getElementById('lib-author-select').classList.remove('active-filter');
+        renderLibraryList();
+    } else {
+        row.classList.add('visible');
+        btn.classList.add('active');
+        populateAuthorDropdown();
+    }
+}
+
+function onAuthorSelectChange(sel) {
+    currentAuthorFilter = sel.value;
+    if (sel.value) sel.classList.add('active-filter'); else sel.classList.remove('active-filter');
+    renderLibraryList();
+}
+
+function populateAuthorDropdown() {
+    getAllBooksFromDB().then(books => {
+        const select = document.getElementById('lib-author-select');
+        const current = select.value;
+        const authors = [...new Set(
+            books.map(b => (b.author || '').trim()).filter(a => a && a !== 'Unbekannter Autor')
+        )].sort((a, b) => a.localeCompare(b, 'de'));
+        select.innerHTML = '<option value="">— Alle Autoren —</option>';
+        authors.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a; opt.textContent = a;
+            if (a === current) opt.selected = true;
+            select.appendChild(opt);
+        });
+    });
+}
+
+function renderLibraryList() {
+    getAllBooksFromDB().then(books => {
+        libraryList.innerHTML = "";
+        const filteredBooks = books.filter(book => {
+            const idx = parseInt(book.lastIndex) || 0; const total = book.words ? book.words.length : 0; const pct = total > 0 ? (idx / total) * 100 : 0;
+            const isNew = idx === 0; const isFinished = total > 0 && (idx >= total || Math.round(pct) >= 100); const isStarted = idx > 0 && !isFinished;
+            const statusOk = currentLibraryFilter === "all" || (currentLibraryFilter === "new" && isNew) || (currentLibraryFilter === "reading" && isStarted) || (currentLibraryFilter === "finished" && isFinished);
+            const authorOk = !currentAuthorFilter || (book.author || '').trim() === currentAuthorFilter;
+            return statusOk && authorOk;
+        });
+
+        if(filteredBooks.length === 0) { libraryList.innerHTML = `<div style="text-align:center; color:#666; font-size:13px; padding:30px;">Keine Bücher in dieser Kategorie.</div>`; return; }
+
+        filteredBooks.forEach(book => {
+            const card = document.createElement('div'); card.className = `library-book-card ${activeBookId === book.id ? "active" : ""}`;
+            const idx = parseInt(book.lastIndex) || 0; const total = book.words ? book.words.length : 0; const pct = total > 0 ? Math.min(100, Math.round((idx / total) * 100)) : 0; const isFinished = total > 0 && (idx >= total || pct >= 100);
+            
+            let statusClass = 'status-new'; let statusText = 'Neu';
+            if (idx > 0 && !isFinished) { statusClass = 'status-reading'; statusText = 'Begonnen'; } else if (isFinished) { statusClass = 'status-finished'; statusText = 'Beendet'; }
+            
+            const displayAuthor = book.author || "Unbekannter Autor"; const displayTitle = book.title || "Unbenanntes Dokument";
+            const coverImageHtml = book.cover ? `<img src="${book.cover}" class="book-cover-img" alt="Cover">` : '';
+
+            // Build stats display for card
+                const lastReadStr = book.lastReadDate
+                    ? new Date(book.lastReadDate).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'2-digit'})
+                    : null;
+                const wpmHtml = book.avgWpm
+                    ? '<span class="book-stat-item has-data"><svg width="11" height="11" viewBox="0 0 24 24"><path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/></svg>Ø ' + Math.round(book.avgWpm) + ' WPM</span>'
+                    : '';
+                const gSecs = book.totalReadSeconds || 0;
+                const gH = Math.floor(gSecs / 3600), gM = Math.floor((gSecs % 3600) / 60);
+                const timeHtml = gSecs >= 60
+                    ? '<span class="book-stat-item has-data" style="color:#7aaa7a;"><svg width="11" height="11" viewBox="0 0 24 24" style="fill:#7aaa7a;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>' + (gH >= 1 ? gH + 'h ' + (gM > 0 ? gM + 'min' : '') : gM + ' min') + '</span>'
+                    : '';
+
+                // Geschätzte Restzeit (inkl. aktiver Modifier via Sampling)
+                let estHtml = '';
+                if (isFinished) {
+                    estHtml = '<span class="book-stat-item has-data" style="color:var(--accent-green);">✓ Fertig</span>';
+                } else if (book.words && book.words.length > 0) {
+                    const remSec = estimateBookRemainingSeconds(book.words, idx);
+                    const rH = Math.floor(remSec / 3600), rM = Math.ceil((remSec % 3600) / 60);
+                    const remStr = remSec >= 3600 ? `~${rH}h ${rM}m übrig`
+                                 : remSec >= 60   ? `~${rM}m übrig`
+                                 : remSec  > 0    ? '< 1m übrig' : '';
+                    if (remStr) estHtml = `<span class="book-stat-item has-data"><svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>${remStr}</span>`;
+                }
+
+                card.innerHTML = `
+                <button class="lib-delete-card-btn" title="Buch löschen"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                <div class="book-cover-placeholder">${coverImageHtml}<div class="cover-content-overlay"><div class="cover-author" style="${book.cover ? 'display:none;' : ''}">${displayAuthor}</div><div class="cover-title" style="${book.cover ? 'display:none;' : ''}">${displayTitle}</div><div class="cover-footer-brand">RSVP</div></div></div>
+                <div class="book-details-block">
+                    <div>
+                        <div class="book-title-meta-row">${displayTitle}</div>
+                        <div class="book-author-meta-sub">${displayAuthor}</div>
+                    </div>
+                    <div class="book-meta-badges-row">
+                        <span class="lib-type-badge">${book.type || 'txt'}</span>
+                        <span class="lib-status-tag ${statusClass}">${statusText}</span>
+                        <span class="lib-progress">${pct}%</span>
+                    </div>
+                    <div class="book-stats-row">
+                        <span class="book-stat-item ${lastReadStr ? 'has-data' : ''}">
+                            <svg width="11" height="11" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+                            ${lastReadStr || 'Noch nicht gelesen'}
+                        </span>
+                        ${wpmHtml}${timeHtml}${estHtml}
+                    </div>
+                </div>
+            `
+            
+            card.onclick = async (e) => { if (e.target.closest('.lib-delete-card-btn')) return; await loadLibraryBook(book.id, true); };
+            card.onclick = async (e) => { if (e.target.closest('.lib-delete-card-btn')) return; await loadLibraryBook(book.id, true); };
+            card.querySelector('.lib-delete-card-btn').onclick = async (e) => {
+                e.stopPropagation();
+                if(confirm(`"${displayAuthor} – ${displayTitle}" wirklich löschen?`)) {
+                    // Statistik-Snapshot mit Cover-Thumbnail im statsArchive sichern
+                    const coverThumb = await resizeCoverImage(book.cover, 72);
+                    const total_w = book.words ? book.words.length : 0;
+                    await saveToStatsArchive({
+                        id:               book.id,
+                        title:            book.title,
+                        author:           book.author,
+                        coverThumb,
+                        totalReadSeconds: book.totalReadSeconds || 0,
+                        avgWpm:           book.avgWpm           || 0,
+                        sessionCount:     book.sessionCount      || 0,
+                        lastReadDate:     book.lastReadDate      || null,
+                        wordCount:        total_w,
+                        lastIndex:        book.lastIndex         || 0,
+                        pct:              total_w > 0 ? Math.min(100, Math.round(((book.lastIndex||0)/total_w)*100)) : 0,
+                        readingLog:       book.readingLog        || {},
+                        deletedAt:        new Date().toISOString(),
+                    });
+                    await deleteBookFromDB(book.id); const currentLastLibBook = await getAppState('rsvp-last-library-book-id');
+                    if (currentLastLibBook === book.id) await saveAppState('rsvp-last-library-book-id', null);
+                    if (activeBookId === book.id) { activeBookId = "schnellstart"; activeBookTitle = "Freier Text"; activeBookAuthor = ""; chapterOffsets = []; let data = buildBookData(input.value, 0); words = data.words; const savedIdx = await getAppState('rsvp-fast-index'); currentIndex = parseInt(savedIdx) || 0; await saveAppState('rsvp-active-book-id', "schnellstart"); }
+                    await updateActiveBookMenuState();
+        updateResetButtonVisibility(); renderLibraryList(); 
+                }
+            }; libraryList.appendChild(card);
+        });
+    });
+}
+
+async function loadLibraryBook(id, switchToReader = false) {
+    stopEngineOnly(); await saveSessionStats(); activeBookId = id; await saveAppState('rsvp-active-book-id', id); closeRightMenu(); hyphenFragments = null;
+    const modeToggle = document.getElementById('reader-mode-toggle');
+
+    if(id === "schnellstart") {
+        activeBookTitle = "Freier Text"; activeBookAuthor = ""; chapterOffsets = []; let data = buildBookData(input.value, 0); words = data.words;
+        estimatedTimeCache = null; // Cache invalidieren – Schnellstart geladen
+        const savedIdx = await getAppState('rsvp-fast-index'); currentIndex = parseInt(savedIdx) || 0; 
+        if (modeToggle) modeToggle.style.display = "none"; if (readerModeToggleBottom) readerModeToggleBottom.style.display = "none"; if (isPageMode) togglePageMode(); if (switchToReader) switchUIMode('reader');
+    } else {
+        const book = await getBookFromDB(id); if(!book) return loadLibraryBook("schnellstart", switchToReader);
+        activeBookTitle = book.title; activeBookAuthor = book.author || ""; words = book.words; chapterOffsets = book.chapters || []; 
+        estimatedTimeCache = null; // Cache invalidieren – neues Buch geladen
+        
+        let savedIndex = parseInt(book.lastIndex) || 0;
+        if (savedIndex > 0) currentIndex = savedIndex; else currentIndex = 0;
+        
+        // Auto-Rewind Logik: Wenn erlaubt, zurückspringen für besseren Anschluss
+        const rewindPermitted = await getAppState('rsvp-rewind-permitted-' + id);
+        if (rewindMode.checked && rewindPermitted === true) {
+            const rewindWords = parseInt(rewindAmount.value) || 0;
+            currentIndex = Math.max(0, currentIndex - rewindWords);
+        }
+        
+        await saveAppState('rsvp-last-library-book-id', id);
+        
+        if (book.type === "epub") {
+            if (modeToggle) modeToggle.style.display = "flex";
+            if (readerModeToggleBottom) readerModeToggleBottom.style.display = "flex";
+        } else {
+            if (modeToggle) modeToggle.style.display = "none";
+            if (readerModeToggleBottom) readerModeToggleBottom.style.display = "none";
+            if (isPageMode) togglePageMode();
+        }
+        if (switchToReader) switchUIMode('reader');
+    }
+    await updateActiveBookMenuState();
+        updateResetButtonVisibility(); await saveAppState('rsvp-rewind-permitted-' + id, false);
+    render(); if (viewReader.classList.contains('view-active')) await updateProgressUI(false);
+}
+
+function renderReaderChapterList() {
+    chapterListScroll.innerHTML = ""; if (chapterOffsets.length === 0) return;
+    let activeIndex = getActiveChapterIndex();
+    chapterOffsets.forEach((chap, i) => {
+        const item = document.createElement('div'); item.className = `chapter-item ${i === activeIndex ? 'active' : ''}`; item.innerHTML = `<span>${chap.name}</span>`;
+        item.onclick = async () => { stopEngineOnly(); hyphenFragments = null; currentIndex = parseInt(chap.start) || 0; await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); closeRightMenu(); await updateProgressUI(true); if (isPageMode) renderPageMode(); else render(); };
+        chapterListScroll.appendChild(item);
+    });
+}
+
+
+function updateResetButtonVisibility() {
+    const btnReset = document.getElementById('btn-reset');
+    const controls = document.getElementById('main-controls');
+    const toggle = document.getElementById('show-reset-button-toggle');
+    if (!btnReset || !controls || !toggle) return;
+
+    // Check if we are in "Schnellstart" (activeBookId is "schnellstart" or empty)
+    const isSchnellstart = (typeof activeBookId === 'undefined' || activeBookId === "schnellstart" || activeBookId === "");
+    
+    if (isSchnellstart || toggle.checked) {
+        btnReset.style.display = ""; 
+        controls.style.gridTemplateColumns = "repeat(3, 1fr)";
+    } else {
+        btnReset.style.display = "none";
+        controls.style.gridTemplateColumns = "repeat(2, 1fr)";
+    }
+}
+
+function saveSettings() {
+    localStorage.setItem('rsvp-wpm', wpmIn.value); localStorage.setItem('rsvp-fs', fsIn.value);
+    localStorage.setItem('rsvp-pause-on', pauseMode.checked); localStorage.setItem('rsvp-long-on', longWordMode.checked);
+    localStorage.setItem('rsvp-long-val', longWordTrigger.value); localStorage.setItem('rsvp-rewind-on', rewindMode.checked);
+    localStorage.setItem('rsvp-rewind-val', rewindAmount.value); localStorage.setItem('rsvp-hyphen-on', hyphenMode.checked);
+    localStorage.setItem('rsvp-stop-chapter', stopAtChapterEnd.checked);
+    
+    localStorage.setItem('rsvp-show-chapter-time', showChapterTimeToggle.checked); 
+    localStorage.setItem('rsvp-show-chapter-remaining', showChapterRemainingToggle.checked);
+    localStorage.setItem('rsvp-show-book-time', showBookTimeToggle.checked); 
+    localStorage.setItem('rsvp-show-book-remaining', showBookRemainingToggle.checked);
+    
+    localStorage.setItem('rsvp-show-progress-bar', showProgressBarToggle.checked);
+    localStorage.setItem('rsvp-amoled-mode', amoledModeToggle.checked);
+    localStorage.setItem('rsvp-show-reset-button', document.getElementById('show-reset-button-toggle').checked);
+    localStorage.setItem('rsvp-resume-enabled', resumeToggle.checked);
+    updateResetButtonVisibility();
+    if (amoledModeToggle.checked) { document.body.classList.add('amoled-mode'); document.documentElement.style.setProperty('--scrollbar-thumb', '#222'); } 
+    else { document.body.classList.remove('amoled-mode'); document.documentElement.style.setProperty('--scrollbar-thumb', '#444'); }
+    updateProgressUI(false); render();
+}
+
+async function init() {
+    await initDB();
+    if(localStorage.getItem('rsvp-wpm')) wpmIn.value = localStorage.getItem('rsvp-wpm');
+    if(localStorage.getItem('rsvp-fs')) fsIn.value = localStorage.getItem('rsvp-fs');
+    if(localStorage.getItem('rsvp-pause-on')) pauseMode.checked = localStorage.getItem('rsvp-pause-on') === 'true';
+    if(localStorage.getItem('rsvp-long-on')) longWordMode.checked = localStorage.getItem('rsvp-long-on') === 'true';
+    if(localStorage.getItem('rsvp-long-val')) longWordTrigger.value = localStorage.getItem('rsvp-long-val');
+    if(localStorage.getItem('rsvp-rewind-on')) rewindMode.checked = localStorage.getItem('rsvp-rewind-on') === 'true';
+    if(localStorage.getItem('rsvp-rewind-val')) rewindAmount.value = localStorage.getItem('rsvp-rewind-val');
+    if(localStorage.getItem('rsvp-hyphen-on')) hyphenMode.checked = localStorage.getItem('rsvp-hyphen-on') === 'true';
+    if(localStorage.getItem('rsvp-stop-chapter')) document.getElementById('stop-at-chapter-end').checked = localStorage.getItem('rsvp-stop-chapter') === 'true';
+    
+    if(localStorage.getItem('rsvp-show-chapter-time')) showChapterTimeToggle.checked = localStorage.getItem('rsvp-show-chapter-time') === 'true';
+    if(localStorage.getItem('rsvp-show-chapter-remaining')) showChapterRemainingToggle.checked = localStorage.getItem('rsvp-show-chapter-remaining') === 'true';
+    if(localStorage.getItem('rsvp-show-book-time')) showBookTimeToggle.checked = localStorage.getItem('rsvp-show-book-time') === 'true';
+    if(localStorage.getItem('rsvp-show-book-remaining')) showBookRemainingToggle.checked = localStorage.getItem('rsvp-show-book-remaining') === 'true';
+    
+        if (document.getElementById('show-reset-button-toggle')) {
+        const savedResetToggle = localStorage.getItem('rsvp-show-reset-button');
+        document.getElementById('show-reset-button-toggle').checked = savedResetToggle !== 'false';
+    }
+    updateResetButtonVisibility();
+    if(localStorage.getItem('rsvp-show-progress-bar')) showProgressBarToggle.checked = localStorage.getItem('rsvp-show-progress-bar') === 'true';
+    if(localStorage.getItem('rsvp-amoled-mode')) { amoledModeToggle.checked = localStorage.getItem('rsvp-amoled-mode') === 'true'; if (amoledModeToggle.checked) { document.body.classList.add('amoled-mode'); document.documentElement.style.setProperty('--scrollbar-thumb', '#222'); } }
+    
+    // Auto-Resume Toggle laden
+    if(localStorage.getItem('rsvp-resume-enabled')) resumeToggle.checked = localStorage.getItem('rsvp-resume-enabled') === 'true';
+
+    const savedFastText = await getAppState('rsvp-fast-text'); if(savedFastText) input.value = savedFastText;
+    
+    // Auto-Resume Logik: Wenn aktiviert, letztes Buch laden, sonst Schnellstart
+    if (resumeToggle.checked) {
+        const lastBookId = await getAppState('rsvp-last-library-book-id');
+        if (lastBookId && lastBookId !== "schnellstart") {
+            await loadLibraryBook(lastBookId, false);
+        } else {
+            await loadLibraryBook("schnellstart", false);
+        }
+    } else {
+        await loadLibraryBook("schnellstart", false);
+    }
+    
+    switchUIMode('reader');
+}
+
+mainBtn.onclick = start;
+chapterToggleBtn.onclick = () => { if(sideChapterPanel.classList.contains('active')) closeRightMenu(); else openRightMenu(); };
+chapterPanelCloseBtn.onclick = closeRightMenu; 
+
+if (readerModeToggle) readerModeToggle.onclick = togglePageMode;
+if (readerModeToggleBottom) readerModeToggleBottom.onclick = togglePageMode;
+
+document.getElementById('btn-reset').onclick = async () => { 
+    if (activeBookId !== "schnellstart") { const confirmReset = confirm(`Möchtest du den Lesefortschritt von "${activeBookTitle}" wirklich an den Anfang zurücksetzen?`); if (!confirmReset) return; }
+    await stopEngineOnly(); hyphenFragments = null; currentIndex = 0;
+    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+    if (activeBookId !== "schnellstart") {
+        const book = await getBookFromDB(activeBookId);
+        if (book) { book.lastIndex = 0; await saveBookToDB(book); }
+    } else {
+        await saveAppState('rsvp-fast-index', 0);
+    }
+    if (sideChapterPanel.classList.contains('active')) renderReaderChapterList(); if (isPageMode) renderPageMode(); else await updateProgressUI(true); render(); 
+};
+
+document.getElementById('btn-fwd').onclick = async () => { 
+    hyphenFragments = null;
+    if (isPageMode) {
+        const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+        const colWidth = exactViewportWidth + 40;
+        if (pageTextContent.scrollLeft + colWidth < pageScrollWidth - 45) { 
+            let currentPage = Math.round(pageTextContent.scrollLeft / colWidth); 
+            pageTextContent.scrollLeft = (currentPage + 1) * colWidth; 
+            currentPageScrollOffset = pageTextContent.scrollLeft; 
+            setTimeout(updateIndexFromPageScroll, 100); 
+        } else { 
+            let chapIdx = getActiveChapterIndex(); 
+            if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { currentIndex = chapterOffsets[chapIdx + 1].start; currentPageScrollOffset = 0; renderPageMode(); } 
+        }
+    } else { currentIndex = Math.min(words.length - 1, currentIndex + 10); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
+};
+
+document.getElementById('btn-back').onclick = async () => { 
+    hyphenFragments = null;
+    if (isPageMode) {
+        const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+        const colWidth = exactViewportWidth + 40;
+        
+        if (pageTextContent.scrollLeft - colWidth >= -10) { 
+            let currentPage = Math.round(pageTextContent.scrollLeft / colWidth); 
+            pageTextContent.scrollLeft = (currentPage - 1) * colWidth; 
+            currentPageScrollOffset = pageTextContent.scrollLeft; 
+            setTimeout(updateIndexFromPageScroll, 100); 
+        } else { 
+            let chapIdx = getActiveChapterIndex(); 
+            if (chapIdx > 0) { 
+                pageTextContent.style.opacity = '0';
+                pageTextContent.style.transition = 'none'; 
+
+                currentIndex = chapterOffsets[chapIdx - 1].start; 
+                currentPageScrollOffset = 0; 
+                
+                renderPageMode(); 
+                
+                setTimeout(() => {
+                    if (!isPageMode) return;
+                    pageTextContent.scrollLeft = pageTextContent.scrollWidth;
+                    updateIndexFromPageScroll();
+                    pageTextContent.style.opacity = '1';
+                }, 80);
+            } 
+        }
+    } else { 
+        currentIndex = Math.max(0, currentIndex - 10); 
+        await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); 
+        if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); 
+        render(); 
+    }
+};
+
+let scrollTimeout;
+pageTextContent.onscroll = () => { 
+    if (!isPageMode) return; 
+    if (isSnapping) return; 
+    clearTimeout(scrollTimeout); 
+    scrollTimeout = setTimeout(() => { 
+        const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+        const colFullWidth = exactViewportWidth + 40;
+        let currentPage = Math.round(pageTextContent.scrollLeft / colFullWidth);
+        let targetLeft = currentPage * colFullWidth;
+
+        if (Math.abs(pageTextContent.scrollLeft - targetLeft) > 1) {
+            isSnapping = true; pageTextContent.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            setTimeout(() => { isSnapping = false; updateIndexFromPageScroll(); }, 250); 
+        } else { updateIndexFromPageScroll(); }
+    }, 60); 
+};
+
+pageTextContent.ontouchstart = () => { isSnapping = false; };
+hamburgerTrigger.onclick = openLeftMenu; sidebarCloseBtn.onclick = closeLeftMenu; sidebarOverlay.onclick = closeAllMenus;
+
+input.oninput = () => {
+    if (activeBookId === "schnellstart") {
+        let data = buildBookData(input.value, 0); words = data.words; hyphenFragments = null; currentIndex = 0; totalSessionSeconds = 0; saveAppState('rsvp-rewind-permitted-schnellstart', false);
+        estimatedTimeCache = null; // Cache invalidieren – Text hat sich geändert
+        saveAppState('rsvp-fast-index', 0); saveAppState('rsvp-fast-text', input.value); updateProgressUI(true);
+    }
+};
+
+[wpmIn, fsIn, longWordTrigger, rewindAmount].forEach(el => el.oninput = () => { estimatedTimeCache = null; saveSettings(); });
+[pauseMode, hyphenMode, longWordMode, rewindMode, showChapterTimeToggle, showChapterRemainingToggle, showBookTimeToggle, showBookRemainingToggle, showProgressBarToggle, amoledModeToggle, resumeToggle, document.getElementById('show-reset-button-toggle')].forEach(el => el.onchange = () => { estimatedTimeCache = null; saveSettings(); });
+
+document.getElementById('btn-clear-floating').onclick = async () => {
+    if(activeBookId === "schnellstart") {
+        stopEngineOnly(); input.value = ""; words = []; hyphenFragments = null; currentIndex = 0; totalSessionSeconds = 0; await saveAppState('rsvp-rewind-permitted-schnellstart', false);
+        await saveAppState('rsvp-fast-index', 0); await saveAppState('rsvp-fast-text', ""); tLeft.innerText = ""; tCenter.innerText = ""; tRight.innerText = ""; await updateProgressUI(true);
+    }
+};
+
+window.onresize = () => { if (isPageMode) renderPageMode(); };
+
+init();
+
+// ── Backup & Restore ─────────────────────────────────────────────────────────
+async function exportBackup() {
+    await saveSessionStats();
+    const [books, archived] = await Promise.all([getAllBooksFromDB(), getAllStatsArchive()]);
+    const backup = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        books: books.map(b => ({
+            title:            b.title || '',
+            author:           b.author || '',
+            lastIndex:        b.lastIndex || 0,
+            totalWords:       b.words ? b.words.length : 0,
+            lastReadDate:     b.lastReadDate || null,
+            avgWpm:           b.avgWpm || null,
+            sessionCount:     b.sessionCount || 0,
+            totalReadSeconds: b.totalReadSeconds || 0,
+            readingLog:       b.readingLog || {},
+            wpmHistory:       b.wpmHistory || [],
+        })),
+        archivedStats: archived.map(a => ({
+            id:               a.id,
+            title:            a.title || '',
+            author:           a.author || '',
+            lastIndex:        a.lastIndex || 0,
+            totalWords:       a.wordCount || a.totalWords || 0,
+            lastReadDate:     a.lastReadDate || null,
+            avgWpm:           a.avgWpm || null,
+            sessionCount:     a.sessionCount || 0,
+            totalReadSeconds: a.totalReadSeconds || 0,
+            readingLog:       a.readingLog || {},
+            wpmHistory:       a.wpmHistory || [],
+            deletedAt:        a.deletedAt || null,
+            pct:              a.pct || 0,
+        })),
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rsvp-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+async function importBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+    try {
+        const text = await file.text();
+        const backup = JSON.parse(text);
+        if (!backup.books || !Array.isArray(backup.books)) throw new Error('Ungültiges Format');
+
+        const normalize = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
+        // ── Aktive Bücher zusammenführen ──────────────────────────────────────
+        const existing = await getAllBooksFromDB();
+        let matched = 0, skipped = 0;
+
+        for (const entry of backup.books) {
+            const book = existing.find(b =>
+                normalize(b.title) === normalize(entry.title) &&
+                normalize(b.author) === normalize(entry.author)
+            );
+            if (!book) { skipped++; continue; }
+
+            if (entry.lastReadDate)     book.lastReadDate     = entry.lastReadDate;
+            if (entry.avgWpm)           book.avgWpm           = entry.avgWpm;
+            if (entry.sessionCount)     book.sessionCount     = entry.sessionCount;
+            if (entry.totalReadSeconds) book.totalReadSeconds = entry.totalReadSeconds;
+            if ((entry.lastIndex || 0) > (book.lastIndex || 0)) book.lastIndex = entry.lastIndex;
+
+            // readingLog zusammenführen (Monate addieren)
+            if (entry.readingLog && Object.keys(entry.readingLog).length > 0) {
+                const merged = book.readingLog || {};
+                for (const [ym, sec] of Object.entries(entry.readingLog)) {
+                    merged[ym] = (merged[ym] || 0) + sec;
+                }
+                book.readingLog = merged;
+            }
+            // wpmHistory übernehmen falls lokal leer
+            if (entry.wpmHistory && entry.wpmHistory.length > 0 && !(book.wpmHistory && book.wpmHistory.length > 0)) {
+                book.wpmHistory = entry.wpmHistory;
+            }
+
+            await saveBookToDB(book);
+            matched++;
+        }
+
+        // ── Archivierte Statistiken wiederherstellen ──────────────────────────
+        let archivedRestored = 0;
+        if (backup.archivedStats && Array.isArray(backup.archivedStats)) {
+            const existingArchive = await getAllStatsArchive();
+            const existingArchiveIds = new Set(existingArchive.map(a => a.id));
+            // Auch auf Titel+Autor prüfen um Duplikate zu vermeiden
+            const existingArchiveKeys = new Set(existingArchive.map(a => normalize(a.title) + '||' + normalize(a.author)));
+
+            for (const entry of backup.archivedStats) {
+                if (existingArchiveIds.has(entry.id)) continue;
+                if (existingArchiveKeys.has(normalize(entry.title) + '||' + normalize(entry.author))) continue;
+                // Als archivierter Eintrag in statsArchive speichern
+                await new Promise(resolve => {
+                    const tx = db.transaction("statsArchive", "readwrite");
+                    tx.objectStore("statsArchive").put({
+                        id: entry.id,
+                        title: entry.title,
+                        author: entry.author,
+                        lastIndex: entry.lastIndex || 0,
+                        wordCount: entry.totalWords || 0,
+                        lastReadDate: entry.lastReadDate || null,
+                        avgWpm: entry.avgWpm || null,
+                        sessionCount: entry.sessionCount || 0,
+                        totalReadSeconds: entry.totalReadSeconds || 0,
+                        readingLog: entry.readingLog || {},
+                        wpmHistory: entry.wpmHistory || [],
+                        deletedAt: entry.deletedAt || null,
+                        pct: entry.pct || 0,
+                    });
+                    tx.oncomplete = resolve; tx.onerror = resolve;
+                });
+                archivedRestored++;
+            }
+        }
+
+        renderLibraryList();
+        renderStatsPanel();
+
+        const parts = [];
+        if (matched > 0) parts.push(`✓ ${matched} Buch${matched !== 1 ? 'er' : ''} aktualisiert`);
+        if (skipped > 0) parts.push(`${skipped} nicht in Bibliothek gefunden`);
+        if (archivedRestored > 0) parts.push(`${archivedRestored} Statistik-Einträge wiederhergestellt`);
+        alert(parts.length > 0 ? parts.join(' · ') : 'Keine passenden Daten gefunden.');
+    } catch (e) {
+        alert('Fehler beim Importieren: ' + e.message);
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── PWA: Service Worker registrieren ─────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                // Neues Update verfügbar?
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            showPwaUpdateBanner();
+                        }
+                    });
+                });
+            })
+            .catch(err => console.warn('SW Registrierung fehlgeschlagen:', err));
+    });
+}
+
+// Install-Prompt abfangen (Android Chrome)
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showPwaInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+    hidePwaInstallBanner();
+    deferredInstallPrompt = null;
+});
+
+function showPwaInstallBanner() {
+    const existing = document.getElementById('pwa-install-banner');
+    if (existing || window.matchMedia('(display-mode: standalone)').matches) return;
+    const banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+    banner.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <img src="icons/icon-192.png" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;">
+            <div style="min-width:0;">
+                <div style="font-weight:600;font-size:13px;color:#fff;">RSVP Reader installieren</div>
+                <div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Offline verfügbar · Kein Browser-UI</div>
+            </div>
+        </div>
+        <button id="pwa-install-btn" style="background:#3498db;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">Installieren</button>
+        <button id="pwa-dismiss-btn" style="background:transparent;border:none;color:#666;font-size:18px;cursor:pointer;flex-shrink:0;line-height:1;">✕</button>
+    `;
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:1px solid #333;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:9999;box-shadow:0 -4px 20px rgba(0,0,0,0.5);';
+    document.body.appendChild(banner);
+    document.getElementById('pwa-install-btn').onclick = async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') hidePwaInstallBanner();
+        deferredInstallPrompt = null;
+    };
+    document.getElementById('pwa-dismiss-btn').onclick = hidePwaInstallBanner;
+}
+
+function hidePwaInstallBanner() {
+    const b = document.getElementById('pwa-install-banner');
+    if (b) b.remove();
+}
+
+function showPwaUpdateBanner() {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#27ae60;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-size:13px;';
+    banner.innerHTML = '<span>🔄 Update verfügbar</span><button onclick="location.reload()" style="background:#fff;color:#27ae60;border:none;padding:5px 12px;border-radius:6px;font-weight:600;cursor:pointer;">Neu laden</button>';
+    document.body.appendChild(banner);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+</script>
+
+</body>
+</html>
