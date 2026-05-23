@@ -2145,30 +2145,30 @@ function step() {
         for (let ci = 0; ci < chapterOffsets.length; ci++) {
             const chapEnd = ci + 1 < chapterOffsets.length ? chapterOffsets[ci + 1].start : words.length;
             if (nextIdx === chapEnd) {
-                // Letztes Wort wurde bereits gerendert – jetzt increment + stopp
+                // Letztes Wort wurde bereits gerendert – Index vorrücken,
+                // dann erst nach vollem delay stoppen und Kapitelname zeigen.
                 if (hyphenFragments) {
                     hyphenFragmentIdx++;
                     if (hyphenFragmentIdx >= hyphenFragments.length) { hyphenFragments = null; currentIndex++; }
                 } else { currentIndex++; }
-                stopEngineOnly();
                 const nextChap = chapterOffsets[ci + 1];
                 const label = nextChap ? (nextChap.name || 'Nächstes Kapitel') : '– Ende –';
-                // Kapitelname an ORP-Linie ausrichten, aktuelle Schriftgröße
-                const fs = fsIn.value + 'px';
-                measurer.font = 'bold ' + fs + " 'Segoe UI', Arial";
-                const labelW = measurer.measureText(label).width;
-                // ORP für Kapitelname: gleiche Lookup-Tabelle wie normale Wörter
-                const lStripped = label.replace(/[^\p{L}\p{N}]/gu, '');
-                const lLen = lStripped.length || label.length;
-                const lFocusIdx = lLen < ORP_TABLE.length ? ORP_TABLE[lLen] : Math.floor(lLen * 0.3);
-                const lLeftW = measurer.measureText(label.substring(0, lFocusIdx)).width;
-                const lCenterW = measurer.measureText(label.substring(lFocusIdx, lFocusIdx + 1)).width;
-                tLeft.innerText = label.substring(0, lFocusIdx);
-                tCenter.innerText = label.substring(lFocusIdx, lFocusIdx + 1);
-                tRight.innerText = label.substring(lFocusIdx + 1);
-                canvas.style.fontSize = fs;
-                canvas.style.left = 'calc(35% - ' + (lLeftW + lCenterW / 2) + 'px)';
-                updateProgressUI(true);
+                timer = setTimeout(() => {
+                    stopEngineOnly();
+                    const fs = fsIn.value + 'px';
+                    measurer.font = 'bold ' + fs + " 'Segoe UI', Arial";
+                    const lStripped = label.replace(/[^\p{L}\p{N}]/gu, '');
+                    const lLen = lStripped.length || label.length;
+                    const lFocusIdx = lLen < ORP_TABLE.length ? ORP_TABLE[lLen] : Math.floor(lLen * 0.3);
+                    const lLeftW = measurer.measureText(label.substring(0, lFocusIdx)).width;
+                    const lCenterW = measurer.measureText(label.substring(lFocusIdx, lFocusIdx + 1)).width;
+                    tLeft.innerText = label.substring(0, lFocusIdx);
+                    tCenter.innerText = label.substring(lFocusIdx, lFocusIdx + 1);
+                    tRight.innerText = label.substring(lFocusIdx + 1);
+                    canvas.style.fontSize = fs;
+                    canvas.style.left = 'calc(35% - ' + (lLeftW + lCenterW / 2) + 'px)';
+                    updateProgressUI(true);
+                }, delay);
                 return;
             }
         }
@@ -2822,6 +2822,7 @@ async function exportBackup() {
             wpmHistory:       a.wpmHistory || [],
             deletedAt:        a.deletedAt || null,
             pct:              a.pct || 0,
+            coverThumb:       a.coverThumb || null,
         })),
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -2906,6 +2907,7 @@ async function importBackup(event) {
                         wpmHistory: entry.wpmHistory || [],
                         deletedAt: entry.deletedAt || null,
                         pct: entry.pct || 0,
+                        coverThumb: entry.coverThumb || null,
                     });
                     tx.oncomplete = resolve; tx.onerror = resolve;
                 });
