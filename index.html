@@ -1276,6 +1276,14 @@ let isCurrentlyInRSVPFlow = false;
 // Flag für das automatische Seiten-Snapping
 let isSnapping = false;
 
+// ── Performance: DB-Throttling & rAF-Entkopplung ─────────────────────────────
+// Problem vorher: updateProgressUI(true) = IndexedDB-Read + Write bei JEDEM Wort.
+// Bei 300 WPM → 5 DB-Ops/Sek, bei 600 WPM → 10/Sek → Event-Loop-Stau → Timing-Drift.
+let dbSaveCounter = 0;          // Zählt Wörter seit letztem DB-Save
+const DB_SAVE_INTERVAL = 30;    // Alle 30 Wörter speichern (~6 Sek bei 300 WPM)
+let progressRafPending = false; // Verhindert mehrfache rAF-Frames
+// ─────────────────────────────────────────────────────────────────────────────
+
 const canvas = document.getElementById('word-canvas');
 const tLeft = document.getElementById('txt-left');
 const tCenter = document.getElementById('txt-center');
@@ -1885,6 +1893,47 @@ function updateProgressUI(shouldSaveToDB = true) {
     });
 }
 
+// ── Lightweight Index-Save (nur Position, kein Full-Read) ─────────────────────
+// Wird alle DB_SAVE_INTERVAL Wörter aufgerufen statt bei jedem Tick.
+// saveSessionStats() (Lesezeit, WPM) bleibt davon vollständig unberührt.
+async function saveCurrentIndex() {
+    const idx = parseInt(currentIndex) || 0;
+    if (activeBookId === "schnellstart") {
+        saveAppState('rsvp-fast-index', idx); // Kein await nötig – fire & forget
+        return;
+    }
+    if (!db) return;
+    const tx = db.transaction("library", "readwrite");
+    const store = tx.objectStore("library");
+    const req = store.get(activeBookId);
+    req.onsuccess = () => {
+        const book = req.result;
+        if (book) { book.lastIndex = idx; store.put(book); }
+    };
+}
+
+// ── rAF-basiertes Progress-UI-Update (entkoppelt vom Timing-kritischen step()) ─
+// Visual-Update läuft per requestAnimationFrame → kein Blockieren des setTimeout-Timers.
+// DB-Save passiert throttled alle DB_SAVE_INTERVAL Wörter.
+function scheduleProgressUpdate() {
+    if (progressRafPending) return;
+    progressRafPending = true;
+    requestAnimationFrame(() => {
+        progressRafPending = false;
+        // UI updaten ohne DB-Write (false) – visuell immer aktuell
+        updateProgressUI(false);
+        // Throttled DB-Save: nur alle N Wörter
+        if (isPlaying) {
+            dbSaveCounter++;
+            if (dbSaveCounter >= DB_SAVE_INTERVAL) {
+                dbSaveCounter = 0;
+                saveCurrentIndex();
+            }
+        }
+    });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function render() {
     if (isPageMode) { renderPageMode(); return; }
     if (words.length === 0) { tLeft.innerText = ""; tCenter.innerText = ""; tRight.innerText = ""; return; }
@@ -1925,7 +1974,9 @@ function render() {
     const leftW = measurer.measureText(tLeft.innerText).width;
     const centerW = measurer.measureText(tCenter.innerText).width;
     
-    canvas.style.left = `calc(35% - ${leftW + (centerW / 2)}px)`; canvas.style.fontSize = fsIn.value + "px"; updateProgressUI(true);
+    canvas.style.left = `calc(35% - ${leftW + (centerW / 2)}px)`; canvas.style.fontSize = fsIn.value + "px";
+    // scheduleProgressUpdate() statt updateProgressUI(true) – entkoppelt DB-I/O vom Timer
+    scheduleProgressUpdate();
 }
 
 function setupPageSnapStyles() {
@@ -2240,6 +2291,9 @@ function start() {
 async function stopEngineOnly() {
     isPlaying = false; clearTimeout(timer); lastTickTime = null;
     mainBtn.innerText = "START"; mainBtn.style.background = "var(--accent)";
+    // Sicherstellen: aktuelle Position sofort speichern, egal wo im DB_SAVE_INTERVAL-Zyklus
+    dbSaveCounter = 0;
+    saveCurrentIndex();
     // totalSessionSeconds wird NICHT zurückgesetzt – akkumuliert über alle Pausen hinweg.
     // Gespeichert wird erst beim Buchwechsel (saveSessionStats).
 }
