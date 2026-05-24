@@ -3158,6 +3158,25 @@ async function exportBackup() {
             wpmHistory:       b.wpmHistory       || [],
             coverThumb:       b.thumbnail        || await resizeCoverImage(b.cover, 72) || null,
         }))),
+        settings: {
+            wpm:                  localStorage.getItem('rsvp-wpm')                   || null,
+            fontSize:             localStorage.getItem('rsvp-fs')                    || null,
+            pauseOnLongWord:      localStorage.getItem('rsvp-pause-on')              || null,
+            longWordMode:         localStorage.getItem('rsvp-long-on')               || null,
+            longWordTrigger:      localStorage.getItem('rsvp-long-val')              || null,
+            rewindMode:           localStorage.getItem('rsvp-rewind-on')             || null,
+            rewindAmount:         localStorage.getItem('rsvp-rewind-val')            || null,
+            hyphenMode:           localStorage.getItem('rsvp-hyphen-on')             || null,
+            stopAtChapterEnd:     localStorage.getItem('rsvp-stop-chapter')          || null,
+            showChapterTime:      localStorage.getItem('rsvp-show-chapter-time')     || null,
+            showChapterRemaining: localStorage.getItem('rsvp-show-chapter-remaining')|| null,
+            showBookTime:         localStorage.getItem('rsvp-show-book-time')        || null,
+            showBookRemaining:    localStorage.getItem('rsvp-show-book-remaining')   || null,
+            showProgressBar:      localStorage.getItem('rsvp-show-progress-bar')     || null,
+            amoledMode:           localStorage.getItem('rsvp-amoled-mode')           || null,
+            showResetButton:      localStorage.getItem('rsvp-show-reset-button')     || null,
+            resumeEnabled:        localStorage.getItem('rsvp-resume-enabled')        || null,
+        },
         archivedStats: archived.map(a => ({
             id:               a.id,
             title:            a.title            || '',
@@ -3368,6 +3387,32 @@ async function importBackup(event) {
             }
         }
 
+        // ── 3. Einstellungen übernehmen (nur wenn vorhanden) ─────────────────
+        let settingsRestored = false;
+        if (backup.settings && typeof backup.settings === 'object') {
+            const s = backup.settings;
+            const setLS = (key, val) => { if (val !== null && val !== undefined) localStorage.setItem(key, val); };
+            setLS('rsvp-wpm',                    s.wpm);
+            setLS('rsvp-fs',                     s.fontSize);
+            setLS('rsvp-pause-on',               s.pauseOnLongWord);
+            setLS('rsvp-long-on',                s.longWordMode);
+            setLS('rsvp-long-val',               s.longWordTrigger);
+            setLS('rsvp-rewind-on',              s.rewindMode);
+            setLS('rsvp-rewind-val',             s.rewindAmount);
+            setLS('rsvp-hyphen-on',              s.hyphenMode);
+            setLS('rsvp-stop-chapter',           s.stopAtChapterEnd);
+            setLS('rsvp-show-chapter-time',      s.showChapterTime);
+            setLS('rsvp-show-chapter-remaining', s.showChapterRemaining);
+            setLS('rsvp-show-book-time',         s.showBookTime);
+            setLS('rsvp-show-book-remaining',    s.showBookRemaining);
+            setLS('rsvp-show-progress-bar',      s.showProgressBar);
+            setLS('rsvp-amoled-mode',            s.amoledMode);
+            setLS('rsvp-show-reset-button',      s.showResetButton);
+            setLS('rsvp-resume-enabled',         s.resumeEnabled);
+            loadSettings(); // UI-Elemente sofort aktualisieren
+            settingsRestored = true;
+        }
+
         renderLibraryList();
         renderStatsPanel();
 
@@ -3376,6 +3421,7 @@ async function importBackup(event) {
         if (skipped > 0)          parts.push(`${skipped} Buch${skipped !== 1 ? 'er' : ''} nicht gefunden → in Bibliothek als "Nicht importiert" markiert`);
         if (archivedRestored > 0) parts.push(`${archivedRestored} archivierte Einträge neu hinzugefügt`);
         if (archivedMerged > 0)   parts.push(`${archivedMerged} archivierte Einträge zusammengeführt`);
+        if (settingsRestored)      parts.push(`✓ Einstellungen (WPM, Textgröße, Toggles) übernommen`);
         alert(parts.length > 0 ? parts.join('\n') : 'Keine passenden Daten gefunden.');
     } catch (e) {
         alert('Fehler beim Importieren: ' + e.message);
