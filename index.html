@@ -620,27 +620,67 @@
         .stats-empty { text-align: center; color: #555; font-size: 13px; padding: 50px 20px; line-height: 1.7; }
 
         /* --- Statistik: Timeline Jahr/Monat --- */
-        .stats-timeline { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
-        .stats-year-block { border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
-        body.amoled-mode .stats-year-block { border-color: #222; }
-        .stats-year-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 14px; cursor: pointer; user-select: none;
-            font-size: 13px; font-weight: 600; color: #ccc; background: #181818;
+        /* ── Heatmap Timeline ─────────────────────────────────────────── */
+        .stats-timeline { margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+        .stats-heatmap-year { border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); }
+        body.amoled-mode .stats-heatmap-year { border-color: #222; }
+
+        .stats-heatmap-year-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 9px 14px; background: #181818; cursor: pointer; user-select: none;
         }
-        body.amoled-mode .stats-year-header { background: #050505; }
-        .stats-year-header:hover { background: #1e1e1e; }
-        .stats-year-total { font-size: 12px; color: var(--accent); font-family: monospace; }
-        .stats-year-arrow { font-size: 10px; color: #666; transition: transform 0.2s; }
-        .stats-year-months { padding: 6px 14px 10px; background: #141414; display: none; }
-        body.amoled-mode .stats-year-months { background: #030303; }
-        .stats-year-block.open .stats-year-months { display: block; }
-        .stats-year-block.open .stats-year-arrow { transform: rotate(90deg); }
-        .stats-month-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-        .stats-month-name { width: 30px; font-size: 11px; color: #888; flex-shrink: 0; }
-        .stats-month-bar-track { flex: 1; height: 6px; background: #2a2a2a; border-radius: 3px; overflow: hidden; }
-        .stats-month-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); min-width: 2px; }
-        .stats-month-time { width: 52px; text-align: right; font-size: 11px; color: #aaa; flex-shrink: 0; font-family: monospace; }
+        body.amoled-mode .stats-heatmap-year-header { background: #050505; }
+        .stats-heatmap-year-header:hover { background: #1e1e1e; }
+        .stats-heatmap-year-label { font-size: 13px; font-weight: 600; color: #ccc; }
+        .stats-heatmap-year-meta { display: flex; align-items: center; gap: 8px; }
+        .stats-heatmap-year-total { font-size: 12px; color: var(--accent); font-family: monospace; }
+        .stats-heatmap-year-arrow { font-size: 10px; color: #555; transition: transform 0.2s; }
+        .stats-heatmap-year.open .stats-heatmap-year-arrow { transform: rotate(90deg); }
+
+        .stats-heatmap-grid-wrap { display: none; padding: 12px 14px 14px; background: #141414; }
+        body.amoled-mode .stats-heatmap-grid-wrap { background: #030303; }
+        .stats-heatmap-year.open .stats-heatmap-grid-wrap { display: block; }
+
+        .stats-heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+        .stats-heatmap-cell {
+            aspect-ratio: 1.5;
+            border-radius: 7px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer; position: relative;
+            border: 2px solid transparent;
+            transition: transform 0.12s, border-color 0.12s;
+            background: #1e1e1e;
+        }
+        .stats-heatmap-cell:hover:not(.hm-empty) { transform: scale(1.07); z-index: 1; }
+        .stats-heatmap-cell.hm-active { border-color: #fff !important; transform: scale(1.07); z-index: 1; }
+        .stats-heatmap-cell.hm-empty { cursor: default; opacity: 0.28; }
+        .hm-month-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.9); line-height: 1; }
+        .hm-month-time { font-size: 9px; color: rgba(255,255,255,0.65); margin-top: 3px; line-height: 1; font-family: monospace; }
+        .stats-heatmap-legend {
+            display: flex; align-items: center; gap: 4px; margin-top: 10px; justify-content: flex-end;
+        }
+        .stats-heatmap-legend span { font-size: 10px; color: #555; }
+        .hm-legend-cell { width: 13px; height: 13px; border-radius: 3px; }
+
+        /* Monatsfilter UI */
+        .stats-month-row { display: none; } /* nicht mehr genutzt */
+        .stats-filter-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .stats-filter-header .settings-cluster-header { margin-bottom: 0; }
+        .stats-filter-reset {
+            font-size: 11px; color: var(--accent); cursor: pointer;
+            background: none; border: 1px solid rgba(52,152,219,0.35);
+            border-radius: 4px; padding: 3px 8px; white-space: nowrap;
+        }
+        .stats-filter-reset:hover { background: rgba(52,152,219,0.1); }
         .stats-book-archived { opacity: 0.75; }
         .stats-archive-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; color: #888; background: #252525; border: 1px solid #333; border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: middle; flex-shrink: 0; }
         body.amoled-mode .stats-archive-badge { background: #111; border-color: #222; }
@@ -660,7 +700,6 @@
         .stats-book-thumb-placeholder { width: 40px; min-width: 40px; height: 60px; border-radius: 4px; background: #252525; border: 1px solid #333; display: flex; align-items: center; justify-content: center; }
         .stats-book-content { flex: 1; min-width: 0; }
         .stats-deleted-badge { font-size: 9px; background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
-
         /* --- Ghost-Karten (Backup-Bücher ohne Inhalt) --- */
         .library-book-card.ghost-card {
             opacity: 0.6;
@@ -1616,6 +1655,15 @@ function showStatsTab(tabId, btn) {
 
 // --- Statistik-Panel rendern --------------------------------------------------
 const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const DE_MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+// Aktiver Monatsfilter: null = alle, 'YYYY-MM' = gefilterter Monat
+let statsMonthFilter = null;
+
+function fmtSecs(sec) {
+    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
+    return sec >= 3600 ? `${h}h ${m}m` : sec >= 60 ? `${m}m` : sec > 0 ? '< 1m' : '–';
+}
 
 async function renderStatsPanel() {
     const container = document.getElementById('stats-content');
@@ -1625,7 +1673,7 @@ async function renderStatsPanel() {
     const [books, archived] = await Promise.all([getAllBooksFromDB(), getAllStatsArchive()]);
     const allEntries = [
         ...books.map(b => ({ ...b, _archived: false, wordCount: b.words ? b.words.length : 0, pct: b.words && b.words.length > 0 ? Math.min(100, Math.round(((b.lastIndex||0)/b.words.length)*100)) : 0, coverThumb: null })),
-        ...archived.map(a => ({ ...a, _archived: true })),
+        ...archived.filter(a => !a._notFinished && !a._fromBackup).map(a => ({ ...a, _archived: true })),
     ];
 
     if (allEntries.length === 0) {
@@ -1633,22 +1681,17 @@ async function renderStatsPanel() {
         return;
     }
 
-    // ── KPI-Aggregate (alle Einträge, inkl. archiviert) ──────────────────────
     const totalBooks    = allEntries.length;
     const activeCount   = books.length;
-    const archivedCount = archived.length;
+    const archivedCount = archived.filter(a => !a._notFinished && !a._fromBackup).length;
     const finishedCount = allEntries.filter(e => e.pct >= 99).length;
     const startedCount  = allEntries.filter(e => (e.lastIndex||0) > 0 && e.pct < 99).length;
     const totalSecs     = allEntries.reduce((s, e) => s + (e.totalReadSeconds||0), 0);
     const totalWords    = allEntries.reduce((s, e) => s + (e.lastIndex||0), 0);
-
     const wpmEntries    = allEntries.filter(e => e.avgWpm && e.sessionCount);
     const wAvgWpm       = wpmEntries.length > 0
         ? Math.round(wpmEntries.reduce((s,e)=>s+e.avgWpm*e.sessionCount,0) / wpmEntries.reduce((s,e)=>s+e.sessionCount,0))
         : 0;
-
-    const tH = Math.floor(totalSecs/3600), tM = Math.floor((totalSecs%3600)/60);
-    const totalTimeStr = totalSecs >= 3600 ? `${tH}h ${tM}m` : totalSecs >= 60 ? `${tM}m` : '< 1m';
     const wordsStr = totalWords >= 1000000 ? `${(totalWords/1000000).toFixed(1)}M` : totalWords >= 1000 ? `${Math.round(totalWords/1000)}k` : `${totalWords}`;
 
     let html = `<div class="info-container">
@@ -1656,13 +1699,12 @@ async function renderStatsPanel() {
         <div class="stats-kpi-card"><div class="stats-kpi-num">${totalBooks}</div><div class="stats-kpi-lbl">Bücher gesamt</div></div>
         <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:var(--accent-green);">${finishedCount}</div><div class="stats-kpi-lbl">Beendet</div></div>
         <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:#f39c12;">${startedCount}</div><div class="stats-kpi-lbl">Begonnen</div></div>
-        <div class="stats-kpi-card"><div class="stats-kpi-num">${totalTimeStr}</div><div class="stats-kpi-lbl">Lesezeit gesamt</div></div>
+        <div class="stats-kpi-card"><div class="stats-kpi-num">${fmtSecs(totalSecs)}</div><div class="stats-kpi-lbl">Lesezeit gesamt</div></div>
         <div class="stats-kpi-card"><div class="stats-kpi-num">${wAvgWpm > 0 ? wAvgWpm : '–'}</div><div class="stats-kpi-lbl">Ø WPM</div></div>
         <div class="stats-kpi-card"><div class="stats-kpi-num">${wordsStr}</div><div class="stats-kpi-lbl">Wörter gelesen</div></div>
     </div>`;
 
-    // ── Jahr/Monat-Timeline ──────────────────────────────────────────────────
-    // readingLog aus allen Einträgen zusammenführen: { "YYYY-MM": seconds }
+    // readingLog aller Einträge zusammenführen
     const mergedLog = {};
     for (const e of allEntries) {
         for (const [ym, sec] of Object.entries(e.readingLog || {})) {
@@ -1670,12 +1712,9 @@ async function renderStatsPanel() {
         }
     }
 
-    const logKeys = Object.keys(mergedLog).sort().reverse(); // neueste zuerst
+    const logKeys = Object.keys(mergedLog).sort().reverse();
     if (logKeys.length > 0) {
-        const DE_MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
         const currentYear = new Date().getFullYear().toString();
-
-        // Nach Jahren gruppieren
         const byYear = {};
         for (const ym of logKeys) {
             const [y, m] = ym.split('-');
@@ -1687,93 +1726,148 @@ async function renderStatsPanel() {
 
         html += `<div class="settings-cluster-header" style="margin-bottom:8px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-            Lesezeit-Timeline
+            Lesezeit
+            <span style="font-size:10px;font-weight:400;color:#666;margin-left:6px;">Monat antippen zum Filtern</span>
         </div><div class="stats-timeline">`;
+
+        // Farbintensität: 5 Stufen von #1e1e1e bis Akzentfarbe
+        function hmColor(sec, maxS) {
+            if (sec === 0) return '#1e1e1e';
+            const t = Math.pow(sec / maxS, 0.5); // sqrt-Skalierung für bessere Verteilung
+            if (t < 0.2)  return '#0d3a5c';
+            if (t < 0.4)  return '#1a5f8a';
+            if (t < 0.65) return '#2281b8';
+            if (t < 0.85) return '#2e9fd6';
+            return '#3498db';
+        }
 
         for (const year of years) {
             const yearSec = Object.values(byYear[year]).reduce((a,b)=>a+b,0);
-            const yH = Math.floor(yearSec/3600), yM = Math.floor((yearSec%3600)/60);
-            const yearTimeStr = yearSec >= 3600 ? `${yH}h ${yM}m` : yearSec >= 60 ? `${yM}m` : '< 1m';
             const isCurrentYear = year === currentYear;
 
-            html += `<div class="stats-year-block ${isCurrentYear ? 'open' : ''}" id="year-block-${year}">
-                <div class="stats-year-header" onclick="this.parentElement.classList.toggle('open')">
-                    <span>📅 ${year}</span>
-                    <span style="display:flex;align-items:center;gap:8px;">
-                        <span class="stats-year-total">${yearTimeStr}</span>
-                        <span class="stats-year-arrow">▶</span>
+            html += `<div class="stats-heatmap-year ${isCurrentYear ? 'open' : ''}" id="year-block-${year}">
+                <div class="stats-heatmap-year-header" onclick="this.parentElement.classList.toggle('open')">
+                    <span class="stats-heatmap-year-label">📅 ${year}</span>
+                    <span class="stats-heatmap-year-meta">
+                        <span class="stats-heatmap-year-total">${fmtSecs(yearSec)}</span>
+                        <span class="stats-heatmap-year-arrow">▶</span>
                     </span>
                 </div>
-                <div class="stats-year-months">`;
+                <div class="stats-heatmap-grid-wrap">
+                    <div class="stats-heatmap-grid">`;
 
-            // Alle 12 Monate anzeigen (auch leere)
-            for (let m = 12; m >= 1; m--) {
+            // 12 Monate als Kacheln (Jan→Dez, links→rechts, oben→unten)
+            for (let m = 1; m <= 12; m++) {
                 const mKey = m.toString().padStart(2,'0');
+                const ym   = `${year}-${mKey}`;
                 const sec  = byYear[year][mKey] || 0;
-                if (sec === 0 && !isCurrentYear) continue; // Leere Monate in alten Jahren überspringen
-                const mH = Math.floor(sec/3600), mM = Math.floor((sec%3600)/60);
-                const timeStr = sec >= 3600 ? `${mH}h ${mM}m` : sec >= 60 ? `${mM}m` : sec > 0 ? '< 1m' : '–';
-                const barW = maxSec > 0 ? Math.round((sec / maxSec) * 100) : 0;
                 const isCurrentMonth = isCurrentYear && m === (new Date().getMonth()+1);
-                html += `<div class="stats-month-row">
-                    <span class="stats-month-name" style="${isCurrentMonth ? 'color:var(--accent);font-weight:600;' : ''}">${DE_MONTHS[m-1]}</span>
-                    <div class="stats-month-bar-track"><div class="stats-month-bar-fill" style="width:${barW}%;${isCurrentMonth?'background:var(--accent-green);':''}"></div></div>
-                    <span class="stats-month-time" style="${sec===0?'color:#444;':''}">${timeStr}</span>
+                const isActive = statsMonthFilter === ym;
+                const isEmpty  = sec === 0;
+                const bg = isActive ? '#3498db' : hmColor(sec, maxSec);
+                const timeLabel = sec >= 3600
+                    ? `${Math.floor(sec/3600)}h${Math.floor((sec%3600)/60)>0?Math.floor((sec%3600)/60)+'m':''}`
+                    : sec >= 60 ? `${Math.floor(sec/60)}m` : sec > 0 ? '<1m' : '';
+                const currentDot = isCurrentMonth && !isActive
+                    ? `<div style="position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--accent-green);"></div>`
+                    : '';
+                html += `<div class="stats-heatmap-cell${isEmpty ? ' hm-empty' : ''}${isActive ? ' hm-active' : ''}"
+                    style="background:${bg};"
+                    ${isEmpty ? '' : `onclick="statsSetMonthFilter('${ym}')"`}
+                    title="${DE_MONTHS_SHORT[m-1]} ${year}${sec > 0 ? ': ' + fmtSecs(sec) : ' · keine Aktivität'}">
+                    ${currentDot}
+                    <span class="hm-month-label">${DE_MONTHS_SHORT[m-1]}</span>
+                    <span class="hm-month-time">${timeLabel || '–'}</span>
                 </div>`;
             }
-            html += `</div></div>`;
+
+            // Legende (nur einmal, im ersten Jahr)
+            const legendHtml = year === years[0] ? `
+                <div class="stats-heatmap-legend">
+                    <span>wenig</span>
+                    <div class="hm-legend-cell" style="background:#0d3a5c;"></div>
+                    <div class="hm-legend-cell" style="background:#1a5f8a;"></div>
+                    <div class="hm-legend-cell" style="background:#2281b8;"></div>
+                    <div class="hm-legend-cell" style="background:#2e9fd6;"></div>
+                    <div class="hm-legend-cell" style="background:#3498db;"></div>
+                    <span>viel</span>
+                </div>` : '';
+
+            html += `</div>${legendHtml}</div></div>`;
         }
         html += `</div>`;
     }
 
-    // ── Bücherliste ──────────────────────────────────────────────────────────
-    const sorted = [...allEntries].sort((a,b)=>(b.totalReadSeconds||0)-(a.totalReadSeconds||0));
+    // Bücherliste: gefiltert oder alle
+    let listEntries;
+    let monthFilterSecs = 0;
+    if (statsMonthFilter) {
+        listEntries = allEntries
+            .map(e => ({ ...e, _monthSecs: (e.readingLog || {})[statsMonthFilter] || 0 }))
+            .filter(e => e._monthSecs > 0)
+            .sort((a, b) => b._monthSecs - a._monthSecs);
+        monthFilterSecs = listEntries.reduce((s, e) => s + e._monthSecs, 0);
+    } else {
+        listEntries = [...allEntries].sort((a,b) => (b.totalReadSeconds||0) - (a.totalReadSeconds||0));
+    }
 
-    html += `<div class="settings-cluster-header" style="margin-bottom:8px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
-        Alle Bücher <span style="color:#666;font-weight:400;font-size:10px;">(${activeCount} aktiv${archivedCount > 0 ? ` · ${archivedCount} archiviert` : ''})</span>
-    </div><div class="stats-book-list">`;
+    const [filterYear, filterMonth] = statsMonthFilter ? statsMonthFilter.split('-') : [null, null];
+    const filterLabel    = statsMonthFilter ? `${MONTHS_DE[parseInt(filterMonth)-1]} ${filterYear}` : 'Alle Bücher';
+    const filterSubLabel = statsMonthFilter
+        ? `${listEntries.length} Buch${listEntries.length !== 1 ? 'er' : ''} · ${fmtSecs(monthFilterSecs)} gesamt`
+        : `${activeCount} aktiv${archivedCount > 0 ? ` · ${archivedCount} archiviert` : ''}`;
 
-    for (const entry of sorted) {
+    html += `<div class="stats-filter-header">
+        <div class="settings-cluster-header" style="margin-bottom:0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+            ${filterLabel}
+            <span style="color:#666;font-weight:400;font-size:10px;">(${filterSubLabel})</span>
+        </div>
+        ${statsMonthFilter ? `<button class="stats-filter-reset" onclick="statsSetMonthFilter(null)">✕ Filter aufheben</button>` : ''}
+    </div>`;
+
+    if (statsMonthFilter && listEntries.length === 0) {
+        html += `<div style="color:#666;font-size:12px;padding:16px 0;text-align:center;">Keine Leseaktivität in diesem Monat.</div>`;
+    }
+
+    html += `<div class="stats-book-list">`;
+
+    for (const entry of listEntries) {
         const isDone = entry.pct >= 99;
         const bSecs  = entry.totalReadSeconds || 0;
-        const bH = Math.floor(bSecs/3600), bM = Math.floor((bSecs%3600)/60);
-        const spentStr = bSecs >= 3600 ? `${bH}h ${bM}m gelesen` : bSecs >= 60 ? `${bM}m gelesen` : bSecs > 0 ? '< 1m gelesen' : 'Noch nicht gelesen';
+        const displaySecs = statsMonthFilter ? (entry._monthSecs || 0) : bSecs;
+        const spentLabel  = statsMonthFilter ? 'diesen Monat' : 'gelesen';
+        const spentStr    = displaySecs > 0 ? `${fmtSecs(displaySecs)} ${spentLabel}` : 'Noch nicht gelesen';
 
         let rightStr = '', rightColor = '#888';
         if (isDone) { rightStr = '✓ Fertig'; rightColor = 'var(--accent-green)'; }
         else if (!entry._archived && entry.words && entry.words.length > 0) {
             const remSec = estimateBookRemainingSeconds(entry.words, entry.lastIndex||0);
-            const rH = Math.floor(remSec/3600), rM = Math.ceil((remSec%3600)/60);
-            rightStr = remSec >= 3600 ? `~${rH}h ${rM}m übrig` : remSec >= 60 ? `~${rM}m übrig` : remSec > 0 ? '< 1m übrig' : '';
+            rightStr = remSec >= 3600 ? `~${fmtSecs(remSec)} übrig` : remSec >= 60 ? `~${fmtSecs(remSec)} übrig` : remSec > 0 ? '< 1m übrig' : '';
         } else if (entry._archived && entry.wordCount > 0) {
             const remSec = ((entry.wordCount - (entry.lastIndex||0)) / (wAvgWpm||300)) * 60;
-            const rH = Math.floor(remSec/3600), rM = Math.ceil((remSec%3600)/60);
-            rightStr = !isDone && remSec >= 60 ? (remSec >= 3600 ? `~${rH}h ${rM}m übrig` : `~${rM}m übrig`) : '';
+            rightStr = !isDone && remSec >= 60 ? `~${fmtSecs(remSec)} übrig` : '';
         }
 
-        const wpmStr    = entry.avgWpm ? ` · Ø ${Math.round(entry.avgWpm)} WPM` : '';
+        const wpmStr    = !statsMonthFilter && entry.avgWpm ? ` · Ø ${Math.round(entry.avgWpm)} WPM` : '';
         const barColor  = isDone ? 'var(--accent-green)' : entry._archived ? '#555' : 'var(--accent)';
         const thumbSrc  = entry._archived ? entry.coverThumb : (entry.cover || null);
         const thumbHtml = thumbSrc ? `<img src="${thumbSrc}" class="stats-book-thumb" alt="">` : `<div class="stats-book-thumb" style="background:#222;border-radius:4px;"></div>`;
         const isGhost   = entry._archived && entry._fromBackup === true;
         const archBadge = isGhost
             ? `<span class="stats-backup-badge">⚠ Nicht importiert</span>`
-            : entry._archived
-                ? `<span class="stats-archive-badge">gelöscht</span>`
-                : '';
+            : entry._archived ? `<span class="stats-archive-badge">gelöscht</span>` : '';
         const delDate   = entry._archived && entry.deletedAt ? ` · ${new Date(entry.deletedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})}` : '';
-
-        // Löschen-Button: nur für archivierte Einträge oder abgeschlossene Bücher
         const canDelete = entry._archived || isDone;
-        const delLabel = entry._archived ? 'Statistik-Eintrag löschen' : 'Buch aus Bibliothek löschen';
+        const delLabel  = entry._archived ? 'Statistik-Eintrag löschen' : 'Buch aus Bibliothek löschen';
         const delBtn = canDelete
-            ? `<button class="stats-book-del-btn" title="${delLabel}" onclick="handleStatsDelete('${entry.id}', ${entry._archived}, '${(entry.title||'').replace(/'/g,"\\'")}')">
+            ? `<button class="stats-book-del-btn" title="${delLabel}" onclick="handleStatsDelete('${entry.id}', ${entry._archived}, '${(entry.title||'').replace(/'/g,"\'")}')">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>`
             : `<div class="stats-book-del-btn" style="opacity:0;pointer-events:none;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </div>`;
+
         html += `<div class="stats-book-row ${entry._archived ? 'stats-book-archived' : ''}" data-entry-id="${entry.id}" data-archived="${entry._archived}">
             ${delBtn}
             <div class="stats-book-header">
@@ -1793,6 +1887,22 @@ async function renderStatsPanel() {
 
     html += `</div></div>`;
     container.innerHTML = html;
+}
+
+function statsSetMonthFilter(ym) {
+    statsMonthFilter = (statsMonthFilter === ym) ? null : ym;
+    if (ym) {
+        const year = ym.split('-')[0];
+        const block = document.getElementById('year-block-' + year);
+        if (block) block.classList.add('open');
+    }
+    renderStatsPanel();
+    if (ym) {
+        setTimeout(() => {
+            const list = document.querySelector('.stats-book-list');
+            if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
+    }
 }
 // ── Löschen aus Statistik ────────────────────────────────────────────────────
 async function handleStatsDelete(id, isArchived, title) {
@@ -2457,35 +2567,57 @@ fileInput.onchange = async (e) => {
 async function finalizeBookImport(title, author, text, parsedWords, chapters, type, coverData) {
     const thumbnail = await generateThumbnail(coverData);
     const normalize = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const totalWords = parsedWords ? parsedWords.length : 0;
 
-    // Prüfen ob ein Ghost-Eintrag (aus Backup) für dieses Buch existiert
-    const allArchived  = await getAllStatsArchive();
-    const ghostMatch   = allArchived.find(a =>
+    // ── Schritt 1: Passenden Archiv-Eintrag suchen ───────────────────────────
+    // Priorität: Ghost-Eintrag (aus Backup) > regulärer Archiv-Eintrag (abgeschlossen)
+    const allArchived = await getAllStatsArchive();
+    const ghostMatch  = allArchived.find(a =>
         a._fromBackup === true &&
         normalize(a.title)  === normalize(title) &&
         normalize(a.author) === normalize(author)
     );
+    // Regulärer Archiv-Eintrag: entweder abgeschlossen oder nicht-fertig gelöscht
+    const archiveMatch = !ghostMatch && allArchived.find(a =>
+        !a._fromBackup &&
+        normalize(a.title)  === normalize(title) &&
+        normalize(a.author) === normalize(author)
+    );
+    const existingStats = ghostMatch || archiveMatch || null;
 
-    let startIndex = 0;
+    let startIndex   = 0;
     let statsToMerge = null;
 
-    if (ghostMatch) {
-        const pct = ghostMatch.pct || 0;
-        const gSecs = ghostMatch.totalReadSeconds || 0;
-        const gH = Math.floor(gSecs / 3600), gM = Math.floor((gSecs % 3600) / 60);
+    if (existingStats) {
+        const pct     = existingStats.pct || (
+            existingStats.lastIndex && totalWords > 0
+                ? Math.min(100, Math.round(existingStats.lastIndex / totalWords * 100))
+                : 0
+        );
+        const gSecs   = existingStats.totalReadSeconds || 0;
+        const gH      = Math.floor(gSecs / 3600);
+        const gM      = Math.floor((gSecs % 3600) / 60);
         const timeStr = gSecs >= 3600 ? `${gH}h ${gM}m` : gSecs >= 60 ? `${gM}m` : '< 1m';
-        const wpmStr = ghostMatch.avgWpm ? `\nØ ${Math.round(ghostMatch.avgWpm)} WPM` : '';
-        const msg = `Im Backup gefundene Daten für dieses Buch:\n`
+        const wpmStr  = existingStats.avgWpm ? `\nØ ${Math.round(existingStats.avgWpm)} WPM` : '';
+        const source  = ghostMatch ? 'Im Backup gefundene Daten' : 'Frühere Lesedaten gefunden';
+
+        const msg = `${source} für dieses Buch:\n`
             + `• Fortschritt: ${pct}%\n`
             + `• Lesezeit: ${timeStr}${wpmStr}\n\n`
             + `Lesestand und Statistiken übernehmen?`;
         const take = confirm(msg);
         if (take) {
-            startIndex  = ghostMatch.lastIndex || 0;
-            statsToMerge = ghostMatch;
+            startIndex   = existingStats.lastIndex || 0;
+            statsToMerge = existingStats;
         }
-        // Ghost-Eintrag in jedem Fall entfernen
-        await deleteFromStatsArchive(ghostMatch.id);
+        // Ghost-Eintrag immer entfernen (er wandert ins Buch oder wird verworfen)
+        if (ghostMatch) await deleteFromStatsArchive(ghostMatch.id);
+        // _notFinished-Einträge immer entfernen (kein historischer Wert, nur für Re-Import)
+        // Abgeschlossene Archiv-Einträge: nur entfernen wenn Nutzer Daten übernimmt
+        // → bei Ablehnung bleibt der Eintrag als historischer Nachweis erhalten
+        if (archiveMatch) {
+            if (archiveMatch._notFinished || take) await deleteFromStatsArchive(archiveMatch.id);
+        }
     }
 
     const newBook = {
@@ -2510,6 +2642,7 @@ async function finalizeBookImport(title, author, text, parsedWords, chapters, ty
     await saveBookToDB(newBook);
     fileInput.value = '';
     renderLibraryList();
+    renderStatsPanel();
     const authorRow = document.getElementById('lib-author-filter-row');
     if (authorRow && authorRow.classList.contains('visible')) populateAuthorDropdown();
 }
@@ -2641,9 +2774,15 @@ function renderLibraryList() {
             card.querySelector('.lib-delete-card-btn').onclick = async (e) => {
                 e.stopPropagation();
                 if(confirm(`"${displayAuthor} – ${displayTitle}" wirklich löschen?`)) {
-                    // Statistik-Snapshot mit Cover-Thumbnail im statsArchive sichern
+                    // Statistik-Snapshot sichern
                     const coverThumb = await resizeCoverImage(book.cover, 72);
                     const total_w = book.words ? book.words.length : 0;
+                    const book_pct = total_w > 0 ? Math.min(100, Math.round(((book.lastIndex||0)/total_w)*100)) : 0;
+                    const isBookDone = book_pct >= 99;
+
+                    // Nur abgeschlossene Bücher bekommen einen sichtbaren Statistik-Eintrag.
+                    // Nicht abgeschlossene werden intern gespeichert (_notFinished: true)
+                    // damit beim Re-Import die Statistik angeboten werden kann.
                     await saveToStatsArchive({
                         id:               book.id,
                         title:            book.title,
@@ -2655,9 +2794,11 @@ function renderLibraryList() {
                         lastReadDate:     book.lastReadDate      || null,
                         wordCount:        total_w,
                         lastIndex:        book.lastIndex         || 0,
-                        pct:              total_w > 0 ? Math.min(100, Math.round(((book.lastIndex||0)/total_w)*100)) : 0,
+                        pct:              book_pct,
                         readingLog:       book.readingLog        || {},
+                        wpmHistory:       book.wpmHistory        || [],
                         deletedAt:        new Date().toISOString(),
+                        _notFinished:     !isBookDone,  // nicht in Statistik anzeigen wenn unfertig
                     });
                     await deleteBookFromDB(book.id); const currentLastLibBook = await getAppState('rsvp-last-library-book-id');
                     if (currentLastLibBook === book.id) await saveAppState('rsvp-last-library-book-id', null);
