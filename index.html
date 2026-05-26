@@ -732,6 +732,15 @@ function getActiveChapterIndex() {
 const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const DE_MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 
+// --- Tab-Umschaltung im Statistik-Panel ----------------------------------------
+function showStatsTab(tabId, btn) {
+    document.querySelectorAll('.stats-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.stats-tab').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById('stats-tab-' + tabId);
+    if (target) target.style.display = '';
+    if (btn) btn.classList.add('active');
+}
+
 // Aktiver Monatsfilter: null = alle, 'YYYY-MM' = gefilterter Monat
 let statsMonthFilter = null;
 
