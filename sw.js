@@ -1,8 +1,8 @@
 // RSVP Speed Reader Pro – Service Worker
 // Strategie: Cache-First für App-Shell, Network-First für externe Ressourcen
 
-const CACHE_NAME = 'rsvp-reader-v5';
-const CACHE_VERSION = 5;
+const CACHE_NAME = 'rsvp-reader-v6';
+const CACHE_VERSION = 6;
 
 // Ressourcen die beim Install gecacht werden
 const APP_SHELL = [
@@ -10,6 +10,7 @@ const APP_SHELL = [
   './styles.css',
   './db.js',
   './reader.js',
+  './stats.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
