@@ -183,9 +183,7 @@ async function generateThumbnail(dataUrl) {
 }
 // -------------------------------------------------------------------------------
 
-// --- Tab-Umschaltung im Statistik-Panel ----------------------------------------
-function showStatsTab(tabId, btn) {
-
+// --- Wortanzeige ---------------------------------------------------------------
 function render() {
     if (isPageMode) { renderPageMode(); return; }
     if (words.length === 0) { tLeft.innerText = ""; tCenter.innerText = ""; tRight.innerText = ""; return; }
@@ -229,6 +227,15 @@ function render() {
 }
 
 function setupPageSnapStyles() {
+    if (pageDisplayContainer) { pageDisplayContainer.style.overflow = "hidden"; }
+    if (pageTextContent) {
+        pageTextContent.style.overflowX = "auto";
+        pageTextContent.style.overflowY = "hidden";
+        pageTextContent.style.display = "block";
+        pageTextContent.style.width = "100%";
+        pageTextContent.style.webkitOverflowScrolling = "touch";
+    }
+}
 
 function step() {
     if (!isPlaying) { lastTickTime = null; return; }
