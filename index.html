@@ -555,7 +555,7 @@
 
 <script type="module">
 import { initDB, migrateLibraryContent, getAllBooksFromDB, getBookFromDB, saveBookToDB, getAppState, saveAppState } from './db.js';
-import { render, step, stopEngineOnly, saveSessionStats, buildBookData, estimateBookRemainingSeconds, generateThumbnail, resizeCoverImage, setupPageSnapStyles } from './reader.js';
+import { render, step, start, stopEngineOnly, saveSessionStats, buildBookData, estimateBookRemainingSeconds, generateThumbnail, resizeCoverImage, setupPageSnapStyles } from './reader.js';
 import { renderStatsPanel, showStatsTab, statsSetMonthFilter, handleStatsDelete } from './stats.js';
 import { exportBackup, importBackup } from './backup.js';
 import { saveSettings, applySettingsToUI, updateResetButtonVisibility } from './settings.js';
@@ -564,6 +564,7 @@ import { switchUIMode, openLeftMenu, closeLeftMenu, openRightMenu, closeRightMen
 
 // ── Window-Bindungen für inline onclick-Handler ───────────────────────────────
 // Inline HTML-Handler (onclick="...") brauchen globalen Zugriff via window.*
+window.start                = start;
 window.filterLibrary        = filterLibrary;
 window.toggleAuthorFilter   = toggleAuthorFilter;
 window.onAuthorSelectChange = onAuthorSelectChange;

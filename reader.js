@@ -309,7 +309,7 @@ export function step() {
     timer = setTimeout(step, delay);
 }
 
-function start() {
+export function start() {
     if(isPlaying) { 
         stopEngineOnly();
         // Index zurücksetzen auf das zuletzt angezeigte Wort
