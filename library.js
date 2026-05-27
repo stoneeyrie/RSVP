@@ -6,12 +6,21 @@ import {
 } from './db.js';
 import {
     stopEngineOnly, saveSessionStats, buildBookData,
-    generateThumbnail, resizeCoverImage,
-    estimateBookRemainingSeconds,
+    generateThumbnail, resizeCoverImage, estimateBookRemainingSeconds,
     words, currentIndex, chapterOffsets, activeBookId, activeBookTitle, activeBookAuthor,
     hyphenFragments, lastSavedIndex, lastSaveTime, estimatedTimeCache, isPageMode,
+    setWords, setCurrentIndex, setChapterOffsets,
+    setActiveBookId, setActiveBookTitle, setActiveBookAuthor,
+    setHyphenFragments, setLastSavedIndex, setLastSaveTime, setEstimatedTimeCache,
+    togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,
 } from './reader.js';
+import {
+    canvas, wpmIn, rewindMode, rewindAmount,
+    pageDisplayContainer, readerModeToggle,
+    libraryList, fileInput, chapterListScroll,
+} from './dom.js';
 import { updateResetButtonVisibility } from './settings.js';
+import { renderStatsPanel } from './stats.js';
 
 // RSVP Speed Reader – library.js
 // Bibliothek: Rendern, Filtern, Laden, Kapitel-Panel, Buch-Import
@@ -208,14 +217,14 @@ export function renderLibraryList() {
                     if (currentLastLibBook === book.id) await saveAppState('rsvp-last-library-book-id', null);
 
                     if (activeBookId === book.id) {
-                        activeBookId    = 'schnellstart';
-                        activeBookTitle = 'Freier Text';
-                        activeBookAuthor = '';
-                        chapterOffsets  = [];
+                        setActiveBookId('schnellstart');
+                        setActiveBookTitle('Freier Text');
+                        setActiveBookAuthor('');
+                        setChapterOffsets([]);
                         const data = buildBookData(input.value, 0);
-                        words = data.words;
+                        setWords(data.words);
                         const savedIdx = await getAppState('rsvp-fast-index');
-                        currentIndex = parseInt(savedIdx) || 0;
+                        setCurrentIndex(parseInt(savedIdx) || 0);
                         await saveAppState('rsvp-active-book-id', 'schnellstart');
                     }
                     await updateActiveBookMenuState();
@@ -296,23 +305,23 @@ export function renderLibraryList() {
 export async function loadLibraryBook(id, switchToReader = false) {
     stopEngineOnly();
     await saveSessionStats();
-    activeBookId   = id;
-    lastSavedIndex = -1;
-    lastSaveTime   = 0;
+    setActiveBookId(id);
+    setLastSavedIndex(-1);
+    setLastSaveTime(0);
     await saveAppState('rsvp-active-book-id', id);
     closeRightMenu();
-    hyphenFragments = null;
+    setHyphenFragments(null);
     const modeToggle = document.getElementById('reader-mode-toggle');
 
     if (id === 'schnellstart') {
-        activeBookTitle  = 'Freier Text';
-        activeBookAuthor = '';
-        chapterOffsets   = [];
+        setActiveBookTitle('Freier Text');
+        setActiveBookAuthor('');
+        setChapterOffsets([]);
         const data = buildBookData(input.value, 0);
-        words = data.words;
-        estimatedTimeCache = null;
+        setWords(data.words);
+        setEstimatedTimeCache(null);
         const savedIdx = await getAppState('rsvp-fast-index');
-        currentIndex = parseInt(savedIdx) || 0;
+        setCurrentIndex(parseInt(savedIdx) || 0);
         if (modeToggle) modeToggle.style.display = 'none';
         if (isPageMode) togglePageMode();
         if (switchToReader) switchUIMode('reader');
@@ -320,20 +329,20 @@ export async function loadLibraryBook(id, switchToReader = false) {
         const [book, bookContent] = await Promise.all([getBookFromDB(id), getBookContentFromDB(id)]);
         if (!book) return loadLibraryBook('schnellstart', switchToReader);
 
-        activeBookTitle  = book.title;
-        activeBookAuthor = book.author || '';
-        words            = (bookContent && bookContent.words) ? bookContent.words : [];
-        chapterOffsets   = book.chapters || [];
-        estimatedTimeCache = null;
+        setActiveBookTitle(book.title);
+        setActiveBookAuthor(book.author || '');
+        setWords((bookContent && bookContent.words) ? bookContent.words : []);
+        setChapterOffsets(book.chapters || []);
+        setEstimatedTimeCache(null);
 
         let savedIndex = parseInt(book.lastIndex) || 0;
-        currentIndex = savedIndex > 0 ? savedIndex : 0;
+        setCurrentIndex(savedIndex > 0 ? savedIndex : 0);
 
         // Auto-Rewind
         const rewindPermitted = await getAppState('rsvp-rewind-permitted-' + id);
         if (rewindMode.checked && rewindPermitted === true) {
             const rewindWords = parseInt(rewindAmount.value) || 0;
-            currentIndex = Math.max(0, currentIndex - rewindWords);
+            setCurrentIndex(Math.max(0, currentIndex - rewindWords));
         }
 
         await saveAppState('rsvp-last-library-book-id', id);
@@ -365,8 +374,8 @@ export function renderReaderChapterList() {
         item.innerHTML = `<span>${chap.name}</span>`;
         item.onclick = async () => {
             stopEngineOnly();
-            hyphenFragments = null;
-            currentIndex = parseInt(chap.start) || 0;
+            setHyphenFragments(null);
+            setCurrentIndex(parseInt(chap.start) || 0);
             await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
             closeRightMenu();
             await updateProgressUI(true);

@@ -48,6 +48,14 @@ export let pageRenderTimeout      = null;
 export let currentLibraryFilter   = 'all';
 export let currentAuthorFilter    = '';
 
+// ── Stubs: Brücken zu Funktionen die noch in index.html leben ────────────────
+// Diese werden durch window.* aufgerufen bis sie vollständig refactored sind.
+export function togglePageMode()        { if (window.togglePageMode_impl)       window.togglePageMode_impl(); }
+export function renderPageMode()        { if (window.renderPageMode_impl)        window.renderPageMode_impl(); }
+export function getActiveChapterIndex() { return window.getActiveChapterIndex_impl ? window.getActiveChapterIndex_impl() : 0; }
+export function updateProgressUI(save)  { if (window.updateProgressUI_impl)      window.updateProgressUI_impl(save); }
+export function updateActiveBookMenuState() { if (window.updateActiveBookMenuState_impl) return window.updateActiveBookMenuState_impl(); }
+
 // ── Setter für geteilten State (für andere Module) ───────────────────────────
 export function setWords(v)                  { words = v; }
 export function setCurrentIndex(v)           { currentIndex = v; }

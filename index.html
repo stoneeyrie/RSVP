@@ -606,6 +606,12 @@ import { switchUIMode, openLeftMenu, closeLeftMenu, openRightMenu, closeRightMen
 // Inline HTML-Handler (onclick="...") brauchen globalen Zugriff via window.*
 window.start                = start;
 window.filterLibrary        = filterLibrary;
+// impl-Bindungen: Brücken von Stubs in reader.js zu den echten Funktionen hier
+window.togglePageMode_impl        = togglePageMode;
+window.renderPageMode_impl        = renderPageMode;
+window.getActiveChapterIndex_impl = getActiveChapterIndex;
+window.updateProgressUI_impl      = updateProgressUI;
+window.updateActiveBookMenuState_impl = updateActiveBookMenuState;
 window.toggleAuthorFilter   = toggleAuthorFilter;
 window.onAuthorSelectChange = onAuthorSelectChange;
 window.exportBackup         = exportBackup;
