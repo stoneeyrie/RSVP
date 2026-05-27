@@ -555,7 +555,22 @@
 
 <script type="module">
 import { initDB, migrateLibraryContent, getAllBooksFromDB, getBookFromDB, saveBookToDB, getAppState, saveAppState } from './db.js';
-import { render, step, start, stopEngineOnly, saveSessionStats, buildBookData, estimateBookRemainingSeconds, generateThumbnail, resizeCoverImage, setupPageSnapStyles } from './reader.js';
+import {
+    render, step, start, stopEngineOnly, saveSessionStats,
+    buildBookData, estimateBookRemainingSeconds,
+    generateThumbnail, resizeCoverImage, setupPageSnapStyles,
+    // Geteilter State – reader.js ist der Owner
+    words, currentIndex, timer, isPlaying, chapterOffsets,
+    activeBookId, activeBookTitle, activeBookAuthor,
+    totalSessionSeconds, lastTickTime, lastSavedIndex, lastSaveTime,
+    hyphenFragments, hyphenFragmentIdx,
+    estimatedTimeCache, estimatedTimeCacheKey,
+    isCurrentlyInRSVPFlow, isSnapping, isPageMode,
+    currentPageScrollOffset, pageScrollWidth,
+    indexOnPageModeEnter, initialPageOnEnter,
+    chapterOnPageModeEnter, pageRenderTimeout,
+    currentLibraryFilter, currentAuthorFilter,
+} from './reader.js';
 import { renderStatsPanel, showStatsTab, statsSetMonthFilter, handleStatsDelete } from './stats.js';
 import { exportBackup, importBackup } from './backup.js';
 import { saveSettings, applySettingsToUI, updateResetButtonVisibility } from './settings.js';
@@ -580,40 +595,7 @@ window.showStatsTab         = showStatsTab;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-let words = [], currentIndex = 0, timer = null, isPlaying = false;
-let chapterOffsets = [];
-let activeBookId = "schnellstart"; 
-let activeBookTitle = "Freier Text";
-let activeBookAuthor = "";
-let currentLibraryFilter = "all";
-let currentAuthorFilter = "";
-
-let isPageMode = false;
-let currentPageScrollOffset = 0;
-let pageScrollWidth = 0;
-
-let indexOnPageModeEnter = 0;
-let initialPageOnEnter = 0;
-let chapterOnPageModeEnter = 0;
-let pageRenderTimeout = null;
-
-let totalSessionSeconds = 0; 
-let lastTickTime = null;     
-let lastSavedIndex = -1;      // letzter in DB gespeicherter Index
-let lastSaveTime   = 0;       // Zeitstempel des letzten DB-Saves
-
-let hyphenFragments = null;
-let hyphenFragmentIdx = 0;
-
-// Cache für realistische Zeitschätzung (berücksichtigt Pause- & Langwort-Modifier)
-let estimatedTimeCache = null;
-let estimatedTimeCacheKey = '';
-
-// Flag für die präzise Index-Korrektur beim Umschalten
-let isCurrentlyInRSVPFlow = false;
-
-// Flag für das automatische Seiten-Snapping
-let isSnapping = false;
+let scrollTimeout;
 
 const canvas = document.getElementById('word-canvas');
 const tLeft = document.getElementById('txt-left');
@@ -1249,7 +1231,6 @@ document.getElementById('btn-back').onclick = async () => {
     }
 };
 
-let scrollTimeout;
 pageTextContent.onscroll = () => { 
     if (!isPageMode) return; 
     if (isSnapping) return; 

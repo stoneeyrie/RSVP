@@ -8,6 +8,8 @@ import {
     stopEngineOnly, saveSessionStats, buildBookData,
     generateThumbnail, resizeCoverImage,
     estimateBookRemainingSeconds,
+    words, currentIndex, chapterOffsets, activeBookId, activeBookTitle, activeBookAuthor,
+    hyphenFragments, lastSavedIndex, lastSaveTime, estimatedTimeCache, isPageMode,
 } from './reader.js';
 import { updateResetButtonVisibility } from './settings.js';
 

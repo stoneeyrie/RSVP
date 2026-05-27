@@ -4,6 +4,8 @@ import {
 import {
     stopEngineOnly, saveSessionStats,
     estimateBookRemainingSeconds,
+    words, currentIndex, chapterOffsets, activeBookId,
+    isPageMode,
 } from './reader.js';
 import { renderLibraryList, renderReaderChapterList, loadLibraryBook } from './library.js';
 import { renderStatsPanel } from './stats.js';

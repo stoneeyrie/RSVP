@@ -3,7 +3,7 @@ import {
     getBookFromDB, deleteFromStatsArchive, saveToStatsArchive, deleteBookFromDB,
     getBookContentFromDB,
 } from './db.js';
-import { resizeCoverImage } from './reader.js';
+import { resizeCoverImage, activeBookId, activeBookTitle, activeBookAuthor, chapterOffsets, words, currentIndex } from './reader.js';
 
 // RSVP Speed Reader – stats.js
 // Statistik-Panel: Rendern, Monatsfilter, Löschen

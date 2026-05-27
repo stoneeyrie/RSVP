@@ -4,6 +4,37 @@ import {
     getBookContentFromDB,
 } from './db.js';
 
+// ── Geteilter App-State ───────────────────────────────────────────────────────
+// Diese Variablen werden von reader.js verwaltet und von anderen Modulen
+// über window.* gelesen/geschrieben. reader.js ist der kanonische Owner.
+export let words               = [];
+export let currentIndex        = 0;
+export let timer               = null;
+export let isPlaying           = false;
+export let chapterOffsets      = [];
+export let activeBookId        = 'schnellstart';
+export let activeBookTitle     = 'Freier Text';
+export let activeBookAuthor    = '';
+export let totalSessionSeconds = 0;
+export let lastTickTime        = null;
+export let lastSavedIndex      = -1;
+export let lastSaveTime        = 0;
+export let hyphenFragments     = null;
+export let hyphenFragmentIdx   = 0;
+export let estimatedTimeCache  = null;
+export let estimatedTimeCacheKey = '';
+export let isCurrentlyInRSVPFlow = false;
+export let isSnapping          = false;
+export let isPageMode          = false;
+export let currentPageScrollOffset = 0;
+export let pageScrollWidth     = 0;
+export let indexOnPageModeEnter   = 0;
+export let initialPageOnEnter     = 0;
+export let chapterOnPageModeEnter = 0;
+export let pageRenderTimeout      = null;
+export let currentLibraryFilter   = 'all';
+export let currentAuthorFilter    = '';
+
 // RSVP Speed Reader Pro – Reader Engine
 // RSVP-Kern: Zeitberechnung, Wortanzeige, step/render-Loop, Session-Statistik
 
