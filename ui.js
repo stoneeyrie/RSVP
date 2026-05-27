@@ -2,11 +2,18 @@ import {
     getBookFromDB, saveBookToDB, getAppState, saveAppState,
 } from './db.js';
 import {
-    stopEngineOnly, saveSessionStats,
-    estimateBookRemainingSeconds,
-    words, currentIndex, chapterOffsets, activeBookId,
-    isPageMode,
+    stopEngineOnly, saveSessionStats, estimateBookRemainingSeconds,
+    words, currentIndex, chapterOffsets, activeBookId, isPageMode,
 } from './reader.js';
+import {
+    sidebarMenu, sidebarOverlay, sideChapterPanel,
+    appPanels, navButtons,
+    viewReader, viewDynamic, textboxContainer,
+    chapterSubheaderBar, progressRowContainer, progressBar,
+    percentLabel, authorLabel, timeLabel,
+    globalTimeCounter, globalChapterCounter,
+    mainBtn, readerModeToggle,
+} from './dom.js';
 import { renderLibraryList, renderReaderChapterList, loadLibraryBook } from './library.js';
 import { renderStatsPanel } from './stats.js';
 

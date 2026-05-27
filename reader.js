@@ -3,6 +3,19 @@ import {
     getAppState, saveAppState,
     getBookContentFromDB,
 } from './db.js';
+import {
+    canvas, tLeft, tCenter, tRight, wpmIn, fsIn, mainBtn,
+    pauseMode, longWordMode, longWordTrigger, hyphenMode,
+    stopAtChapterEnd, rewindMode, rewindAmount,
+    pageDisplayContainer, pageTextContent, wordDisplay,
+    showProgressBarToggle, viewReader, viewDynamic,
+    progressRowContainer, progressBar,
+    authorLabel, timeLabel, percentLabel,
+    globalTimeCounter, globalChapterCounter,
+    showBookTimeToggle, showBookRemainingToggle,
+    showChapterTimeToggle, showChapterRemainingToggle,
+    sideChapterPanel, readerModeToggle, textboxContainer,
+} from './dom.js';
 
 // ── Geteilter App-State ───────────────────────────────────────────────────────
 // Diese Variablen werden von reader.js verwaltet und von anderen Modulen
@@ -34,6 +47,35 @@ export let chapterOnPageModeEnter = 0;
 export let pageRenderTimeout      = null;
 export let currentLibraryFilter   = 'all';
 export let currentAuthorFilter    = '';
+
+// ── Setter für geteilten State (für andere Module) ───────────────────────────
+export function setWords(v)                  { words = v; }
+export function setCurrentIndex(v)           { currentIndex = v; }
+export function setTimer(v)                  { timer = v; }
+export function setIsPlaying(v)              { isPlaying = v; }
+export function setChapterOffsets(v)         { chapterOffsets = v; }
+export function setActiveBookId(v)           { activeBookId = v; }
+export function setActiveBookTitle(v)        { activeBookTitle = v; }
+export function setActiveBookAuthor(v)       { activeBookAuthor = v; }
+export function setTotalSessionSeconds(v)    { totalSessionSeconds = v; }
+export function setLastTickTime(v)           { lastTickTime = v; }
+export function setLastSavedIndex(v)         { lastSavedIndex = v; }
+export function setLastSaveTime(v)           { lastSaveTime = v; }
+export function setHyphenFragments(v)        { hyphenFragments = v; }
+export function setHyphenFragmentIdx(v)      { hyphenFragmentIdx = v; }
+export function setEstimatedTimeCache(v)     { estimatedTimeCache = v; }
+export function setEstimatedTimeCacheKey(v)  { estimatedTimeCacheKey = v; }
+export function setIsCurrentlyInRSVPFlow(v)  { isCurrentlyInRSVPFlow = v; }
+export function setIsSnapping(v)             { isSnapping = v; }
+export function setIsPageMode(v)             { isPageMode = v; }
+export function setCurrentPageScrollOffset(v){ currentPageScrollOffset = v; }
+export function setPageScrollWidth(v)        { pageScrollWidth = v; }
+export function setIndexOnPageModeEnter(v)   { indexOnPageModeEnter = v; }
+export function setInitialPageOnEnter(v)     { initialPageOnEnter = v; }
+export function setChapterOnPageModeEnter(v) { chapterOnPageModeEnter = v; }
+export function setPageRenderTimeout(v)      { pageRenderTimeout = v; }
+export function setCurrentLibraryFilter(v)   { currentLibraryFilter = v; }
+export function setCurrentAuthorFilter(v)    { currentAuthorFilter = v; }
 
 // RSVP Speed Reader Pro – Reader Engine
 // RSVP-Kern: Zeitberechnung, Wortanzeige, step/render-Loop, Session-Statistik

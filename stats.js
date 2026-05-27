@@ -3,7 +3,8 @@ import {
     getBookFromDB, deleteFromStatsArchive, saveToStatsArchive, deleteBookFromDB,
     getBookContentFromDB,
 } from './db.js';
-import { resizeCoverImage, activeBookId, activeBookTitle, activeBookAuthor, chapterOffsets, words, currentIndex } from './reader.js';
+import { resizeCoverImage, activeBookId, activeBookTitle, activeBookAuthor, chapterOffsets, words, currentIndex, setActiveBookId, setActiveBookTitle, setActiveBookAuthor, setChapterOffsets, setWords, setCurrentIndex } from './reader.js';
+import { viewDynamic } from './dom.js';
 
 // RSVP Speed Reader – stats.js
 // Statistik-Panel: Rendern, Monatsfilter, Löschen
@@ -328,12 +329,12 @@ export async function handleStatsDelete(id, isArchived, title) {
         await deleteBookFromDB(id);
         // Globale Reader-State zurücksetzen wenn aktives Buch gelöscht
         if (typeof activeBookId !== 'undefined' && activeBookId === id) {
-            activeBookId    = 'schnellstart';
-            activeBookTitle = 'Freier Text';
-            activeBookAuthor = '';
-            chapterOffsets  = [];
-            words           = [];
-            currentIndex    = 0;
+            setActiveBookId('schnellstart');
+            setActiveBookTitle('Freier Text');
+            setActiveBookAuthor('');
+            setChapterOffsets([]);
+            setWords([]);
+            setCurrentIndex(0);
         }
     }
     renderLibraryList();

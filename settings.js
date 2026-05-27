@@ -1,4 +1,11 @@
 import { saveAppState } from './db.js';
+import {
+    wpmIn, fsIn, pauseMode, longWordMode, longWordTrigger,
+    rewindMode, rewindAmount, hyphenMode, stopAtChapterEnd,
+    showChapterTimeToggle, showChapterRemainingToggle,
+    showBookTimeToggle, showBookRemainingToggle,
+    showProgressBarToggle, amoledModeToggle, resumeToggle,
+} from './dom.js';
 
 // RSVP Speed Reader – settings.js
 // Einstellungen: Speichern, Laden, Reset-Button-Sichtbarkeit
