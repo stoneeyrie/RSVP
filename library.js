@@ -5,15 +5,18 @@ import {
     getAppState, saveAppState,
 } from './db.js';
 import {
-    stopEngineOnly, saveSessionStats, buildBookData,
+    stopEngineOnly, saveSessionStats, buildBookData, render,
     generateThumbnail, resizeCoverImage, estimateBookRemainingSeconds,
     words, currentIndex, chapterOffsets, activeBookId, activeBookTitle, activeBookAuthor,
     hyphenFragments, lastSavedIndex, lastSaveTime, estimatedTimeCache, isPageMode,
+    currentLibraryFilter, currentAuthorFilter,
     setWords, setCurrentIndex, setChapterOffsets,
     setActiveBookId, setActiveBookTitle, setActiveBookAuthor,
     setHyphenFragments, setLastSavedIndex, setLastSaveTime, setEstimatedTimeCache,
+    setCurrentLibraryFilter, setCurrentAuthorFilter,
     togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,
 } from './reader.js';
+import { closeRightMenu } from './ui.js';
 import {
     canvas, wpmIn, rewindMode, rewindAmount,
     pageDisplayContainer, readerModeToggle,
@@ -27,7 +30,7 @@ import { renderStatsPanel } from './stats.js';
 
 // ── Filter ────────────────────────────────────────────────────────────────────
 export function filterLibrary(filterType, tabEl) {
-    currentLibraryFilter = filterType;
+    setCurrentLibraryFilter(filterType);
     document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
     tabEl.classList.add('active');
     renderLibraryList();
@@ -40,7 +43,7 @@ export function toggleAuthorFilter() {
     if (isVisible) {
         row.classList.remove('visible');
         btn.classList.remove('active');
-        currentAuthorFilter = '';
+        setCurrentAuthorFilter('');
         document.getElementById('lib-author-select').value = '';
         document.getElementById('lib-author-select').classList.remove('active-filter');
         renderLibraryList();
@@ -52,7 +55,7 @@ export function toggleAuthorFilter() {
 }
 
 export function onAuthorSelectChange(sel) {
-    currentAuthorFilter = sel.value;
+    setCurrentAuthorFilter(sel.value);
     if (sel.value) sel.classList.add('active-filter');
     else sel.classList.remove('active-filter');
     renderLibraryList();

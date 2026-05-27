@@ -1157,11 +1157,11 @@ document.getElementById('btn-fwd').onclick = async () => {
         if (pageTextContent.scrollLeft + colWidth < pageScrollWidth - 45) { 
             let currentPage = Math.round(pageTextContent.scrollLeft / colWidth); 
             pageTextContent.scrollLeft = (currentPage + 1) * colWidth; 
-            currentPageScrollOffset = pageTextContent.scrollLeft; 
+            setCurrentPageScrollOffset(pageTextContent.scrollLeft); 
             setTimeout(updateIndexFromPageScroll, 100); 
         } else { 
             let chapIdx = getActiveChapterIndex(); 
-            if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { currentIndex = chapterOffsets[chapIdx + 1].start; currentPageScrollOffset = 0; renderPageMode(); } 
+            if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { setCurrentIndex(chapterOffsets[chapIdx + 1].start); setCurrentPageScrollOffset(0); renderPageMode(); } 
         }
     } else { setCurrentIndex(Math.min(words.length - 1, currentIndex + 10)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
 };
@@ -1175,7 +1175,7 @@ document.getElementById('btn-back').onclick = async () => {
         if (pageTextContent.scrollLeft - colWidth >= -10) { 
             let currentPage = Math.round(pageTextContent.scrollLeft / colWidth); 
             pageTextContent.scrollLeft = (currentPage - 1) * colWidth; 
-            currentPageScrollOffset = pageTextContent.scrollLeft; 
+            setCurrentPageScrollOffset(pageTextContent.scrollLeft); 
             setTimeout(updateIndexFromPageScroll, 100); 
         } else { 
             let chapIdx = getActiveChapterIndex(); 
@@ -1184,7 +1184,7 @@ document.getElementById('btn-back').onclick = async () => {
                 pageTextContent.style.transition = 'none'; 
 
                 setCurrentIndex(chapterOffsets[chapIdx - 1].start); 
-                currentPageScrollOffset = 0; 
+                setCurrentPageScrollOffset(0); 
                 
                 renderPageMode(); 
                 
@@ -1215,25 +1215,25 @@ pageTextContent.onscroll = () => {
         let targetLeft = currentPage * colFullWidth;
 
         if (Math.abs(pageTextContent.scrollLeft - targetLeft) > 1) {
-            isSnapping = true; pageTextContent.scrollTo({ left: targetLeft, behavior: 'smooth' });
-            setTimeout(() => { isSnapping = false; updateIndexFromPageScroll(); }, 250); 
+            setIsSnapping(true); pageTextContent.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            setTimeout(() => { setIsSnapping(false); updateIndexFromPageScroll(); }, 250); 
         } else { updateIndexFromPageScroll(); }
     }, 60); 
 };
 
-pageTextContent.ontouchstart = () => { isSnapping = false; };
+pageTextContent.ontouchstart = () => { setIsSnapping(false); };
 hamburgerTrigger.onclick = openLeftMenu; sidebarCloseBtn.onclick = closeLeftMenu; sidebarOverlay.onclick = closeAllMenus;
 
 input.oninput = () => {
     if (activeBookId === "schnellstart") {
-        let data = buildBookData(input.value, 0); words = data.words; hyphenFragments = null; currentIndex = 0; totalSessionSeconds = 0; saveAppState('rsvp-rewind-permitted-schnellstart', false);
-        estimatedTimeCache = null; // Cache invalidieren – Text hat sich geändert
+        let data = buildBookData(input.value, 0); setWords(data.words); setHyphenFragments(null); setCurrentIndex(0); setTotalSessionSeconds(0); saveAppState('rsvp-rewind-permitted-schnellstart', false);
+        setEstimatedTimeCache(null); // Cache invalidieren – Text hat sich geändert
         saveAppState('rsvp-fast-index', 0); saveAppState('rsvp-fast-text', input.value); updateProgressUI(true);
     }
 };
 
 [wpmIn, fsIn, longWordTrigger, rewindAmount].forEach(el => el.oninput = () => { setEstimatedTimeCache(null); saveSettings(); });
-[pauseMode, hyphenMode, longWordMode, rewindMode, stopAtChapterEnd, showChapterTimeToggle, showChapterRemainingToggle, showBookTimeToggle, showBookRemainingToggle, showProgressBarToggle, amoledModeToggle, resumeToggle, document.getElementById('show-reset-button-toggle')].forEach(el => el.onchange = () => { estimatedTimeCache = null; saveSettings(); });
+[pauseMode, hyphenMode, longWordMode, rewindMode, stopAtChapterEnd, showChapterTimeToggle, showChapterRemainingToggle, showBookTimeToggle, showBookRemainingToggle, showProgressBarToggle, amoledModeToggle, resumeToggle, document.getElementById('show-reset-button-toggle')].forEach(el => el.onchange = () => { setEstimatedTimeCache(null); saveSettings(); });
 
 document.getElementById('btn-clear-floating').onclick = async () => {
     if(activeBookId === "schnellstart") {
