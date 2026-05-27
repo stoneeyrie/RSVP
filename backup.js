@@ -1,10 +1,17 @@
+import {
+    getAllBooksFromDB, getAllStatsArchive, saveBookToDB,
+    saveToStatsArchive, deleteFromStatsArchive,
+    getAppState,
+} from './db.js';
+import { saveSessionStats, resizeCoverImage } from './reader.js';
+
 // RSVP Speed Reader – backup.js
 // Export und Import von Backup-Dateien (Bücher, Statistik, Einstellungen)
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 
 // readingLog zusammenführen – pro Monat den HÖHEREN Wert nehmen (idempotent).
-function mergeReadingLogs(local, backup) {
+export function mergeReadingLogs(local, backup) {
     const result = Object.assign({}, local || {});
     for (const [ym, sec] of Object.entries(backup || {})) {
         result[ym] = Math.max(result[ym] || 0, sec);
@@ -13,7 +20,7 @@ function mergeReadingLogs(local, backup) {
 }
 
 // wpmHistory zusammenführen, Duplikate per Timestamp entfernen.
-function mergeWpmHistory(local, backup) {
+export function mergeWpmHistory(local, backup) {
     const combined = [...(local || []), ...(backup || [])];
     const seen = new Set();
     return combined.filter(entry => {
@@ -27,14 +34,14 @@ function mergeWpmHistory(local, backup) {
 }
 
 // "Neuestes Datum" gewinnt (ISO-String-Vergleich).
-function newerDate(a, b) {
+export function newerDate(a, b) {
     if (!a) return b;
     if (!b) return a;
     return a > b ? a : b;
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────
-async function exportBackup() {
+export async function exportBackup() {
     await saveSessionStats();
     const [books, archived] = await Promise.all([getAllBooksFromDB(), getAllStatsArchive()]);
     const backup = {
@@ -99,7 +106,7 @@ async function exportBackup() {
 }
 
 // ── Import ────────────────────────────────────────────────────────────────────
-async function importBackup(event) {
+export async function importBackup(event) {
     const file = event.target.files[0];
     if (!file) return;
     event.target.value = '';

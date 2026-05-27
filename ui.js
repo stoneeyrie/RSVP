@@ -1,13 +1,23 @@
+import {
+    getBookFromDB, saveBookToDB, getAppState, saveAppState,
+} from './db.js';
+import {
+    stopEngineOnly, saveSessionStats,
+    estimateBookRemainingSeconds,
+} from './reader.js';
+import { renderLibraryList, renderReaderChapterList, loadLibraryBook } from './library.js';
+import { renderStatsPanel } from './stats.js';
+
 // RSVP Speed Reader – ui.js
 // Navigation, Menüs, Panel-Umschaltung, PWA-Banner
 
 // ── Menü-Steuerung ────────────────────────────────────────────────────────────
-function openLeftMenu()  { closeRightMenu(); sidebarMenu.classList.add('active'); sidebarOverlay.classList.add('active'); }
-function closeLeftMenu() { sidebarMenu.classList.remove('active'); checkOverlayState(); }
-function closeRightMenu() { sideChapterPanel.classList.remove('active'); checkOverlayState(); }
-function closeAllMenus() { closeLeftMenu(); closeRightMenu(); }
+export function openLeftMenu()  { closeRightMenu(); sidebarMenu.classList.add('active'); sidebarOverlay.classList.add('active'); }
+export function closeLeftMenu() { sidebarMenu.classList.remove('active'); checkOverlayState(); }
+export function closeRightMenu() { sideChapterPanel.classList.remove('active'); checkOverlayState(); }
+export function closeAllMenus() { closeLeftMenu(); closeRightMenu(); }
 
-function openRightMenu() {
+export function openRightMenu() {
     if (chapterOffsets.length === 0) return;
     stopEngineOnly();
     closeLeftMenu();
@@ -16,20 +26,20 @@ function openRightMenu() {
     sidebarOverlay.classList.add('active');
 }
 
-function checkOverlayState() {
+export function checkOverlayState() {
     if (!sidebarMenu.classList.contains('active') && !sideChapterPanel.classList.contains('active')) {
         sidebarOverlay.classList.remove('active');
     }
 }
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
-function cleanBookTitle(title) {
+export function cleanBookTitle(title) {
     if (!title) return '';
     return title.split(/[-–—:]/)[0].trim();
 }
 
 // ── Panel-Umschaltung ─────────────────────────────────────────────────────────
-function switchUIMode(mode, targetPanel = '') {
+export function switchUIMode(mode, targetPanel = '') {
     Object.keys(navButtons).forEach(k => { if (navButtons[k]) navButtons[k].classList.remove('active-panel'); });
     closeAllMenus();
 
@@ -98,12 +108,12 @@ function switchUIMode(mode, targetPanel = '') {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-async function navigateToFaststart() {
+export async function navigateToFaststart() {
     stopEngineOnly();
     await loadLibraryBook('schnellstart', true);
 }
 
-async function jumpToActiveBook() {
+export async function jumpToActiveBook() {
     stopEngineOnly();
     closeLeftMenu();
     const lastActiveBook = await getAppState('rsvp-last-library-book-id');
@@ -114,7 +124,7 @@ async function jumpToActiveBook() {
     }
 }
 
-async function updateActiveBookMenuState() {
+export async function updateActiveBookMenuState() {
     const lastActiveBook = await getAppState('rsvp-last-library-book-id');
     const btn = document.getElementById('nav-active-book');
     if (btn) {
@@ -153,7 +163,7 @@ window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
 });
 
-function showPwaInstallBanner() {
+export function showPwaInstallBanner() {
     const existing = document.getElementById('pwa-install-banner');
     if (existing || window.matchMedia('(display-mode: standalone)').matches) return;
     const banner = document.createElement('div');
@@ -181,12 +191,12 @@ function showPwaInstallBanner() {
     document.getElementById('pwa-dismiss-btn').onclick = hidePwaInstallBanner;
 }
 
-function hidePwaInstallBanner() {
+export function hidePwaInstallBanner() {
     const b = document.getElementById('pwa-install-banner');
     if (b) b.remove();
 }
 
-function showPwaUpdateBanner() {
+export function showPwaUpdateBanner() {
     const banner = document.createElement('div');
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#27ae60;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;z-index:9999;font-size:13px;';
     banner.innerHTML = '<span>🔄 Update verfügbar</span><button onclick="location.reload()" style="background:#fff;color:#27ae60;border:none;padding:5px 12px;border-radius:6px;font-weight:600;cursor:pointer;">Neu laden</button>';

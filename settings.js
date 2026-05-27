@@ -1,7 +1,9 @@
+import { saveAppState } from './db.js';
+
 // RSVP Speed Reader – settings.js
 // Einstellungen: Speichern, Laden, Reset-Button-Sichtbarkeit
 
-function updateResetButtonVisibility() {
+export function updateResetButtonVisibility() {
     const btnReset = document.getElementById('btn-reset');
     const controls = document.getElementById('main-controls');
     const toggle   = document.getElementById('show-reset-button-toggle');
@@ -16,7 +18,7 @@ function updateResetButtonVisibility() {
     }
 }
 
-function saveSettings() {
+export function saveSettings() {
     localStorage.setItem('rsvp-wpm',                    wpmIn.value);
     localStorage.setItem('rsvp-fs',                     fsIn.value);
     localStorage.setItem('rsvp-pause-on',               pauseMode.checked);
@@ -46,7 +48,7 @@ function saveSettings() {
     render();
 }
 
-function applySettingsToUI() {
+export function applySettingsToUI() {
     if (localStorage.getItem('rsvp-wpm'))           wpmIn.value             = localStorage.getItem('rsvp-wpm');
     if (localStorage.getItem('rsvp-fs'))            fsIn.value              = localStorage.getItem('rsvp-fs');
     if (localStorage.getItem('rsvp-pause-on'))      pauseMode.checked       = localStorage.getItem('rsvp-pause-on')  === 'true';

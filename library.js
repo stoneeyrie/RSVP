@@ -1,15 +1,28 @@
+import {
+    getAllBooksFromDB, getAllStatsArchive, getBookFromDB,
+    saveBookToDB, deleteBookFromDB, saveToStatsArchive, deleteFromStatsArchive,
+    getBookContentFromDB, saveBookContentToDB,
+    getAppState, saveAppState,
+} from './db.js';
+import {
+    stopEngineOnly, saveSessionStats, buildBookData,
+    generateThumbnail, resizeCoverImage,
+    estimateBookRemainingSeconds,
+} from './reader.js';
+import { updateResetButtonVisibility } from './settings.js';
+
 // RSVP Speed Reader – library.js
 // Bibliothek: Rendern, Filtern, Laden, Kapitel-Panel, Buch-Import
 
 // ── Filter ────────────────────────────────────────────────────────────────────
-function filterLibrary(filterType, tabEl) {
+export function filterLibrary(filterType, tabEl) {
     currentLibraryFilter = filterType;
     document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
     tabEl.classList.add('active');
     renderLibraryList();
 }
 
-function toggleAuthorFilter() {
+export function toggleAuthorFilter() {
     const row = document.getElementById('lib-author-filter-row');
     const btn = document.getElementById('btn-author-filter');
     const isVisible = row.classList.contains('visible');
@@ -27,14 +40,14 @@ function toggleAuthorFilter() {
     }
 }
 
-function onAuthorSelectChange(sel) {
+export function onAuthorSelectChange(sel) {
     currentAuthorFilter = sel.value;
     if (sel.value) sel.classList.add('active-filter');
     else sel.classList.remove('active-filter');
     renderLibraryList();
 }
 
-function populateAuthorDropdown() {
+export function populateAuthorDropdown() {
     getAllBooksFromDB().then(books => {
         const select  = document.getElementById('lib-author-select');
         const current = select.value;
@@ -53,7 +66,7 @@ function populateAuthorDropdown() {
 }
 
 // ── Bibliothek rendern ────────────────────────────────────────────────────────
-function renderLibraryList() {
+export function renderLibraryList() {
     Promise.all([getAllBooksFromDB(), getAllStatsArchive()]).then(async ([books, archived]) => {
         libraryList.innerHTML = '';
 
@@ -278,7 +291,7 @@ function renderLibraryList() {
 }
 
 // ── Buch laden ────────────────────────────────────────────────────────────────
-async function loadLibraryBook(id, switchToReader = false) {
+export async function loadLibraryBook(id, switchToReader = false) {
     stopEngineOnly();
     await saveSessionStats();
     activeBookId   = id;
@@ -340,7 +353,7 @@ async function loadLibraryBook(id, switchToReader = false) {
 }
 
 // ── Kapitel-Panel ─────────────────────────────────────────────────────────────
-function renderReaderChapterList() {
+export function renderReaderChapterList() {
     chapterListScroll.innerHTML = '';
     if (chapterOffsets.length === 0) return;
     const activeIndex = getActiveChapterIndex();
@@ -363,7 +376,7 @@ function renderReaderChapterList() {
 }
 
 // ── Buch-Import finalisieren ──────────────────────────────────────────────────
-async function finalizeBookImport(title, author, text, parsedWords, chapters, type, coverData) {
+export async function finalizeBookImport(title, author, text, parsedWords, chapters, type, coverData) {
     const thumbnail  = await generateThumbnail(coverData);
     const normalize  = s => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
     const totalWords = parsedWords ? parsedWords.length : 0;

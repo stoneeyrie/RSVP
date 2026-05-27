@@ -553,14 +553,30 @@
 </div>
 <input type="file" id="file-input" accept=".txt,.epub,.pdf">
 
-<script src="db.js"></script>
-<script src="reader.js"></script>
-<script src="stats.js"></script>
-<script src="backup.js"></script>
-<script src="settings.js"></script>
-<script src="library.js"></script>
-<script src="ui.js"></script>
-<script>
+<script type="module">
+import { initDB, migrateLibraryContent, getAllBooksFromDB, getBookFromDB, saveBookToDB, getAppState, saveAppState } from './db.js';
+import { render, step, stopEngineOnly, saveSessionStats, buildBookData, estimateBookRemainingSeconds, generateThumbnail, resizeCoverImage, setupPageSnapStyles } from './reader.js';
+import { renderStatsPanel, showStatsTab, statsSetMonthFilter, handleStatsDelete } from './stats.js';
+import { exportBackup, importBackup } from './backup.js';
+import { saveSettings, applySettingsToUI, updateResetButtonVisibility } from './settings.js';
+import { renderLibraryList, loadLibraryBook, finalizeBookImport, filterLibrary, toggleAuthorFilter, onAuthorSelectChange, populateAuthorDropdown, renderReaderChapterList } from './library.js';
+import { switchUIMode, openLeftMenu, closeLeftMenu, openRightMenu, closeRightMenu, closeAllMenus, navigateToFaststart, jumpToActiveBook, updateActiveBookMenuState, cleanBookTitle } from './ui.js';
+
+// ── Window-Bindungen für inline onclick-Handler ───────────────────────────────
+// Inline HTML-Handler (onclick="...") brauchen globalen Zugriff via window.*
+window.filterLibrary        = filterLibrary;
+window.toggleAuthorFilter   = toggleAuthorFilter;
+window.onAuthorSelectChange = onAuthorSelectChange;
+window.exportBackup         = exportBackup;
+window.importBackup         = importBackup;
+window.navigateToFaststart  = navigateToFaststart;
+window.jumpToActiveBook     = jumpToActiveBook;
+window.switchUIMode         = switchUIMode;
+window.statsSetMonthFilter  = statsSetMonthFilter;
+window.handleStatsDelete    = handleStatsDelete;
+window.showStatsTab         = showStatsTab;
+
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
 let words = [], currentIndex = 0, timer = null, isPlaying = false;

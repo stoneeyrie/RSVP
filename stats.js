@@ -1,3 +1,10 @@
+import {
+    getAllBooksFromDB, getAllStatsArchive,
+    getBookFromDB, deleteFromStatsArchive, saveToStatsArchive, deleteBookFromDB,
+    getBookContentFromDB,
+} from './db.js';
+import { resizeCoverImage } from './reader.js';
+
 // RSVP Speed Reader – stats.js
 // Statistik-Panel: Rendern, Monatsfilter, Löschen
 
@@ -10,7 +17,7 @@ const DE_MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep',
 let statsMonthFilter = null;
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
-function fmtSecs(sec) {
+export function fmtSecs(sec) {
     const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
     return sec >= 3600 ? `${h}h ${m}m` : sec >= 60 ? `${m}m` : sec > 0 ? '< 1m' : '–';
 }
@@ -26,7 +33,7 @@ function hmColor(sec, maxS) {
 }
 
 // ── Tab-Umschaltung ───────────────────────────────────────────────────────────
-function showStatsTab(tabId, btn) {
+export function showStatsTab(tabId, btn) {
     document.querySelectorAll('.stats-tab-content').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.stats-tab').forEach(el => el.classList.remove('active'));
     const target = document.getElementById('stats-tab-' + tabId);
@@ -35,7 +42,7 @@ function showStatsTab(tabId, btn) {
 }
 
 // ── Monatsfilter ──────────────────────────────────────────────────────────────
-function statsSetMonthFilter(ym) {
+export function statsSetMonthFilter(ym) {
     statsMonthFilter = (statsMonthFilter === ym) ? null : ym;
     if (ym) {
         const year = ym.split('-')[0];
@@ -52,7 +59,7 @@ function statsSetMonthFilter(ym) {
 }
 
 // ── Statistik-Panel rendern ───────────────────────────────────────────────────
-async function renderStatsPanel() {
+export async function renderStatsPanel() {
     const container = document.getElementById('stats-content');
     if (!container) return;
     container.innerHTML = '<div class="stats-empty">Lade Statistiken…</div>';
@@ -282,7 +289,7 @@ async function renderStatsPanel() {
 }
 
 // ── Löschen aus Statistik ─────────────────────────────────────────────────────
-async function handleStatsDelete(id, isArchived, title) {
+export async function handleStatsDelete(id, isArchived, title) {
     if (isArchived === true || isArchived === 'true') {
         const msg = `Statistik-Eintrag "${title}" endgültig löschen?\nDiese Aktion kann nicht rückgängig gemacht werden.`;
         if (!confirm(msg)) return;

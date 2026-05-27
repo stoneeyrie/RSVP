@@ -1,3 +1,9 @@
+import {
+    getAllBooksFromDB, getBookFromDB, saveBookToDB,
+    getAppState, saveAppState,
+    getBookContentFromDB,
+} from './db.js';
+
 // RSVP Speed Reader Pro – Reader Engine
 // RSVP-Kern: Zeitberechnung, Wortanzeige, step/render-Loop, Session-Statistik
 
@@ -5,7 +11,7 @@ const measurer = document.createElement("canvas").getContext("2d");
 const ORP_TABLE = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];
 
 
-function buildBookData(htmlString, startIdx) {
+export function buildBookData(htmlString, startIdx) {
     let tempDiv = document.createElement('div');
     if (!/<[a-z][\s\S]*>/i.test(htmlString)) {
         tempDiv.innerHTML = `<p>${htmlString.replace(/\n/g, '<br>')}</p>`;
@@ -64,7 +70,7 @@ function getEstimateKey() {
     return `${wpmIn.value}|${pauseMode.checked}|${longWordMode.checked}|${longWordTrigger.value}|${hyphenMode.checked}`;
 }
 
-function buildEstimatedTimeCumulative() {
+export function buildEstimatedTimeCumulative() {
     const key = getEstimateKey();
     if (estimatedTimeCache && estimatedTimeCacheKey === key) return estimatedTimeCache;
 
@@ -118,7 +124,7 @@ function estimateSeconds(fromIdx, toIdx) {
 // Verwendet eine Stichprobe von 600 Wörtern, um den Modifier-Faktor zu schätzen.
 // Deutlich schneller als buildEstimatedTimeCumulative für nicht-aktive Bücher.
 
-function estimateBookRemainingSeconds(bookWords, lastIndex) {
+export function estimateBookRemainingSeconds(bookWords, lastIndex) {
     if (!bookWords || bookWords.length === 0) return 0;
     const remaining = bookWords.length - lastIndex;
     if (remaining <= 0) return 0;
@@ -164,7 +170,7 @@ function estimateBookRemainingSeconds(bookWords, lastIndex) {
 }
 
 // --- Thumbnail-Generierung (Cover auf ~80x120px, JPEG q=0.6, ~3-6KB) ---------
-async function generateThumbnail(dataUrl) {
+export async function generateThumbnail(dataUrl) {
     if (!dataUrl) return null;
     return new Promise((resolve) => {
         const img = new Image();
@@ -184,7 +190,7 @@ async function generateThumbnail(dataUrl) {
 // -------------------------------------------------------------------------------
 
 // --- Wortanzeige ---------------------------------------------------------------
-function render() {
+export function render() {
     if (isPageMode) { renderPageMode(); return; }
     if (words.length === 0) { tLeft.innerText = ""; tCenter.innerText = ""; tRight.innerText = ""; return; }
     if (currentIndex >= words.length) { currentIndex = words.length; stopEngineOnly(); updateProgressUI(true); return; }
@@ -226,7 +232,7 @@ function render() {
     canvas.style.left = `calc(35% - ${leftW + (centerW / 2)}px)`; canvas.style.fontSize = fsIn.value + "px"; updateProgressUI(true);
 }
 
-function setupPageSnapStyles() {
+export function setupPageSnapStyles() {
     if (pageDisplayContainer) { pageDisplayContainer.style.overflow = "hidden"; }
     if (pageTextContent) {
         pageTextContent.style.overflowX = "auto";
@@ -237,7 +243,7 @@ function setupPageSnapStyles() {
     }
 }
 
-function step() {
+export function step() {
     if (!isPlaying) { lastTickTime = null; return; }
     const now = performance.now();
     if (lastTickTime) { const elapsedSeconds = (now - lastTickTime) / 1000; totalSessionSeconds += elapsedSeconds; }
@@ -321,7 +327,7 @@ function start() {
     lastTickTime = performance.now(); isPlaying = true; mainBtn.innerText = "STOPP"; mainBtn.style.background = "#e74c3c"; step();
 }
 
-async function stopEngineOnly() {
+export async function stopEngineOnly() {
     isPlaying = false; clearTimeout(timer); lastTickTime = null;
     mainBtn.innerText = "START"; mainBtn.style.background = "var(--accent)";
     // totalSessionSeconds wird NICHT zurückgesetzt – akkumuliert über alle Pausen hinweg.
@@ -329,7 +335,7 @@ async function stopEngineOnly() {
 }
 
 // Cover auf Thumbnail-Größe verkleinern (Canvas, max. ~5 KB als JPEG)
-function resizeCoverImage(dataUrl, maxPx = 72) {
+export function resizeCoverImage(dataUrl, maxPx = 72) {
     return new Promise((resolve) => {
         if (!dataUrl) return resolve(null);
         const img = new Image();
@@ -346,7 +352,7 @@ function resizeCoverImage(dataUrl, maxPx = 72) {
     });
 }
 
-async function saveSessionStats() {
+export async function saveSessionStats() {
     if (totalSessionSeconds > 2 && activeBookId && activeBookId !== "schnellstart") {
         const wpmNow = parseInt(document.getElementById('wpm')?.value) || 300;
         const book = await getBookFromDB(activeBookId);
