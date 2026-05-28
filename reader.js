@@ -14,7 +14,7 @@ import {
     globalTimeCounter, globalChapterCounter,
     showBookTimeToggle, showBookRemainingToggle,
     showChapterTimeToggle, showChapterRemainingToggle,
-    sideChapterPanel, readerModeToggle, textboxContainer,
+    sideChapterPanel, readerModeToggle, textboxContainer, input,
 } from './dom.js';
 
 // ── Geteilter App-State ───────────────────────────────────────────────────────
