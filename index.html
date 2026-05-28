@@ -820,7 +820,7 @@ function renderPageMode() {
     pageTextContent.style.columnGap = `${gapWidth}px`;
     pageTextContent.style.height = `${pageDisplayContainer.clientHeight - 20}px`;
 
-    pageRenderTimeout = setTimeout(() => {
+    setPageRenderTimeout(setTimeout(() => {
         if (!isPageMode) return; 
         setPageScrollWidth(pageTextContent.scrollWidth);
         const colFullWidth = exactViewportWidth + gapWidth;
@@ -833,7 +833,7 @@ function renderPageMode() {
             setInitialPageOnEnter(targetPage);
         } else { pageTextContent.scrollLeft = 0; }
         updateProgressUI(false); updateFwdButtonText();
-    }, 60);
+    }, 60));
 }
 
 // --- NEU: Interner Link-Router für dateiübergreifende und lokale Sprünge ---
