@@ -2,7 +2,8 @@ import {
     getBookFromDB, saveBookToDB, getAppState, saveAppState,
 } from './db.js';
 import {
-    stopEngineOnly, saveSessionStats, estimateBookRemainingSeconds,
+    stopEngineOnly, saveSessionStats, estimateBookRemainingSeconds, updateProgressUI,
+    togglePageMode,
     words, currentIndex, chapterOffsets, activeBookId, isPageMode,
 } from './reader.js';
 import {

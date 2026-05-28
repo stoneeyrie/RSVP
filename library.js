@@ -18,7 +18,7 @@ import {
 } from './reader.js';
 import { closeRightMenu, switchUIMode } from './ui.js';
 import {
-    canvas, wpmIn, rewindMode, rewindAmount,
+    canvas, input, wpmIn, rewindMode, rewindAmount,
     pageDisplayContainer, readerModeToggle,
     viewReader, libraryList, fileInput, chapterListScroll,
 } from './dom.js';

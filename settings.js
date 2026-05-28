@@ -1,4 +1,5 @@
 import { saveAppState } from './db.js';
+import { render, updateProgressUI } from './reader.js';
 import {
     wpmIn, fsIn, pauseMode, longWordMode, longWordTrigger,
     rewindMode, rewindAmount, hyphenMode, stopAtChapterEnd,
