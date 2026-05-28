@@ -14,7 +14,7 @@ import {
     setActiveBookId, setActiveBookTitle, setActiveBookAuthor,
     setHyphenFragments, setLastSavedIndex, setLastSaveTime, setEstimatedTimeCache,
     setCurrentLibraryFilter, setCurrentAuthorFilter,
-    togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,,
+    togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI,
     start,
 } from './reader.js';
 import { closeRightMenu, switchUIMode,
