@@ -138,7 +138,7 @@ export function buildBookData(htmlString, startIdx) {
     return { html: tempDiv.innerHTML, words: chapterWords, nextIndex: currentHtmlIndex };
 }
 
-function formatDuration(seconds) {
+export function formatDuration(seconds) {
     if (seconds < 0 || isNaN(seconds)) seconds = 0;
     const h = Math.floor(seconds / 3600); const m = Math.floor((seconds % 3600) / 60); const s = Math.floor(seconds % 60);
     if (h > 0) return `${h}h ${m}m ${s.toString().padStart(2, '0')}s`; return `${m}m ${s.toString().padStart(2, '0')}s`;

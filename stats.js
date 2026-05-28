@@ -3,8 +3,13 @@ import {
     getBookFromDB, deleteFromStatsArchive, saveToStatsArchive, deleteBookFromDB,
     getBookContentFromDB,
 } from './db.js';
-import { resizeCoverImage, activeBookId, activeBookTitle, activeBookAuthor, chapterOffsets, words, currentIndex, setActiveBookId, setActiveBookTitle, setActiveBookAuthor, setChapterOffsets, setWords, setCurrentIndex } from './reader.js';
-import { viewDynamic } from './dom.js';
+import { resizeCoverImage, activeBookId, activeBookTitle, activeBookAuthor, chapterOffsets, words, currentIndex, setActiveBookId, setActiveBookTitle, setActiveBookAuthor, setChapterOffsets, setWords, setCurrentIndex,
+    start,
+} from './reader.js';
+import { viewDynamic,
+    timeLabel,
+} from './dom.js';
+import { renderLibraryList } from './library.js';
 
 // RSVP Speed Reader – stats.js
 // Statistik-Panel: Rendern, Monatsfilter, Löschen

@@ -4,6 +4,10 @@ import {
     getAppState,
 } from './db.js';
 import { saveSessionStats, resizeCoverImage } from './reader.js';
+import { hyphenMode, longWordMode, longWordTrigger, rewindAmount, rewindMode, stopAtChapterEnd } from './dom.js';
+import { renderStatsPanel } from './stats.js';
+import { applySettingsToUI } from './settings.js';
+import { renderLibraryList } from './library.js';
 
 // RSVP Speed Reader – backup.js
 // Export und Import von Backup-Dateien (Bücher, Statistik, Einstellungen)

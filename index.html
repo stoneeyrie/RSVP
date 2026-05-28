@@ -556,28 +556,12 @@
 <script type="module">
 import { initDB, migrateLibraryContent, getAllBooksFromDB, getBookFromDB, saveBookToDB, getAppState, saveAppState } from './db.js';
 import {
-    render, step, start, stopEngineOnly, saveSessionStats, estimateSeconds,
-    buildBookData, estimateBookRemainingSeconds,
-    generateThumbnail, resizeCoverImage, setupPageSnapStyles,
-    // Geteilter State (read)
-    words, currentIndex, timer, isPlaying, chapterOffsets,
-    activeBookId, activeBookTitle, activeBookAuthor,
-    totalSessionSeconds, lastTickTime, lastSavedIndex, lastSaveTime,
-    hyphenFragments, hyphenFragmentIdx,
-    estimatedTimeCache, estimatedTimeCacheKey,
-    isCurrentlyInRSVPFlow, isSnapping, isPageMode,
-    currentPageScrollOffset, pageScrollWidth,
-    indexOnPageModeEnter, initialPageOnEnter,
-    chapterOnPageModeEnter, pageRenderTimeout,
+    // Funktionen
+    render, step, start, stopEngineOnly, saveSessionStats, estimateSeconds, formatDuration, buildBookData, estimateBookRemainingSeconds, buildEstimatedTimeCumulative, generateThumbnail, resizeCoverImage, setupPageSnapStyles, togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,
+    // State (read)
+    words, currentIndex, timer, isPlaying, chapterOffsets, activeBookId, activeBookTitle, activeBookAuthor, totalSessionSeconds, lastTickTime, lastSavedIndex, lastSaveTime, hyphenFragments, hyphenFragmentIdx, estimatedTimeCache, estimatedTimeCacheKey, isCurrentlyInRSVPFlow, isSnapping, isPageMode, currentPageScrollOffset, pageScrollWidth, indexOnPageModeEnter, initialPageOnEnter, chapterOnPageModeEnter, pageRenderTimeout, currentLibraryFilter, currentAuthorFilter,
     // Setter (write)
-    setWords, setCurrentIndex, setTimer, setIsPlaying, setChapterOffsets,
-    setActiveBookId, setActiveBookTitle, setActiveBookAuthor,
-    setTotalSessionSeconds, setLastTickTime, setLastSavedIndex, setLastSaveTime,
-    setHyphenFragments, setHyphenFragmentIdx,
-    setEstimatedTimeCache, setIsCurrentlyInRSVPFlow, setIsSnapping, setIsPageMode,
-    setCurrentPageScrollOffset, setPageScrollWidth,
-    setIndexOnPageModeEnter, setInitialPageOnEnter,
-    setChapterOnPageModeEnter, setPageRenderTimeout,
+    setWords, setCurrentIndex, setTimer, setIsPlaying, setChapterOffsets, setActiveBookId, setActiveBookTitle, setActiveBookAuthor, setTotalSessionSeconds, setLastTickTime, setLastSavedIndex, setLastSaveTime, setHyphenFragments, setHyphenFragmentIdx, setEstimatedTimeCache, setEstimatedTimeCacheKey, setIsCurrentlyInRSVPFlow, setIsSnapping, setIsPageMode, setCurrentPageScrollOffset, setPageScrollWidth, setIndexOnPageModeEnter, setInitialPageOnEnter, setChapterOnPageModeEnter, setPageRenderTimeout, setCurrentLibraryFilter, setCurrentAuthorFilter,
 } from './reader.js';
 import {
     canvas, tLeft, tCenter, tRight, input,

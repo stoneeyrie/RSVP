@@ -4,7 +4,8 @@ import {
 import {
     stopEngineOnly, saveSessionStats, estimateBookRemainingSeconds, updateProgressUI,
     togglePageMode,
-    words, currentIndex, chapterOffsets, activeBookId, isPageMode,
+    words, currentIndex, chapterOffsets, activeBookId, isPageMode,,
+    updateActiveBookMenuState,
 } from './reader.js';
 import {
     sidebarMenu, sidebarOverlay, sideChapterPanel,

@@ -14,9 +14,12 @@ import {
     setActiveBookId, setActiveBookTitle, setActiveBookAuthor,
     setHyphenFragments, setLastSavedIndex, setLastSaveTime, setEstimatedTimeCache,
     setCurrentLibraryFilter, setCurrentAuthorFilter,
-    togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,
+    togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,,
+    start,
 } from './reader.js';
-import { closeRightMenu, switchUIMode } from './ui.js';
+import { closeRightMenu, switchUIMode,
+    updateActiveBookMenuState,
+} from './ui.js';
 import {
     canvas, input, wpmIn, rewindMode, rewindAmount,
     pageDisplayContainer, readerModeToggle,
