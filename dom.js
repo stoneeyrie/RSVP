@@ -58,17 +58,19 @@ export const readerModeToggle     = document.getElementById('reader-mode-toggle'
 export const appPanels = {
     library:  document.getElementById('panel-library'),
     settings: document.getElementById('panel-settings'),
+    stats:    document.getElementById('panel-stats'),
+    backup:   document.getElementById('panel-backup'),
     about:    document.getElementById('panel-about'),
     support:  document.getElementById('panel-support'),
-    stats:    document.getElementById('panel-stats'),
 };
 export const navButtons = {
     faststart:  document.getElementById('nav-faststart'),
     library:    document.getElementById('nav-library'),
+    stats:      document.getElementById('nav-stats'),
     settings:   document.getElementById('nav-settings'),
+    backup:     document.getElementById('nav-backup'),
     about:      document.getElementById('nav-about'),
     support:    document.getElementById('nav-support'),
-    stats:      document.getElementById('nav-stats'),
     activeBook: document.getElementById('nav-active-book'),
 };
 export const libraryList = document.getElementById('library-list');
