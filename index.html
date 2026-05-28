@@ -753,10 +753,8 @@ function updateProgressUI(shouldSaveToDB = true) {
                         book.lastIndex = indexToSave;
                         // Exakte Rest- und Gesamtzeit direkt aus dem geladenen words-Array
                         // (600 Stichproben, aktuelle WPM + Modifier) – einmal pro Save-Intervall
-                        if (words && words.length > 0) {
-                            book.estimatedTotalSeconds     = estimateBookRemainingSeconds(words, 0);
-                            book.estimatedRemainingSeconds = estimateBookRemainingSeconds(words, indexToSave);
-                        }
+                        // estimatedRemainingSeconds wird nur beim Tab-Wechsel (ui.js) geschrieben
+                        // damit Bibliothek und Statistik immer identische Werte zeigen
                         saveBookToDB(book).then(() => resolve());
                     }
                     else resolve();

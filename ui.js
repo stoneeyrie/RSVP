@@ -109,7 +109,18 @@ export function switchUIMode(mode, targetPanel = '') {
             authorLabel.innerText = '';
             timeLabel.innerText   = 'Meine Statistik';
             stopEngineOnly();
-            saveSessionStats().then(() => renderStatsPanel());
+            saveSessionStats().then(async () => {
+                // Gleiche Logik wie Library: estimatedRemainingSeconds aktualisieren
+                if (activeBookId && activeBookId !== 'schnellstart' && words && words.length > 0) {
+                    const book = await getBookFromDB(activeBookId);
+                    if (book) {
+                        book.estimatedRemainingSeconds = estimateBookRemainingSeconds(words, currentIndex);
+                        book.estimatedTotalSeconds     = estimateBookRemainingSeconds(words, 0);
+                        await saveBookToDB(book);
+                    }
+                }
+                renderStatsPanel();
+            });
         }
         percentLabel.innerText      = '0%';
         progressBar.style.width     = '0%';
