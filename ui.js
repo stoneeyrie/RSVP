@@ -2,7 +2,7 @@ import {
     getBookFromDB, saveBookToDB, getAppState, saveAppState,
 } from './db.js';
 import {
-    stopEngineOnly, saveSessionStats, estimateBookRemainingSeconds, updateProgressUI,
+    stopEngineOnly, saveSessionStats, estimateBookRemainingSeconds, estimateSeconds, updateProgressUI,
     togglePageMode,
     words, currentIndex, chapterOffsets, activeBookId, isPageMode,
 } from './reader.js';
@@ -93,8 +93,9 @@ export function switchUIMode(mode, targetPanel = '') {
                 if (activeBookId && activeBookId !== 'schnellstart' && words && words.length > 0) {
                     const book = await getBookFromDB(activeBookId);
                     if (book) {
-                        book.estimatedRemainingSeconds = estimateBookRemainingSeconds(words, currentIndex);
-                        book.estimatedTotalSeconds     = estimateBookRemainingSeconds(words, 0);
+                        // estimateSeconds = exakt gleicher Algorithmus wie im Buch selbst
+                        book.estimatedRemainingSeconds = estimateSeconds(currentIndex, words.length);
+                        book.estimatedTotalSeconds     = estimateSeconds(0, words.length);
                         await saveBookToDB(book);
                     }
                 }
@@ -114,8 +115,8 @@ export function switchUIMode(mode, targetPanel = '') {
                 if (activeBookId && activeBookId !== 'schnellstart' && words && words.length > 0) {
                     const book = await getBookFromDB(activeBookId);
                     if (book) {
-                        book.estimatedRemainingSeconds = estimateBookRemainingSeconds(words, currentIndex);
-                        book.estimatedTotalSeconds     = estimateBookRemainingSeconds(words, 0);
+                        book.estimatedRemainingSeconds = estimateSeconds(currentIndex, words.length);
+                        book.estimatedTotalSeconds     = estimateSeconds(0, words.length);
                         await saveBookToDB(book);
                     }
                 }
