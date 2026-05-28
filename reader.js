@@ -192,7 +192,7 @@ export function buildEstimatedTimeCumulative() {
 }
 
 // Gibt die geschätzte Lesezeit in Sekunden für den Bereich [fromIdx, toIdx) zurück
-function estimateSeconds(fromIdx, toIdx) {
+export function estimateSeconds(fromIdx, toIdx) {
     if (words.length === 0) return 0;
     const cumul = buildEstimatedTimeCumulative();
     const from = Math.max(0, Math.min(fromIdx, words.length));
@@ -401,7 +401,7 @@ export function start() {
         return; 
     }
     isCurrentlyInRSVPFlow = true; 
-    closeRightMenu(); 
+    if (window.closeRightMenu) window.closeRightMenu(); 
     if (activeBookId === "schnellstart") { let data = buildBookData(input.value, 0); words = data.words; }
     if(words.length === 0) return;
     if(currentIndex >= words.length) { mainBtn.innerText = "Neustart nötig"; setTimeout(() => { if(!isPlaying) mainBtn.innerText = "START"; }, 1000); return; }

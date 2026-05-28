@@ -556,7 +556,7 @@
 <script type="module">
 import { initDB, migrateLibraryContent, getAllBooksFromDB, getBookFromDB, saveBookToDB, getAppState, saveAppState } from './db.js';
 import {
-    render, step, start, stopEngineOnly, saveSessionStats,
+    render, step, start, stopEngineOnly, saveSessionStats, estimateSeconds,
     buildBookData, estimateBookRemainingSeconds,
     generateThumbnail, resizeCoverImage, setupPageSnapStyles,
     // Geteilter State (read)
@@ -605,6 +605,7 @@ import { switchUIMode, openLeftMenu, closeLeftMenu, openRightMenu, closeRightMen
 // ── Window-Bindungen für inline onclick-Handler ───────────────────────────────
 // Inline HTML-Handler (onclick="...") brauchen globalen Zugriff via window.*
 window.start                = start;
+window.closeRightMenu       = closeRightMenu;
 window.filterLibrary        = filterLibrary;
 // impl-Bindungen: Brücken von Stubs in reader.js zu den echten Funktionen hier
 window.togglePageMode_impl        = togglePageMode;
