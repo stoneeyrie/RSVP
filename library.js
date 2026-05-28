@@ -16,11 +16,11 @@ import {
     setCurrentLibraryFilter, setCurrentAuthorFilter,
     togglePageMode, renderPageMode, getActiveChapterIndex, updateProgressUI, updateActiveBookMenuState,
 } from './reader.js';
-import { closeRightMenu } from './ui.js';
+import { closeRightMenu, switchUIMode } from './ui.js';
 import {
     canvas, wpmIn, rewindMode, rewindAmount,
     pageDisplayContainer, readerModeToggle,
-    libraryList, fileInput, chapterListScroll,
+    viewReader, libraryList, fileInput, chapterListScroll,
 } from './dom.js';
 import { updateResetButtonVisibility } from './settings.js';
 import { renderStatsPanel } from './stats.js';
