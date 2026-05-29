@@ -26,7 +26,7 @@ import {
     viewReader, libraryList, fileInput, chapterListScroll,
 } from './dom.js';
 import { updateResetButtonVisibility } from './settings.js';
-import { renderStatsPanel } from './stats.js';
+import { renderStatsPanel, fmtSecs } from './stats.js';
 
 // RSVP Speed Reader – library.js
 // Bibliothek: Rendern, Filtern, Laden, Kapitel-Panel, Buch-Import
@@ -154,10 +154,8 @@ export function renderLibraryList() {
                     : book.estimatedTotalSeconds
                         ? Math.round(book.estimatedTotalSeconds * (total - idx) / total)
                         : 0;
-                const rH = Math.floor(remSec / 3600), rM = Math.ceil((remSec % 3600) / 60);
-                const remStr = remSec >= 3600 ? `~${rH}h ${rM}m übrig`
-                             : remSec >= 60   ? `~${rM}m übrig`
-                             : remSec  > 0    ? '< 1m übrig' : '';
+                // fmtSecs = identische Formatierung wie in Statistik
+                const remStr = remSec >= 60 ? `~${fmtSecs(remSec)} übrig` : remSec > 0 ? '< 1m übrig' : '';
                 if (remStr) estHtml = `<span class="book-stat-item has-data"><svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>${remStr}</span>`;
             }
 
