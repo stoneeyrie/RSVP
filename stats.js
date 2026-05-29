@@ -17,9 +17,9 @@ import { renderLibraryList } from './library.js';
 // ── Konstanten ────────────────────────────────────────────────────────────────
 const MONTHS_DE       = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const DE_MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const DE_DAYS_SHORT   = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-// Aktiver Monatsfilter: null = alle, 'YYYY-MM' = gefilterter Monat
 let statsMonthFilter = null;
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ export function fmtSecs(sec) {
 }
 
 function hmColor(sec, maxS) {
-    if (sec === 0) return '#1e1e1e';
+    if (sec === 0) return 'transparent';
     const t = Math.pow(sec / maxS, 0.5);
     if (t < 0.2)  return '#0d3a5c';
     if (t < 0.4)  return '#1a5f8a';
@@ -65,46 +65,33 @@ export function statsSetMonthFilter(ym) {
 }
 
 // ── Aggregations-Hilfsfunktionen ──────────────────────────────────────────────
-function getTodayKey() {
-    return new Date().toISOString().substring(0, 10);
-}
+function getTodayKey() { return new Date().toISOString().substring(0, 10); }
 function getWeekKeys() {
     const now = new Date();
-    const day = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mo=0 … So=6
+    const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const keys = [];
     for (let i = 0; i <= day; i++) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - (day - i));
+        const d = new Date(now); d.setDate(now.getDate() - (day - i));
         keys.push(d.toISOString().substring(0, 10));
     }
     return keys;
 }
-function getMonthPrefix() {
-    return new Date().toISOString().substring(0, 7); // "YYYY-MM"
-}
+function getMonthPrefix() { return new Date().toISOString().substring(0, 7); }
 function aggregatePeriod(allEntries, keyFilter) {
-    let total = 0;
-    const byBook = {};
+    let total = 0; const byBook = {};
     for (const e of allEntries) {
         let bookSecs = 0;
-        for (const [k, sec] of Object.entries(e.readingLog || {})) {
-            if (keyFilter(k)) bookSecs += sec;
-        }
-        if (bookSecs > 0) {
-            total += bookSecs;
-            byBook[e.id || e.title] = { title: e.title || 'Unbenannt', secs: bookSecs };
-        }
+        for (const [k, sec] of Object.entries(e.readingLog || {})) { if (keyFilter(k)) bookSecs += sec; }
+        if (bookSecs > 0) { total += bookSecs; byBook[e.id || e.title] = { title: e.title || 'Unbenannt', secs: bookSecs }; }
     }
     return { total, byBook };
 }
-// Durchschnitt der letzten N Wochen/Monate als Vergleichswert
 function weeklyAvgSecs(allEntries) {
     const counts = {};
     for (const e of allEntries) {
         for (const [k] of Object.entries(e.readingLog || {})) {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
-            const d = new Date(k);
-            const mon = d.getDay() === 0 ? 6 : d.getDay() - 1;
+            const d = new Date(k), mon = d.getDay() === 0 ? 6 : d.getDay() - 1;
             const monday = new Date(d); monday.setDate(d.getDate() - mon);
             const wk = monday.toISOString().substring(0, 10);
             counts[wk] = (counts[wk] || 0) + (e.readingLog[k] || 0);
@@ -117,142 +104,142 @@ function monthlyAvgSecs(allEntries) {
     const counts = {};
     for (const e of allEntries) {
         for (const [k, sec] of Object.entries(e.readingLog || {})) {
-            const prefix = k.substring(0, 7);
-            counts[prefix] = (counts[prefix] || 0) + sec;
+            const prefix = k.substring(0, 7); counts[prefix] = (counts[prefix] || 0) + sec;
         }
     }
     const vals = Object.values(counts).filter(v => v > 0);
     return vals.length ? Math.round(vals.reduce((a,b) => a+b,0) / vals.length) : 0;
 }
 
-// ── Quick-Overview-UI ─────────────────────────────────────────────────────────
+// ── Section-Header Helper ─────────────────────────────────────────────────────
+function sectionHeader(iconPath, label, sub = '') {
+    return `<div class="ss-header">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">${iconPath}</svg>
+        <span class="ss-header-label">${label}</span>
+        ${sub ? `<span class="ss-header-sub">${sub}</span>` : ''}
+    </div>`;
+}
+
+// ── Stat-Row Helper (einheitliche horizontale Zeile mit Balken) ───────────────
+function statRow(label, value, pct, color = 'var(--accent)', isToday = false, subLabel = '') {
+    return `<div class="ss-stat-row${isToday ? ' ss-today' : ''}">
+        <span class="ss-row-label">${label}</span>
+        <div class="ss-row-bar-wrap">
+            <div class="ss-row-bar" style="width:${Math.max(0, Math.min(100, pct))}%;background:${color};"></div>
+        </div>
+        <div class="ss-row-right">
+            <span class="ss-row-value">${value}</span>
+            ${subLabel ? `<span class="ss-row-sub">${subLabel}</span>` : ''}
+        </div>
+    </div>`;
+}
+
+// ── Quick-Overview ─────────────────────────────────────────────────────────────
 function buildQuickOverview(allEntries) {
-    const todayKey   = getTodayKey();
-    const weekKeys   = new Set(getWeekKeys());
-    const monthPfx   = getMonthPrefix();
+    const todayKey = getTodayKey();
+    const weekKeys = new Set(getWeekKeys());
+    const monthPfx = getMonthPrefix();
 
     const today = aggregatePeriod(allEntries, k => k === todayKey);
     const week  = aggregatePeriod(allEntries, k => weekKeys.has(k));
     const month = aggregatePeriod(allEntries, k => k.startsWith(monthPfx));
+    const wAvg  = weeklyAvgSecs(allEntries);
+    const mAvg  = monthlyAvgSecs(allEntries);
 
-    const wAvg = weeklyAvgSecs(allEntries);
-    const mAvg = monthlyAvgSecs(allEntries);
+    // ── Heute-Detail: Bücher die heute gelesen wurden ──────────────────────────
+    const todayBooks = Object.values(today.byBook).sort((a,b) => b.secs - a.secs);
+    const todayMaxSec = todayBooks.length ? todayBooks[0].secs : 1;
+    const todayRows = todayBooks.length
+        ? todayBooks.map(b => statRow(b.title, fmtSecs(b.secs), b.secs / todayMaxSec * 100)).join('')
+        : `<div class="ss-empty-hint">Heute noch nichts gelesen.</div>`;
 
-    const bar = (val, max) => {
-        const pct = max > 0 ? Math.min(100, Math.round(val / max * 100)) : 0;
-        return `<div class="qo-bar-track"><div class="qo-bar-fill" style="width:${pct}%"></div></div>`;
-    };
-
-    // Detail: Heute → Bücherliste
-    const todayDetail = Object.values(today.byBook).length
-        ? Object.values(today.byBook).sort((a,b) => b.secs - a.secs).map(b =>
-            `<div class="qo-detail-row"><span class="qo-detail-title">${b.title}</span><span class="qo-detail-time">${fmtSecs(b.secs)}</span></div>`
-          ).join('')
-        : `<div class="qo-detail-empty">Heute noch nichts gelesen.</div>`;
-
-    // Detail: Woche → 7 Tages-Balken (Mo–So)
-    const DE_DAYS_SHORT = ['Mo','Di','Mi','Do','Fr','Sa','So'];
-    const now = new Date();
-    const curDay = now.getDay() === 0 ? 6 : now.getDay() - 1;
-    const weekMaxSec = Math.max(...[...weekKeys].map(k => {
-        let s = 0;
-        for (const e of allEntries) s += (e.readingLog || {})[k] || 0;
-        return s;
-    }), 1);
-    const weekDetail = [...weekKeys].map((k, i) => {
-        let s = 0;
-        for (const e of allEntries) s += (e.readingLog || {})[k] || 0;
-        const pct = Math.min(100, Math.round(s / weekMaxSec * 100));
-        const isToday = k === todayKey;
-        return `<div class="qo-week-row">
-            <span class="qo-week-day${isToday ? ' qo-today' : ''}">${DE_DAYS_SHORT[i]}</span>
-            <div class="qo-week-bar-track"><div class="qo-week-bar-fill${isToday ? ' qo-today-fill' : ''}" style="width:${pct}%"></div></div>
-            <span class="qo-week-time${s === 0 ? ' qo-zero' : ''}">${s > 0 ? fmtSecs(s) : '–'}</span>
-        </div>`;
+    // ── Woche: Mo–aktueller Tag als Balken ────────────────────────────────────
+    const weekArr = [...weekKeys];
+    const weekSecs = weekArr.map(k => { let s = 0; for (const e of allEntries) s += (e.readingLog||{})[k]||0; return s; });
+    const weekMax = Math.max(...weekSecs, 1);
+    const weekRows = weekArr.map((k, i) => {
+        const s = weekSecs[i];
+        const isT = k === todayKey;
+        return statRow(DE_DAYS_SHORT[i], s > 0 ? fmtSecs(s) : '–', s / weekMax * 100,
+            isT ? 'var(--accent-green)' : 'var(--accent)', isT);
     }).join('');
 
-    // Detail: Monat → Tages-Balken für alle Tage im Monat mit Aktivität
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const monthDayData = [];
-    let monthMaxSec = 1;
+    // ── Monat: Tage mit Aktivität als Balken (kompakt, gruppiert) ─────────────
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    const monthDays = [];
+    let monthMax = 1;
     for (let d = 1; d <= daysInMonth; d++) {
         const key = `${monthPfx}-${String(d).padStart(2,'0')}`;
-        let s = 0;
-        for (const e of allEntries) s += (e.readingLog || {})[key] || 0;
-        monthDayData.push({ d, key, s });
-        if (s > monthMaxSec) monthMaxSec = s;
+        let s = 0; for (const e of allEntries) s += (e.readingLog||{})[key]||0;
+        monthDays.push({ d, key, s });
+        if (s > monthMax) monthMax = s;
     }
-    const monthDetail = monthDayData.map(({ d, key, s }) => {
-        const pct = Math.min(100, Math.round(s / monthMaxSec * 100));
-        const isToday = key === todayKey;
-        return `<div class="qo-month-col${s === 0 ? ' qo-month-empty' : ''}${isToday ? ' qo-month-today' : ''}" title="${d}. – ${s > 0 ? fmtSecs(s) : 'keine Aktivität'}">
-            <div class="qo-month-bar-wrap"><div class="qo-month-bar-fill${isToday ? ' qo-today-fill' : ''}" style="height:${Math.max(2,pct)}%"></div></div>
-            <span class="qo-month-day-lbl">${d}</span>
-        </div>`;
-    }).join('');
+    // Nur Tage mit Aktivität + heute anzeigen, max 15 Zeilen
+    const activeDays = monthDays.filter(x => x.s > 0 || x.key === todayKey);
+    const monthRows = activeDays.length
+        ? activeDays.map(({ d, key, s }) => {
+            const isT = key === todayKey;
+            const label = `${d}. ${DE_MONTHS_SHORT[now.getMonth()]}`;
+            return statRow(label, s > 0 ? fmtSecs(s) : '–', s / monthMax * 100,
+                isT ? 'var(--accent-green)' : 'var(--accent)', isT);
+        }).join('')
+        : `<div class="ss-empty-hint">Diesen Monat noch nichts gelesen.</div>`;
 
-    return `<div class="qo-section">
-        <div class="settings-cluster-header" style="margin-bottom:10px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
-            Aktuell
-        </div>
-        <div class="qo-cards">
-            <div class="qo-card" onclick="statsToggleDetail('today')">
-                <div class="qo-card-label">Heute</div>
-                <div class="qo-card-value">${today.total > 0 ? fmtSecs(today.total) : '–'}</div>
-                ${bar(today.total, wAvg > 0 ? wAvg / 7 : 1)}
-                <div class="qo-card-chevron">▾</div>
+    // ── 3 klappbare Kacheln ───────────────────────────────────────────────────
+    const tile = (id, label, value, subValue, rows) => `
+        <div class="ss-period-tile" id="ss-tile-${id}" onclick="statsToggleDetail('${id}')">
+            <div class="ss-tile-head">
+                <span class="ss-tile-label">${label}</span>
+                <span class="ss-tile-value">${value}</span>
+                <span class="ss-tile-chevron">›</span>
             </div>
-            <div class="qo-card" onclick="statsToggleDetail('week')">
-                <div class="qo-card-label">Diese Woche</div>
-                <div class="qo-card-value">${week.total > 0 ? fmtSecs(week.total) : '–'}</div>
-                ${bar(week.total, wAvg > 0 ? wAvg : 1)}
-                <div class="qo-card-chevron">▾</div>
+            ${subValue ? `<div class="ss-tile-sub">${subValue}</div>` : ''}
+            <div class="ss-tile-body" id="ss-detail-${id}" style="display:none;">
+                <div class="ss-tile-rows">${rows}</div>
             </div>
-            <div class="qo-card" onclick="statsToggleDetail('month')">
-                <div class="qo-card-label">Dieser Monat</div>
-                <div class="qo-card-value">${month.total > 0 ? fmtSecs(month.total) : '–'}</div>
-                ${bar(month.total, mAvg > 0 ? mAvg : 1)}
-                <div class="qo-card-chevron">▾</div>
-            </div>
-        </div>
-        <div id="qo-detail-today" class="qo-detail" style="display:none;">
-            <div class="qo-detail-inner">${todayDetail}</div>
-        </div>
-        <div id="qo-detail-week" class="qo-detail" style="display:none;">
-            <div class="qo-detail-inner qo-week-bars">${weekDetail}</div>
-        </div>
-        <div id="qo-detail-month" class="qo-detail" style="display:none;">
-            <div class="qo-detail-inner qo-month-bars">${monthDetail}</div>
+        </div>`;
+
+    const todaySub  = today.total > 0 ? `${Object.keys(today.byBook).length} Buch${Object.keys(today.byBook).length !== 1 ? 'er' : ''}` : '';
+    const weekSub   = week.total  > 0 ? (wAvg > 0 ? `Ø ${fmtSecs(Math.round(wAvg/7))}/Tag` : '') : '';
+    const monthSub  = month.total > 0 ? (mAvg > 0 ? `Ø ${fmtSecs(Math.round(mAvg/daysInMonth))}/Tag` : '') : '';
+
+    return `<div class="ss-section">
+        ${sectionHeader('<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>', 'Aktuell')}
+        <div class="ss-period-stack">
+            ${tile('today', 'Heute',        today.total > 0 ? fmtSecs(today.total) : '–', todaySub,  todayRows)}
+            ${tile('week',  'Diese Woche',  week.total  > 0 ? fmtSecs(week.total)  : '–', weekSub,   weekRows)}
+            ${tile('month', 'Dieser Monat', month.total > 0 ? fmtSecs(month.total) : '–', monthSub,  monthRows)}
         </div>
     </div>`;
 }
 
 export function statsToggleDetail(id) {
-    const el = document.getElementById('qo-detail-' + id);
-    if (!el) return;
-    const isOpen = el.style.display !== 'none';
+    const body = document.getElementById('ss-detail-' + id);
+    const tile = document.getElementById('ss-tile-' + id);
+    if (!body) return;
+    const isOpen = body.style.display !== 'none';
     // Alle schließen
     ['today','week','month'].forEach(k => {
-        const d = document.getElementById('qo-detail-' + k);
-        if (d) d.style.display = 'none';
+        const b = document.getElementById('ss-detail-' + k);
+        const t = document.getElementById('ss-tile-' + k);
+        if (b) b.style.display = 'none';
+        if (t) t.classList.remove('ss-tile-open');
     });
-    if (!isOpen) el.style.display = 'block';
+    if (!isOpen) { body.style.display = 'block'; tile.classList.add('ss-tile-open'); }
 }
+
+// ── Haupt-Render ──────────────────────────────────────────────────────────────
 export async function renderStatsPanel() {
     const container = document.getElementById('stats-content');
     if (!container) return;
-    container.innerHTML = '<div class="stats-empty">Lade Statistiken…</div>';
+    container.innerHTML = '<div class="stats-empty">Lade…</div>';
 
     const [books, archived] = await Promise.all([getAllBooksFromDB(), getAllStatsArchive()]);
     const allEntries = [
-        ...books.map(b => ({
-            ...b,
-            _archived: false,
-            wordCount:  b.wordCount || 0,
-            pct:        b.wordCount > 0 ? Math.min(100, Math.round(((b.lastIndex||0)/b.wordCount)*100)) : 0,
-            coverThumb: b.thumbnail || null,
-        })),
+        ...books.map(b => ({ ...b, _archived: false, wordCount: b.wordCount||0,
+            pct: b.wordCount > 0 ? Math.min(100, Math.round(((b.lastIndex||0)/b.wordCount)*100)) : 0,
+            coverThumb: b.thumbnail || null })),
         ...archived.map(a => ({ ...a, _archived: true })),
     ];
 
@@ -261,8 +248,7 @@ export async function renderStatsPanel() {
         return;
     }
 
-    // ── KPI-Aggregate ────────────────────────────────────────────────────────
-    const totalBooks    = allEntries.length;
+    // ── KPIs ─────────────────────────────────────────────────────────────────
     const activeCount   = books.length;
     const archivedCount = archived.length;
     const finishedCount = allEntries.filter(e => e.pct >= 99).length;
@@ -271,35 +257,44 @@ export async function renderStatsPanel() {
     const totalWords    = allEntries.reduce((s, e) => s + (e.lastIndex||0), 0);
     const wpmEntries    = allEntries.filter(e => e.avgWpm && e.sessionCount);
     const wAvgWpm       = wpmEntries.length > 0
-        ? Math.round(wpmEntries.reduce((s,e) => s + e.avgWpm * e.sessionCount, 0) /
-                     wpmEntries.reduce((s,e) => s + e.sessionCount, 0))
+        ? Math.round(wpmEntries.reduce((s,e) => s + e.avgWpm * e.sessionCount, 0) / wpmEntries.reduce((s,e) => s + e.sessionCount, 0))
         : 0;
-    const wordsStr = totalWords >= 1000000
-        ? `${(totalWords/1000000).toFixed(1)}M`
+    const wordsStr = totalWords >= 1000000 ? `${(totalWords/1000000).toFixed(1)}M`
         : totalWords >= 1000 ? `${Math.round(totalWords/1000)}k` : `${totalWords}`;
 
-    let html = `<div class="info-container">
-    ${buildQuickOverview(allEntries)}
-    <div class="stats-kpi-grid">
-        <div class="stats-kpi-card"><div class="stats-kpi-num">${totalBooks}</div><div class="stats-kpi-lbl">Bücher gesamt</div></div>
-        <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:var(--accent-green);">${finishedCount}</div><div class="stats-kpi-lbl">Beendet</div></div>
-        <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:#f39c12;">${startedCount}</div><div class="stats-kpi-lbl">Begonnen</div></div>
-        <div class="stats-kpi-card"><div class="stats-kpi-num">${fmtSecs(totalSecs)}</div><div class="stats-kpi-lbl">Lesezeit gesamt</div></div>
-        <div class="stats-kpi-card"><div class="stats-kpi-num">${wAvgWpm > 0 ? wAvgWpm : '–'}</div><div class="stats-kpi-lbl">Ø WPM</div></div>
-        <div class="stats-kpi-card"><div class="stats-kpi-num">${wordsStr}</div><div class="stats-kpi-lbl">Wörter gelesen</div></div>
+    // KPI-Grid: 2×3 einheitliche Kacheln
+    const kpiIcon = (path) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">${path}</svg>`;
+    const kpiCard = (icon, num, lbl, color='var(--accent)') =>
+        `<div class="ss-kpi-card"><div class="ss-kpi-icon">${icon}</div><div class="ss-kpi-num" style="color:${color};">${num}</div><div class="ss-kpi-lbl">${lbl}</div></div>`;
+
+    let html = `<div class="ss-wrap">`;
+
+    // KPI-Section
+    html += `<div class="ss-section ss-kpi-section">
+        ${sectionHeader('<path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>', 'Übersicht')}
+        <div class="ss-kpi-grid">
+            ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'), activeCount + archivedCount, 'Bücher gesamt')}
+            ${kpiCard(kpiIcon('<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>'), finishedCount, 'Beendet', 'var(--accent-green)')}
+            ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'), startedCount, 'Begonnen', '#f39c12')}
+            ${kpiCard(kpiIcon('<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>'), fmtSecs(totalSecs), 'Lesezeit')}
+            ${kpiCard(kpiIcon('<path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>'), wAvgWpm > 0 ? `${wAvgWpm}` : '–', 'Ø WPM')}
+            ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>'), wordsStr, 'Wörter')}
+        </div>
     </div>`;
 
-    // ── Heatmap-Timeline ─────────────────────────────────────────────────────
-    // readingLog hat jetzt YYYY-MM-DD Keys → für Heatmap auf Monatsebene aggregieren
+    // Quick-Overview
+    html += buildQuickOverview(allEntries);
+
+    // ── Heatmap ───────────────────────────────────────────────────────────────
     const mergedLog = {};
     for (const e of allEntries) {
         for (const [key, sec] of Object.entries(e.readingLog || {})) {
-            const ym = key.length === 10 ? key.substring(0, 7) : key; // YYYY-MM-DD → YYYY-MM
+            const ym = key.length === 10 ? key.substring(0, 7) : key;
             mergedLog[ym] = (mergedLog[ym] || 0) + sec;
         }
     }
-
     const logKeys = Object.keys(mergedLog).sort().reverse();
+
     if (logKeys.length > 0) {
         const currentYear = new Date().getFullYear().toString();
         const byYear = {};
@@ -308,68 +303,51 @@ export async function renderStatsPanel() {
             if (!byYear[y]) byYear[y] = {};
             byYear[y][m] = mergedLog[ym];
         }
-        const years  = Object.keys(byYear).sort().reverse();
+        const years = Object.keys(byYear).sort().reverse();
         const maxSec = Math.max(...logKeys.map(k => mergedLog[k]));
 
-        html += `<div class="settings-cluster-header" style="margin-bottom:8px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
-            Lesezeit
-            <span style="font-size:10px;font-weight:400;color:#666;margin-left:6px;">Monat antippen zum Filtern</span>
-        </div><div class="stats-timeline">`;
+        html += `<div class="ss-section">
+            ${sectionHeader('<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>', 'Verlauf', 'Monat antippen zum Filtern')}
+            <div class="ss-heatmap-years">`;
 
         for (const year of years) {
-            const yearSec      = Object.values(byYear[year]).reduce((a,b) => a+b, 0);
+            const yearSec = Object.values(byYear[year]).reduce((a,b) => a+b, 0);
             const isCurrentYear = year === currentYear;
-
-            html += `<div class="stats-heatmap-year ${isCurrentYear ? 'open' : ''}" id="year-block-${year}">
-                <div class="stats-heatmap-year-header" onclick="this.parentElement.classList.toggle('open')">
-                    <span class="stats-heatmap-year-label">📅 ${year}</span>
-                    <span class="stats-heatmap-year-meta">
-                        <span class="stats-heatmap-year-total">${fmtSecs(yearSec)}</span>
-                        <span class="stats-heatmap-year-arrow">▶</span>
-                    </span>
+            html += `<div class="ss-heatmap-year ${isCurrentYear ? 'open' : ''}" id="year-block-${year}">
+                <div class="ss-heatmap-year-row" onclick="this.parentElement.classList.toggle('open')">
+                    <span class="ss-heatmap-year-lbl">${year}</span>
+                    <span class="ss-heatmap-year-total">${fmtSecs(yearSec)}</span>
+                    <span class="ss-heatmap-chevron">›</span>
                 </div>
-                <div class="stats-heatmap-grid-wrap">
-                    <div class="stats-heatmap-grid">`;
+                <div class="ss-heatmap-grid-wrap">
+                    <div class="ss-heatmap-grid">`;
 
             for (let m = 1; m <= 12; m++) {
-                const mKey    = m.toString().padStart(2,'0');
-                const ym      = `${year}-${mKey}`;
-                const sec     = byYear[year][mKey] || 0;
-                const isCurrentMonth = isCurrentYear && m === (new Date().getMonth()+1);
+                const mKey = m.toString().padStart(2,'0');
+                const ym = `${year}-${mKey}`;
+                const sec = byYear[year][mKey] || 0;
                 const isActive = statsMonthFilter === ym;
-                const isEmpty  = sec === 0;
-                const bg = isActive ? '#3498db' : hmColor(sec, maxSec);
-                const timeLabel = sec >= 3600
-                    ? `${Math.floor(sec/3600)}h${Math.floor((sec%3600)/60) > 0 ? Math.floor((sec%3600)/60)+'m' : ''}`
-                    : sec >= 60 ? `${Math.floor(sec/60)}m` : sec > 0 ? '<1m' : '';
-                const currentDot = isCurrentMonth && !isActive
-                    ? `<div style="position:absolute;top:4px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--accent-green);"></div>`
-                    : '';
-                html += `<div class="stats-heatmap-cell${isEmpty ? ' hm-empty' : ''}${isActive ? ' hm-active' : ''}"
+                const isCurrentMonth = isCurrentYear && m === (new Date().getMonth()+1);
+                const isEmpty = sec === 0;
+                const bg = isActive ? 'var(--accent)' : hmColor(sec, maxSec);
+                const timeLabel2 = sec >= 3600 ? `${Math.floor(sec/3600)}h${Math.floor((sec%3600)/60)>0?Math.floor((sec%3600)/60)+'m':''}` : sec >= 60 ? `${Math.floor(sec/60)}m` : sec > 0 ? '<1m' : '';
+
+                html += `<div class="ss-hm-cell${isEmpty ? ' ss-hm-empty' : ''}${isActive ? ' ss-hm-active' : ''}"
                     style="background:${bg};"
                     ${isEmpty ? '' : `onclick="statsSetMonthFilter('${ym}')"`}
-                    title="${DE_MONTHS_SHORT[m-1]} ${year}${sec > 0 ? ': ' + fmtSecs(sec) : ' · keine Aktivität'}">
-                    ${currentDot}
-                    <span class="hm-month-label">${DE_MONTHS_SHORT[m-1]}</span>
-                    <span class="hm-month-time">${timeLabel || '–'}</span>
+                    title="${DE_MONTHS_SHORT[m-1]} ${year}${sec > 0 ? ': '+fmtSecs(sec) : ''}">
+                    ${isCurrentMonth && !isActive ? `<div class="ss-hm-dot"></div>` : ''}
+                    <span class="ss-hm-lbl">${DE_MONTHS_SHORT[m-1]}</span>
+                    <span class="ss-hm-time">${timeLabel2 || '–'}</span>
                 </div>`;
             }
 
-            const legendHtml = year === years[0] ? `
-                <div class="stats-heatmap-legend">
-                    <span>wenig</span>
-                    <div class="hm-legend-cell" style="background:#0d3a5c;"></div>
-                    <div class="hm-legend-cell" style="background:#1a5f8a;"></div>
-                    <div class="hm-legend-cell" style="background:#2281b8;"></div>
-                    <div class="hm-legend-cell" style="background:#2e9fd6;"></div>
-                    <div class="hm-legend-cell" style="background:#3498db;"></div>
-                    <span>viel</span>
-                </div>` : '';
+            const isFirstYear = year === years[0];
+            const legendHtml = isFirstYear ? `<div class="ss-hm-legend"><span>wenig</span>${[0.1,0.3,0.55,0.75,1.0].map(t=>`<div class="ss-hm-legend-cell" style="background:${hmColor(t*maxSec,maxSec)};"></div>`).join('')}<span>viel</span></div>` : '';
 
             html += `</div>${legendHtml}</div></div>`;
         }
-        html += `</div>`;
+        html += `</div></div>`;
     }
 
     // ── Bücherliste ───────────────────────────────────────────────────────────
@@ -377,12 +355,7 @@ export async function renderStatsPanel() {
     let monthFilterSecs = 0;
     if (statsMonthFilter) {
         listEntries = allEntries
-            .map(e => ({
-                ...e,
-                _monthSecs: Object.entries(e.readingLog || {})
-                    .filter(([k]) => k.startsWith(statsMonthFilter))
-                    .reduce((s, [,v]) => s + v, 0)
-            }))
+            .map(e => ({ ...e, _monthSecs: Object.entries(e.readingLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0) }))
             .filter(e => e._monthSecs > 0)
             .sort((a, b) => b._monthSecs - a._monthSecs);
         monthFilterSecs = listEntries.reduce((s, e) => s + e._monthSecs, 0);
@@ -391,96 +364,90 @@ export async function renderStatsPanel() {
     }
 
     const [filterYear, filterMonth] = statsMonthFilter ? statsMonthFilter.split('-') : [null, null];
-    const filterLabel    = statsMonthFilter
-        ? `${MONTHS_DE[parseInt(filterMonth)-1]} ${filterYear}`
-        : 'Alle Bücher';
+    const filterLabel    = statsMonthFilter ? `${MONTHS_DE[parseInt(filterMonth)-1]} ${filterYear}` : 'Alle Bücher';
     const filterSubLabel = statsMonthFilter
-        ? `${listEntries.length} Buch${listEntries.length !== 1 ? 'er' : ''} · ${fmtSecs(monthFilterSecs)} gesamt`
+        ? `${listEntries.length} Buch${listEntries.length !== 1 ? 'er' : ''} · ${fmtSecs(monthFilterSecs)}`
         : `${activeCount} aktiv${archivedCount > 0 ? ` · ${archivedCount} archiviert` : ''}`;
 
-    html += `<div class="stats-filter-header">
-        <div class="settings-cluster-header" style="margin-bottom:0;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
-            ${filterLabel}
-            <span style="color:#666;font-weight:400;font-size:10px;">(${filterSubLabel})</span>
-        </div>
-        ${statsMonthFilter ? `<button class="stats-filter-reset" onclick="statsSetMonthFilter(null)">✕ Filter aufheben</button>` : ''}
-    </div>`;
+    html += `<div class="ss-section">
+        <div class="ss-section-filter-row">
+            ${sectionHeader('<path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>', filterLabel, filterSubLabel)}
+            ${statsMonthFilter ? `<button class="ss-filter-reset" onclick="statsSetMonthFilter(null)">✕ Filter aufheben</button>` : ''}
+        </div>`;
 
     if (statsMonthFilter && listEntries.length === 0) {
-        html += `<div style="color:#666;font-size:12px;padding:16px 0;text-align:center;">Keine Leseaktivität in diesem Monat.</div>`;
+        html += `<div class="ss-empty-hint">Keine Leseaktivität in diesem Monat.</div>`;
     }
 
-    html += `<div class="stats-book-list">`;
+    html += `<div class="ss-book-list">`;
 
     for (const entry of listEntries) {
         const isDone = entry.pct >= 99;
-        const bSecs  = entry.totalReadSeconds || 0;
-        const displaySecs = statsMonthFilter ? (entry._monthSecs || 0) : bSecs;
-        const spentLabel  = statsMonthFilter ? 'diesen Monat' : 'gelesen';
-        const spentStr    = displaySecs > 0 ? `${fmtSecs(displaySecs)} ${spentLabel}` : 'Noch nicht gelesen';
+        const displaySecs = statsMonthFilter ? (entry._monthSecs||0) : (entry.totalReadSeconds||0);
+        const spentStr = displaySecs > 0 ? fmtSecs(displaySecs) : '–';
+        const wpmStr   = !statsMonthFilter && entry.avgWpm ? `${Math.round(entry.avgWpm)} WPM` : '';
+        const barColor = isDone ? 'var(--accent-green)' : entry._archived ? '#555' : 'var(--accent)';
 
-        let rightStr = '', rightColor = '#888';
-        if (isDone) {
-            rightStr = '✓ Fertig'; rightColor = 'var(--accent-green)';
-        } else if (entry._archived && entry.wordCount > 0) {
+        let statusStr = '', statusColor = '#888';
+        if (isDone) { statusStr = '✓ Fertig'; statusColor = 'var(--accent-green)'; }
+        else if (entry._archived && entry.wordCount > 0) {
             const remSec = ((entry.wordCount - (entry.lastIndex||0)) / (wAvgWpm||300)) * 60;
-            rightStr = !isDone && remSec >= 60 ? `~${fmtSecs(remSec)} übrig` : '';
+            if (remSec >= 60) { statusStr = `~${fmtSecs(remSec)} übrig`; }
         } else if (!entry._archived && entry.estimatedRemainingSeconds != null) {
             const remSec = entry.estimatedRemainingSeconds;
-            rightStr = remSec >= 60 ? `~${fmtSecs(remSec)} übrig` : remSec > 0 ? '< 1m übrig' : '';
+            if (remSec >= 60) { statusStr = `~${fmtSecs(remSec)} übrig`; }
+            else if (remSec > 0) { statusStr = '< 1m übrig'; }
         }
 
-        const wpmStr    = !statsMonthFilter && entry.avgWpm ? ` · Ø ${Math.round(entry.avgWpm)} WPM` : '';
-        const barColor  = isDone ? 'var(--accent-green)' : entry._archived ? '#555' : 'var(--accent)';
-        const thumbSrc  = entry._archived ? entry.coverThumb : (entry.thumbnail || null);
+        const thumbSrc = entry._archived ? entry.coverThumb : (entry.thumbnail || null);
         const thumbHtml = thumbSrc
-            ? `<img src="${thumbSrc}" class="stats-book-thumb" alt="">`
-            : `<div class="stats-book-thumb" style="background:#222;border-radius:4px;"></div>`;
-        const isGhost   = entry._archived && entry._fromBackup === true;
+            ? `<img src="${thumbSrc}" class="ss-book-thumb" alt="">`
+            : `<div class="ss-book-thumb ss-book-thumb-placeholder"></div>`;
+
+        const isGhost = entry._archived && entry._fromBackup === true;
         const archBadge = isGhost
-            ? `<span class="stats-backup-badge">⚠ Nicht importiert</span>`
-            : entry._archived ? `<span class="stats-archive-badge">gelöscht</span>` : '';
-        const delDate   = entry._archived && entry.deletedAt
-            ? ` · ${new Date(entry.deletedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})}`
+            ? `<span class="ss-badge ss-badge-ghost">⚠ Nicht importiert</span>`
+            : entry._archived ? `<span class="ss-badge ss-badge-archive">archiviert</span>` : '';
+        const delDate = entry._archived && entry.deletedAt
+            ? new Date(entry.deletedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'})
             : '';
+
         const canDelete = entry._archived || isDone;
-        const delLabel  = entry._archived ? 'Statistik-Eintrag löschen' : 'Buch aus Bibliothek löschen';
+        const delLabel  = entry._archived ? 'Eintrag löschen' : 'Buch löschen';
         const safeTitle = (entry.title||'').replace(/'/g, "\\'");
         const delBtn = canDelete
-            ? `<button class="stats-book-del-btn" title="${delLabel}" onclick="handleStatsDelete('${entry.id}', ${entry._archived}, '${safeTitle}')">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-            </button>`
-            : `<div class="stats-book-del-btn" style="opacity:0;pointer-events:none;">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-            </div>`;
+            ? `<button class="ss-book-del" title="${delLabel}" onclick="handleStatsDelete('${entry.id}', ${entry._archived}, '${safeTitle}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>`
+            : `<div class="ss-book-del" style="opacity:0;pointer-events:none;"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></div>`;
 
-        html += `<div class="stats-book-row ${entry._archived ? 'stats-book-archived' : ''}" data-entry-id="${entry.id}" data-archived="${entry._archived}">
+        html += `<div class="ss-book-row${entry._archived ? ' ss-book-archived' : ''}">
             ${delBtn}
-            <div class="stats-book-header">
+            <div class="ss-book-inner">
                 ${thumbHtml}
-                <div class="stats-book-header-text">
-                    <div class="stats-book-title">${entry.title||'Unbenanntes Buch'}${archBadge}</div>
-                    <div class="stats-book-author">${entry.author||'Unbekannter Autor'}${delDate}</div>
+                <div class="ss-book-content">
+                    <div class="ss-book-title">${entry.title||'Unbenanntes Buch'}${archBadge}</div>
+                    <div class="ss-book-author">${entry.author||'Unbekannter Autor'}${delDate ? ` · ${delDate}` : ''}</div>
+                    <div class="ss-book-bar-wrap">
+                        <div class="ss-book-bar" style="width:${entry.pct||0}%;background:${barColor};"></div>
+                    </div>
+                    <div class="ss-book-meta-row">
+                        <span class="ss-book-pct">${entry.pct||0}%</span>
+                        <span class="ss-book-time">${spentStr}</span>
+                        ${wpmStr ? `<span class="ss-book-wpm">${wpmStr}</span>` : ''}
+                        ${statusStr ? `<span class="ss-book-status" style="color:${statusColor};margin-left:auto;">${statusStr}</span>` : ''}
+                    </div>
                 </div>
-            </div>
-            <div class="stats-book-bar-track"><div class="stats-book-bar-fill" style="width:${entry.pct||0}%;background:${barColor};"></div></div>
-            <div class="stats-book-meta">
-                <span>${entry.pct||0}% · ${spentStr}${wpmStr}</span>
-                <span style="color:${rightColor};flex-shrink:0;">${rightStr}</span>
             </div>
         </div>`;
     }
 
-    html += `</div></div>`;
+    html += `</div></div></div>`;
     container.innerHTML = html;
 }
 
 // ── Löschen aus Statistik ─────────────────────────────────────────────────────
 export async function handleStatsDelete(id, isArchived, title) {
     if (isArchived === true || isArchived === 'true') {
-        const msg = `Statistik-Eintrag "${title}" endgültig löschen?\nDiese Aktion kann nicht rückgängig gemacht werden.`;
-        if (!confirm(msg)) return;
+        if (!confirm(`Statistik-Eintrag "${title}" endgültig löschen?\nDiese Aktion kann nicht rückgängig gemacht werden.`)) return;
         await deleteFromStatsArchive(id);
     } else {
         const book = await getBookFromDB(id);
@@ -491,37 +458,21 @@ export async function handleStatsDelete(id, isArchived, title) {
             alert(`"${title}" ist noch nicht abgeschlossen (${pct}% gelesen).\nNicht abgeschlossene Bücher können nur direkt aus der Bibliothek entfernt werden.`);
             return;
         }
-        const msg = `"${title}" aus der Bibliothek löschen?\nDie Lesestatistik bleibt im Archiv erhalten.`;
-        if (!confirm(msg)) return;
+        if (!confirm(`"${title}" aus der Bibliothek löschen?\nDie Lesestatistik bleibt im Archiv erhalten.`)) return;
         const coverContent = await getBookContentFromDB(id);
-        const coverThumb   = coverContent?.cover
-            ? await resizeCoverImage(coverContent.cover, 72)
-            : (book.thumbnail || null);
+        const coverThumb   = coverContent?.cover ? await resizeCoverImage(coverContent.cover, 72) : (book.thumbnail || null);
         await saveToStatsArchive({
-            id:               book.id,
-            title:            book.title,
-            author:           book.author,
-            coverThumb,
-            totalReadSeconds: book.totalReadSeconds || 0,
-            avgWpm:           book.avgWpm           || 0,
-            sessionCount:     book.sessionCount     || 0,
-            lastReadDate:     book.lastReadDate      || null,
-            wordCount:        total,
-            lastIndex:        book.lastIndex         || 0,
-            pct:              Math.min(100, pct),
-            readingLog:       book.readingLog        || {},
-            wpmHistory:       book.wpmHistory        || [],
-            deletedAt:        new Date().toISOString(),
+            id: book.id, title: book.title, author: book.author, coverThumb,
+            totalReadSeconds: book.totalReadSeconds||0, avgWpm: book.avgWpm||0,
+            sessionCount: book.sessionCount||0, lastReadDate: book.lastReadDate||null,
+            wordCount: total, lastIndex: book.lastIndex||0, pct: Math.min(100, pct),
+            readingLog: book.readingLog||{}, wpmHistory: book.wpmHistory||[],
+            deletedAt: new Date().toISOString(),
         });
         await deleteBookFromDB(id);
-        // Globale Reader-State zurücksetzen wenn aktives Buch gelöscht
         if (typeof activeBookId !== 'undefined' && activeBookId === id) {
-            setActiveBookId('schnellstart');
-            setActiveBookTitle('Freier Text');
-            setActiveBookAuthor('');
-            setChapterOffsets([]);
-            setWords([]);
-            setCurrentIndex(0);
+            setActiveBookId('schnellstart'); setActiveBookTitle('Freier Text'); setActiveBookAuthor('');
+            setChapterOffsets([]); setWords([]); setCurrentIndex(0);
         }
     }
     renderLibraryList();
