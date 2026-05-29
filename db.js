@@ -1,7 +1,7 @@
 // RSVP Speed Reader Pro – IndexedDB Datenschicht
 // Alle Lese- und Schreiboperationen für library, libraryContent, appState, statsArchive
 
-let db = null;
+export let db = null;
 
 /* --- IndexedDB --- */
 export function initDB() { return new Promise((resolve) => { const request = indexedDB.open("RSVPReaderPremiumDB", 3); request.onupgradeneeded = (e) => { let database = e.target.result; const oldV = e.oldVersion; if (!database.objectStoreNames.contains("library")) database.createObjectStore("library", { keyPath: "id" }); if (!database.objectStoreNames.contains("appState")) database.createObjectStore("appState"); if (!database.objectStoreNames.contains("statsArchive")) database.createObjectStore("statsArchive", { keyPath: "id" }); if (!database.objectStoreNames.contains("libraryContent")) database.createObjectStore("libraryContent", { keyPath: "id" }); }; request.onsuccess = (e) => { db = e.target.result; migrateLibraryContent().then(() => resolve(true)); }; request.onerror = () => resolve(false); }); }

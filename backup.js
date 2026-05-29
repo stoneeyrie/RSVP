@@ -2,6 +2,7 @@ import {
     getAllBooksFromDB, getAllStatsArchive, saveBookToDB,
     saveToStatsArchive, deleteFromStatsArchive,
     getAppState,
+    db,
 } from './db.js';
 import { saveSessionStats, resizeCoverImage } from './reader.js';
 import { hyphenMode, longWordMode, longWordTrigger, rewindAmount, rewindMode, stopAtChapterEnd } from './dom.js';
