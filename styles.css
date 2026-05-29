@@ -778,3 +778,48 @@ body.amoled-mode .ss-heatmap-grid-wrap { background: #030303; }
 }
 
 /* (old qo-* and verlauf-* removed) */
+
+/* ── URL-Import Panel ────────────────────────────────────────────────────── */
+.floating-btn-group {
+    position: absolute; top: 8px; right: 10px;
+    display: flex; gap: 5px; z-index: 10;
+}
+.floating-action-btn {
+    background: rgba(0,0,0,0.65); border: 1px solid var(--border-color);
+    color: #aaa; border-radius: 6px; padding: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease; backdrop-filter: blur(2px); line-height: 1;
+}
+.floating-action-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(52,152,219,0.15); }
+.floating-trash-btn:hover { color: var(--highlight-red) !important; border-color: var(--highlight-red) !important; background: rgba(231,76,60,0.15) !important; }
+
+.url-import-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: center; gap: 5px;
+    background: #1a1a1a; border-top: 1px solid var(--border-color);
+    padding: 7px 10px; z-index: 11; border-radius: 0 0 var(--radius-main) var(--radius-main);
+}
+body.amoled-mode .url-import-panel { background: #050505; border-color: #222; }
+#url-import-input {
+    flex: 1; background: #111; border: 1px solid #444; color: #e0e0e0;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px;
+    font-family: inherit; outline: none; min-width: 0;
+}
+#url-import-input:focus { border-color: var(--accent); }
+body.amoled-mode #url-import-input { background: #000; border-color: #333; }
+.url-import-go-btn {
+    background: var(--accent); border: none; color: #fff; padding: 7px 10px;
+    border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+    flex-shrink: 0; transition: background 0.2s;
+}
+.url-import-go-btn:hover { background: #2980b9; }
+.url-import-go-btn:disabled { opacity: 0.5; cursor: default; }
+.url-import-cancel-btn {
+    background: transparent; border: 1px solid #444; color: #888;
+    padding: 6px 9px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    flex-shrink: 0; transition: all 0.2s;
+}
+.url-import-cancel-btn:hover { border-color: var(--highlight-red); color: var(--highlight-red); }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
