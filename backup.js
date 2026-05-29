@@ -100,13 +100,20 @@ export async function exportBackup() {
             coverThumb:       a.coverThumb       || null,
         })),
     };
+    const now  = new Date();
+    const date = now.toISOString().slice(0, 10);
+    const time = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+    const filename = `rsvp-backup-${date}_${time}.json`;
+
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `rsvp-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+
+    alert(`✓ Backup erfolgreich exportiert:\n${filename}`);
 }
 
 // ── Import ────────────────────────────────────────────────────────────────────
