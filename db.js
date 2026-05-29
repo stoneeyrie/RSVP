@@ -81,6 +81,44 @@ export async function migrateLibraryContent() {
         await saveBookToDB(meta);
     }
     } // end needsMigration
+    // Phase 3: readingLog von YYYY-MM auf YYYY-MM-DD migrieren
+    // Alte Monatseinträge werden auf den 1. des Monats verschoben (einmalig, idempotent)
+    const booksForLogMigration = await getAllBooksFromDB();
+    for (const book of booksForLogMigration) {
+        if (!book.readingLog) continue;
+        const keys = Object.keys(book.readingLog);
+        const hasOldKeys = keys.some(k => /^\d{4}-\d{2}$/.test(k));
+        if (!hasOldKeys) continue;
+        const newLog = {};
+        for (const [key, sec] of Object.entries(book.readingLog)) {
+            if (/^\d{4}-\d{2}$/.test(key)) {
+                newLog[key + '-01'] = (newLog[key + '-01'] || 0) + sec;
+            } else {
+                newLog[key] = (newLog[key] || 0) + sec;
+            }
+        }
+        const meta = Object.assign({}, book);
+        meta.readingLog = newLog;
+        await saveBookToDB(meta);
+    }
+    // Auch statsArchive migrieren
+    const archiveForLogMigration = await getAllStatsArchive();
+    for (const entry of archiveForLogMigration) {
+        if (!entry.readingLog) continue;
+        const keys = Object.keys(entry.readingLog);
+        const hasOldKeys = keys.some(k => /^\d{4}-\d{2}$/.test(k));
+        if (!hasOldKeys) continue;
+        const newLog = {};
+        for (const [key, sec] of Object.entries(entry.readingLog)) {
+            if (/^\d{4}-\d{2}$/.test(key)) {
+                newLog[key + '-01'] = (newLog[key + '-01'] || 0) + sec;
+            } else {
+                newLog[key] = (newLog[key] || 0) + sec;
+            }
+        }
+        await saveToStatsArchive(Object.assign({}, entry, { readingLog: newLog }));
+    }
+
     // Phase 2: Bücher ohne wordCount reparieren (falls Migration v1 ohne wordCount lief)
     const booksNow = await getAllBooksFromDB();
     for (const book of booksNow) {
