@@ -286,7 +286,7 @@ body.amoled-mode .chapter-item:hover { background: #111; }
 
 textarea {
     width: 100%; height: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: white;
-    padding: 12px 52px 12px 12px;
+    padding: 12px 84px 12px 12px;
     border-radius: var(--radius-main); box-sizing: border-box;
     font-family: inherit; resize: none; outline: none; font-size: 13px; transition: background-color 0.2s;
     overflow-y: auto;
@@ -298,13 +298,7 @@ textarea::-webkit-scrollbar { width: 6px; }
 textarea::-webkit-scrollbar-track { background: transparent; }
 textarea::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 
-.floating-trash-btn {
-    position: absolute; top: 10px; right: 16px;
-    background: rgba(0,0,0,0.65); border: 1px solid var(--border-color);
-    color: #aaa; border-radius: 6px; padding: 6px; cursor: pointer; display: flex; align-items: center;
-    justify-content: center; transition: all 0.2s ease; z-index: 10;
-    backdrop-filter: blur(2px);
-}
+
 .floating-trash-btn:hover { color: var(--highlight-red); border-color: var(--highlight-red); background: rgba(231, 76, 60, 0.15); }
 
 .reader-quick-settings {
@@ -794,10 +788,10 @@ body.amoled-mode .ss-heatmap-grid-wrap { background: #030303; }
 .floating-trash-btn:hover { color: var(--highlight-red) !important; border-color: var(--highlight-red) !important; background: rgba(231,76,60,0.15) !important; }
 
 .url-import-panel {
-    position: absolute; bottom: 0; left: 0; right: 0;
     display: flex; align-items: center; gap: 5px;
-    background: #1a1a1a; border-top: 1px solid var(--border-color);
-    padding: 7px 10px; z-index: 11; border-radius: 0 0 var(--radius-main) var(--radius-main);
+    background: #1a1a1a; border: 1px solid var(--border-color);
+    padding: 7px 10px; border-radius: var(--radius-main);
+    margin-bottom: 8px; flex-shrink: 0;
 }
 body.amoled-mode .url-import-panel { background: #050505; border-color: #222; }
 #url-import-input {
