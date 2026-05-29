@@ -588,7 +588,7 @@ import {
     progressBar, progressRowContainer,
     appPanels, navButtons, libraryList, fileInput,
 } from './dom.js';
-import { renderStatsPanel, showStatsTab, statsSetMonthFilter, handleStatsDelete } from './stats.js';
+import { renderStatsPanel, showStatsTab, statsSetMonthFilter, handleStatsDelete, statsToggleDetail } from './stats.js';
 import { exportBackup, importBackup } from './backup.js';
 import { saveSettings, applySettingsToUI, updateResetButtonVisibility } from './settings.js';
 import { renderLibraryList, loadLibraryBook, finalizeBookImport, filterLibrary, toggleAuthorFilter, onAuthorSelectChange, populateAuthorDropdown, renderReaderChapterList } from './library.js';
@@ -615,6 +615,7 @@ window.switchUIMode         = switchUIMode;
 window.statsSetMonthFilter  = statsSetMonthFilter;
 window.handleStatsDelete    = handleStatsDelete;
 window.showStatsTab         = showStatsTab;
+window.statsToggleDetail    = statsToggleDetail;
 
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';

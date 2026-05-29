@@ -446,10 +446,10 @@ export async function saveSessionStats() {
             book.sessionCount = prevSessions + 1;
             book.lastReadDate = new Date().toISOString();
             book.totalReadSeconds = (book.totalReadSeconds || 0) + totalSessionSeconds;
-            // Monatliches Leseprotokoll direkt im Buch (für Timeline + Archiv)
-            const ym = new Date().toISOString().substring(0, 7); // "YYYY-MM"
+            // Tägliches Leseprotokoll direkt im Buch (für Timeline + Heute/Woche/Monat)
+            const ymd = new Date().toISOString().substring(0, 10); // "YYYY-MM-DD"
             book.readingLog = book.readingLog || {};
-            book.readingLog[ym] = (book.readingLog[ym] || 0) + Math.round(totalSessionSeconds);
+            book.readingLog[ymd] = (book.readingLog[ymd] || 0) + Math.round(totalSessionSeconds);
             await saveBookToDB(book);
         }
     }

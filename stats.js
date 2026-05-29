@@ -64,7 +64,181 @@ export function statsSetMonthFilter(ym) {
     }
 }
 
-// ── Statistik-Panel rendern ───────────────────────────────────────────────────
+// ── Aggregations-Hilfsfunktionen ──────────────────────────────────────────────
+function getTodayKey() {
+    return new Date().toISOString().substring(0, 10);
+}
+function getWeekKeys() {
+    const now = new Date();
+    const day = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mo=0 … So=6
+    const keys = [];
+    for (let i = 0; i <= day; i++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - (day - i));
+        keys.push(d.toISOString().substring(0, 10));
+    }
+    return keys;
+}
+function getMonthPrefix() {
+    return new Date().toISOString().substring(0, 7); // "YYYY-MM"
+}
+function aggregatePeriod(allEntries, keyFilter) {
+    let total = 0;
+    const byBook = {};
+    for (const e of allEntries) {
+        let bookSecs = 0;
+        for (const [k, sec] of Object.entries(e.readingLog || {})) {
+            if (keyFilter(k)) bookSecs += sec;
+        }
+        if (bookSecs > 0) {
+            total += bookSecs;
+            byBook[e.id || e.title] = { title: e.title || 'Unbenannt', secs: bookSecs };
+        }
+    }
+    return { total, byBook };
+}
+// Durchschnitt der letzten N Wochen/Monate als Vergleichswert
+function weeklyAvgSecs(allEntries) {
+    const counts = {};
+    for (const e of allEntries) {
+        for (const [k] of Object.entries(e.readingLog || {})) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+            const d = new Date(k);
+            const mon = d.getDay() === 0 ? 6 : d.getDay() - 1;
+            const monday = new Date(d); monday.setDate(d.getDate() - mon);
+            const wk = monday.toISOString().substring(0, 10);
+            counts[wk] = (counts[wk] || 0) + (e.readingLog[k] || 0);
+        }
+    }
+    const vals = Object.values(counts).filter(v => v > 0);
+    return vals.length ? Math.round(vals.reduce((a,b) => a+b,0) / vals.length) : 0;
+}
+function monthlyAvgSecs(allEntries) {
+    const counts = {};
+    for (const e of allEntries) {
+        for (const [k, sec] of Object.entries(e.readingLog || {})) {
+            const prefix = k.substring(0, 7);
+            counts[prefix] = (counts[prefix] || 0) + sec;
+        }
+    }
+    const vals = Object.values(counts).filter(v => v > 0);
+    return vals.length ? Math.round(vals.reduce((a,b) => a+b,0) / vals.length) : 0;
+}
+
+// ── Quick-Overview-UI ─────────────────────────────────────────────────────────
+function buildQuickOverview(allEntries) {
+    const todayKey   = getTodayKey();
+    const weekKeys   = new Set(getWeekKeys());
+    const monthPfx   = getMonthPrefix();
+
+    const today = aggregatePeriod(allEntries, k => k === todayKey);
+    const week  = aggregatePeriod(allEntries, k => weekKeys.has(k));
+    const month = aggregatePeriod(allEntries, k => k.startsWith(monthPfx));
+
+    const wAvg = weeklyAvgSecs(allEntries);
+    const mAvg = monthlyAvgSecs(allEntries);
+
+    const bar = (val, max) => {
+        const pct = max > 0 ? Math.min(100, Math.round(val / max * 100)) : 0;
+        return `<div class="qo-bar-track"><div class="qo-bar-fill" style="width:${pct}%"></div></div>`;
+    };
+
+    // Detail: Heute → Bücherliste
+    const todayDetail = Object.values(today.byBook).length
+        ? Object.values(today.byBook).sort((a,b) => b.secs - a.secs).map(b =>
+            `<div class="qo-detail-row"><span class="qo-detail-title">${b.title}</span><span class="qo-detail-time">${fmtSecs(b.secs)}</span></div>`
+          ).join('')
+        : `<div class="qo-detail-empty">Heute noch nichts gelesen.</div>`;
+
+    // Detail: Woche → 7 Tages-Balken (Mo–So)
+    const DE_DAYS_SHORT = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    const now = new Date();
+    const curDay = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    const weekMaxSec = Math.max(...[...weekKeys].map(k => {
+        let s = 0;
+        for (const e of allEntries) s += (e.readingLog || {})[k] || 0;
+        return s;
+    }), 1);
+    const weekDetail = [...weekKeys].map((k, i) => {
+        let s = 0;
+        for (const e of allEntries) s += (e.readingLog || {})[k] || 0;
+        const pct = Math.min(100, Math.round(s / weekMaxSec * 100));
+        const isToday = k === todayKey;
+        return `<div class="qo-week-row">
+            <span class="qo-week-day${isToday ? ' qo-today' : ''}">${DE_DAYS_SHORT[i]}</span>
+            <div class="qo-week-bar-track"><div class="qo-week-bar-fill${isToday ? ' qo-today-fill' : ''}" style="width:${pct}%"></div></div>
+            <span class="qo-week-time${s === 0 ? ' qo-zero' : ''}">${s > 0 ? fmtSecs(s) : '–'}</span>
+        </div>`;
+    }).join('');
+
+    // Detail: Monat → Tages-Balken für alle Tage im Monat mit Aktivität
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const monthDayData = [];
+    let monthMaxSec = 1;
+    for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${monthPfx}-${String(d).padStart(2,'0')}`;
+        let s = 0;
+        for (const e of allEntries) s += (e.readingLog || {})[key] || 0;
+        monthDayData.push({ d, key, s });
+        if (s > monthMaxSec) monthMaxSec = s;
+    }
+    const monthDetail = monthDayData.map(({ d, key, s }) => {
+        const pct = Math.min(100, Math.round(s / monthMaxSec * 100));
+        const isToday = key === todayKey;
+        return `<div class="qo-month-col${s === 0 ? ' qo-month-empty' : ''}${isToday ? ' qo-month-today' : ''}" title="${d}. – ${s > 0 ? fmtSecs(s) : 'keine Aktivität'}">
+            <div class="qo-month-bar-wrap"><div class="qo-month-bar-fill${isToday ? ' qo-today-fill' : ''}" style="height:${Math.max(2,pct)}%"></div></div>
+            <span class="qo-month-day-lbl">${d}</span>
+        </div>`;
+    }).join('');
+
+    return `<div class="qo-section">
+        <div class="settings-cluster-header" style="margin-bottom:10px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+            Aktuell
+        </div>
+        <div class="qo-cards">
+            <div class="qo-card" onclick="statsToggleDetail('today')">
+                <div class="qo-card-label">Heute</div>
+                <div class="qo-card-value">${today.total > 0 ? fmtSecs(today.total) : '–'}</div>
+                ${bar(today.total, wAvg > 0 ? wAvg / 7 : 1)}
+                <div class="qo-card-chevron">▾</div>
+            </div>
+            <div class="qo-card" onclick="statsToggleDetail('week')">
+                <div class="qo-card-label">Diese Woche</div>
+                <div class="qo-card-value">${week.total > 0 ? fmtSecs(week.total) : '–'}</div>
+                ${bar(week.total, wAvg > 0 ? wAvg : 1)}
+                <div class="qo-card-chevron">▾</div>
+            </div>
+            <div class="qo-card" onclick="statsToggleDetail('month')">
+                <div class="qo-card-label">Dieser Monat</div>
+                <div class="qo-card-value">${month.total > 0 ? fmtSecs(month.total) : '–'}</div>
+                ${bar(month.total, mAvg > 0 ? mAvg : 1)}
+                <div class="qo-card-chevron">▾</div>
+            </div>
+        </div>
+        <div id="qo-detail-today" class="qo-detail" style="display:none;">
+            <div class="qo-detail-inner">${todayDetail}</div>
+        </div>
+        <div id="qo-detail-week" class="qo-detail" style="display:none;">
+            <div class="qo-detail-inner qo-week-bars">${weekDetail}</div>
+        </div>
+        <div id="qo-detail-month" class="qo-detail" style="display:none;">
+            <div class="qo-detail-inner qo-month-bars">${monthDetail}</div>
+        </div>
+    </div>`;
+}
+
+export function statsToggleDetail(id) {
+    const el = document.getElementById('qo-detail-' + id);
+    if (!el) return;
+    const isOpen = el.style.display !== 'none';
+    // Alle schließen
+    ['today','week','month'].forEach(k => {
+        const d = document.getElementById('qo-detail-' + k);
+        if (d) d.style.display = 'none';
+    });
+    if (!isOpen) el.style.display = 'block';
+}
 export async function renderStatsPanel() {
     const container = document.getElementById('stats-content');
     if (!container) return;
@@ -105,6 +279,7 @@ export async function renderStatsPanel() {
         : totalWords >= 1000 ? `${Math.round(totalWords/1000)}k` : `${totalWords}`;
 
     let html = `<div class="info-container">
+    ${buildQuickOverview(allEntries)}
     <div class="stats-kpi-grid">
         <div class="stats-kpi-card"><div class="stats-kpi-num">${totalBooks}</div><div class="stats-kpi-lbl">Bücher gesamt</div></div>
         <div class="stats-kpi-card"><div class="stats-kpi-num" style="color:var(--accent-green);">${finishedCount}</div><div class="stats-kpi-lbl">Beendet</div></div>
@@ -115,9 +290,11 @@ export async function renderStatsPanel() {
     </div>`;
 
     // ── Heatmap-Timeline ─────────────────────────────────────────────────────
+    // readingLog hat jetzt YYYY-MM-DD Keys → für Heatmap auf Monatsebene aggregieren
     const mergedLog = {};
     for (const e of allEntries) {
-        for (const [ym, sec] of Object.entries(e.readingLog || {})) {
+        for (const [key, sec] of Object.entries(e.readingLog || {})) {
+            const ym = key.length === 10 ? key.substring(0, 7) : key; // YYYY-MM-DD → YYYY-MM
             mergedLog[ym] = (mergedLog[ym] || 0) + sec;
         }
     }
@@ -200,7 +377,12 @@ export async function renderStatsPanel() {
     let monthFilterSecs = 0;
     if (statsMonthFilter) {
         listEntries = allEntries
-            .map(e => ({ ...e, _monthSecs: (e.readingLog || {})[statsMonthFilter] || 0 }))
+            .map(e => ({
+                ...e,
+                _monthSecs: Object.entries(e.readingLog || {})
+                    .filter(([k]) => k.startsWith(statsMonthFilter))
+                    .reduce((s, [,v]) => s + v, 0)
+            }))
             .filter(e => e._monthSecs > 0)
             .sort((a, b) => b._monthSecs - a._monthSecs);
         monthFilterSecs = listEntries.reduce((s, e) => s + e._monthSecs, 0);

@@ -740,3 +740,72 @@ body.amoled-mode .verlauf-bar-wrap { background: #1a1a1a; }
 .verlauf-month-books { font-size: 10px; color: #666; width: 32px; flex-shrink: 0; text-align: right; }
 .verlauf-empty { text-align: center; color: #555; font-size: 13px; padding: 30px 20px; }
 
+
+/* ── Quick Overview: Heute / Woche / Monat ─────────────────────────────────── */
+.qo-section { margin-bottom: 4px; }
+
+.qo-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 4px;
+}
+.qo-card {
+    background: #181818; border: 1px solid var(--border-color); border-radius: 10px;
+    padding: 12px 10px 10px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    user-select: none; position: relative;
+}
+body.amoled-mode .qo-card { background: #050505; border-color: #222; }
+.qo-card:hover { border-color: var(--accent); }
+.qo-card-label { font-size: 10px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.qo-card-value { font-size: 18px; font-weight: bold; color: var(--accent); font-family: monospace; margin-bottom: 7px; }
+.qo-bar-track { height: 4px; background: #2d2d2d; border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+body.amoled-mode .qo-bar-track { background: #1a1a1a; }
+.qo-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; }
+.qo-card-chevron { font-size: 11px; color: #555; text-align: center; margin-top: 2px; transition: transform 0.2s; }
+
+.qo-detail {
+    background: #141414; border: 1px solid var(--border-color); border-radius: 10px;
+    margin-bottom: 8px; overflow: hidden;
+}
+body.amoled-mode .qo-detail { background: #030303; border-color: #222; }
+.qo-detail-inner { padding: 12px 14px; }
+
+/* Heute – Bücherliste */
+.qo-detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; border-bottom: 1px solid #222; font-size: 12.5px;
+}
+.qo-detail-row:last-child { border-bottom: none; }
+.qo-detail-title { color: #ccc; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
+.qo-detail-time { color: var(--accent); font-family: monospace; font-size: 12px; flex-shrink: 0; }
+.qo-detail-empty { color: #555; font-size: 12px; text-align: center; padding: 6px 0; }
+
+/* Woche – Tages-Balken */
+.qo-week-bars { display: flex; flex-direction: column; gap: 5px; }
+.qo-week-row { display: flex; align-items: center; gap: 8px; }
+.qo-week-day { width: 22px; font-size: 11px; color: #888; font-weight: 600; flex-shrink: 0; }
+.qo-week-day.qo-today { color: var(--accent-green); }
+.qo-week-bar-track { flex: 1; height: 7px; background: #2d2d2d; border-radius: 4px; overflow: hidden; }
+body.amoled-mode .qo-week-bar-track { background: #1a1a1a; }
+.qo-week-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.qo-week-time { width: 42px; font-size: 11px; color: #888; text-align: right; flex-shrink: 0; font-family: monospace; }
+.qo-week-time.qo-zero { color: #444; }
+
+/* Monat – Tages-Säulendiagramm */
+.qo-month-bars {
+    display: flex; align-items: flex-end; gap: 3px; height: 70px; padding-bottom: 18px; position: relative;
+}
+.qo-month-col {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    height: 100%; cursor: default;
+}
+.qo-month-bar-wrap {
+    width: 100%; flex: 1; display: flex; align-items: flex-end;
+}
+.qo-month-bar-fill {
+    width: 100%; background: var(--accent); border-radius: 2px 2px 0 0; min-height: 2px; transition: height 0.2s;
+}
+.qo-today-fill { background: var(--accent-green); }
+.qo-month-day-lbl {
+    font-size: 8px; color: #555; margin-top: 3px; line-height: 1;
+}
+.qo-month-today .qo-month-day-lbl { color: var(--accent-green); font-weight: 700; }
+.qo-month-empty .qo-month-bar-fill { opacity: 0.15; }
