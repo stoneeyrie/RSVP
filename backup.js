@@ -2,7 +2,6 @@ import {
     getAllBooksFromDB, getAllStatsArchive, saveBookToDB,
     saveToStatsArchive, deleteFromStatsArchive,
     getAppState,
-    db,
 } from './db.js';
 import { saveSessionStats, resizeCoverImage } from './reader.js';
 import { hyphenMode, longWordMode, longWordTrigger, rewindAmount, rewindMode, stopAtChapterEnd } from './dom.js';
@@ -143,9 +142,7 @@ export async function importBackup(event) {
                     normalize(a.author) === normalize(entry.author)
                 );
                 if (!alreadyInArchive) {
-                    await new Promise(resolve => {
-                        const tx = db.transaction('statsArchive', 'readwrite');
-                        tx.objectStore('statsArchive').put({
+                    await saveToStatsArchive({
                             id:               'ghost_' + Date.now() + '_' + Math.random().toString(36).slice(2),
                             title:            entry.title            || '',
                             author:           entry.author           || '',
@@ -163,9 +160,6 @@ export async function importBackup(event) {
                                 : 0,
                             coverThumb:       entry.coverThumb || null,
                             _fromBackup:      true,
-                        });
-                        tx.oncomplete = resolve;
-                        tx.onerror    = resolve;
                     });
                 }
                 skipped++;
@@ -222,17 +216,10 @@ export async function importBackup(event) {
                     if (!found.coverThumb && entry.coverThumb) merged.coverThumb = entry.coverThumb;
                     merged.pct = Math.max(found.pct || 0, entry.pct || 0);
 
-                    await new Promise(resolve => {
-                        const tx = db.transaction('statsArchive', 'readwrite');
-                        tx.objectStore('statsArchive').put(merged);
-                        tx.oncomplete = resolve;
-                        tx.onerror    = resolve;
-                    });
+                    await saveToStatsArchive(merged);
                     archivedMerged++;
                 } else {
-                    await new Promise(resolve => {
-                        const tx = db.transaction('statsArchive', 'readwrite');
-                        tx.objectStore('statsArchive').put({
+                    await saveToStatsArchive({
                             id:               entry.id,
                             title:            entry.title            || '',
                             author:           entry.author           || '',
@@ -247,9 +234,6 @@ export async function importBackup(event) {
                             deletedAt:        entry.deletedAt        || null,
                             pct:              entry.pct              || 0,
                             coverThumb:       entry.coverThumb       || null,
-                        });
-                        tx.oncomplete = resolve;
-                        tx.onerror    = resolve;
                     });
                     archivedRestored++;
                 }
