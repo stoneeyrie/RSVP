@@ -79,7 +79,7 @@ export async function renderStatsPanel() {
             pct:        b.wordCount > 0 ? Math.min(100, Math.round(((b.lastIndex||0)/b.wordCount)*100)) : 0,
             coverThumb: b.thumbnail || null,
         })),
-        ...archived.filter(a => !a._notFinished && !a._fromBackup).map(a => ({ ...a, _archived: true })),
+        ...archived.filter(a => !a._fromBackup).map(a => ({ ...a, _archived: true })),
     ];
 
     if (allEntries.length === 0) {
@@ -90,7 +90,7 @@ export async function renderStatsPanel() {
     // ── KPI-Aggregate ────────────────────────────────────────────────────────
     const totalBooks    = allEntries.length;
     const activeCount   = books.length;
-    const archivedCount = archived.filter(a => !a._notFinished && !a._fromBackup).length;
+    const archivedCount = archived.filter(a => !a._fromBackup).length;
     const finishedCount = allEntries.filter(e => e.pct >= 99).length;
     const startedCount  = allEntries.filter(e => (e.lastIndex||0) > 0 && e.pct < 99).length;
     const totalSecs     = allEntries.reduce((s, e) => s + (e.totalReadSeconds||0), 0);
