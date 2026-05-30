@@ -127,21 +127,23 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </button>
             </div>
+            <div id="url-import-panel" class="url-import-panel" style="display:none;">
+                <input type="url" id="url-import-input" placeholder="https://…" autocomplete="off" spellcheck="false">
+                <button id="url-import-go" class="url-import-go-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                </button>
+                <button id="url-import-cancel" class="url-import-cancel-btn">✕</button>
+            </div>
             <textarea id="input-text" placeholder="Füge hier deinen Text für den Schnellstart ein..."></textarea>
-        </div>
-        <div id="url-import-panel" class="url-import-panel" style="display:none;">
-            <input type="url" id="url-import-input" placeholder="https://…" autocomplete="off" spellcheck="false">
-            <button id="url-import-go" class="url-import-go-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-            </button>
-            <button id="url-import-cancel" class="url-import-cancel-btn">✕</button>
         </div>
 
         <div id="main-controls">
             <button id="main-btn" class="btn-main">START</button>
+            <button id="btn-back1" class="btn-nav">-1</button>
             <button id="btn-back" class="btn-nav">-10 Wörter</button>
-            <button id="btn-reset" class="btn-nav">Neustart</button>
             <button id="btn-fwd" class="btn-nav">+10 Wörter</button>
+            <button id="btn-fwd1" class="btn-nav">+1</button>
+            <button id="btn-reset" class="btn-nav btn-reset-full">Neustart</button>
         </div>
 		
 		<div id="mode-controls">
@@ -921,6 +923,7 @@ function togglePageMode() {
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
         document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; 
+        document.getElementById('btn-back1').style.display = 'none'; document.getElementById('btn-fwd1').style.display = 'none';
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -935,6 +938,7 @@ function togglePageMode() {
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
         document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; 
+        document.getElementById('btn-back1').style.display = ''; document.getElementById('btn-fwd1').style.display = '';
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
@@ -1208,6 +1212,24 @@ document.getElementById('btn-back').onclick = async () => {
     }
 };
 
+document.getElementById('btn-back1').onclick = async () => {
+    if (isPageMode) return;
+    setHyphenFragments(null);
+    setCurrentIndex(Math.max(0, currentIndex - 1));
+    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+    if (sideChapterPanel.classList.contains('active')) renderReaderChapterList();
+    render();
+};
+
+document.getElementById('btn-fwd1').onclick = async () => {
+    if (isPageMode) return;
+    setHyphenFragments(null);
+    setCurrentIndex(Math.min(words.length - 1, currentIndex + 1));
+    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+    if (sideChapterPanel.classList.contains('active')) renderReaderChapterList();
+    render();
+};
+
 pageTextContent.onscroll = () => { 
     if (!isPageMode) return; 
     if (isSnapping) return; 
@@ -1276,14 +1298,15 @@ urlImportGo.onclick = async () => {
     urlImportGo.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="animation:spin 0.7s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>';
 
     try {
-        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
         const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const htmlText = await res.text();
+        const data = await res.json();
+        if (!data.contents) throw new Error('Keine Inhalte empfangen');
 
         // HTML parsen und Text extrahieren
         const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
+        const doc = parser.parseFromString(data.contents, 'text/html');
 
         // Navigations- und Boilerplate-Elemente entfernen
         ['script','style','nav','header','footer','aside','iframe','noscript',
@@ -1296,7 +1319,10 @@ urlImportGo.onclick = async () => {
             || doc.body;
 
         const text = (main.innerText || main.textContent || '').trim()
-            .replace(/\n{3,}/g, '\n\n')
+            .replace(/
+{3,}/g, '
+
+')
             .replace(/[ 	]{2,}/g, ' ');
 
         if (text.length < 50) throw new Error('Zu wenig Text gefunden. Manche Seiten erlauben keinen externen Abruf.');
@@ -1306,7 +1332,8 @@ urlImportGo.onclick = async () => {
         urlImportPanel.style.display = 'none';
         urlImportInput.value = '';
     } catch (err) {
-        alert('Fehler beim Laden der URL:\n' + err.message);
+        alert('Fehler beim Laden der URL:
+' + err.message);
     } finally {
         urlImportGo.disabled = false;
         urlImportGo.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>';
