@@ -38,6 +38,15 @@ export function mergeWpmHistory(local, backup) {
 }
 
 // "Neuestes Datum" gewinnt (ISO-String-Vergleich).
+// wordsLog zusammenführen – pro Tag den HÖHEREN Wert nehmen (idempotent).
+export function mergeWordsLogs(local, backup) {
+    const result = Object.assign({}, local || {});
+    for (const [day, words] of Object.entries(backup || {})) {
+        result[day] = Math.max(result[day] || 0, words);
+    }
+    return result;
+}
+
 export function newerDate(a, b) {
     if (!a) return b;
     if (!b) return a;
@@ -56,12 +65,14 @@ export async function exportBackup() {
             author:           b.author           || '',
             lastIndex:        b.lastIndex        || 0,
             totalWords:       b.wordCount        || 0,   // wordCount, nicht b.words (liegt in libraryContent)
-            lastReadDate:     b.lastReadDate     || null,
-            avgWpm:           b.avgWpm           || null,
-            sessionCount:     b.sessionCount     || 0,
-            totalReadSeconds: b.totalReadSeconds || 0,
-            readingLog:       b.readingLog       || {},
-            wpmHistory:       b.wpmHistory       || [],
+            lastReadDate:          b.lastReadDate          || null,
+            avgWpm:                b.avgWpm                || null,
+            sessionCount:          b.sessionCount          || 0,
+            totalReadSeconds:      b.totalReadSeconds      || 0,
+            totalWordsDisplayed:   b.totalWordsDisplayed   || 0,
+            readingLog:            b.readingLog            || {},
+            wordsLog:              b.wordsLog              || {},
+            wpmHistory:            b.wpmHistory            || [],
             coverThumb:       b.thumbnail        || await resizeCoverImage(b.cover, 72) || null,
         }))),
         settings: {
@@ -89,12 +100,14 @@ export async function exportBackup() {
             author:           a.author           || '',
             lastIndex:        a.lastIndex        || 0,
             totalWords:       a.wordCount || a.totalWords || 0,
-            lastReadDate:     a.lastReadDate     || null,
-            avgWpm:           a.avgWpm           || null,
-            sessionCount:     a.sessionCount     || 0,
-            totalReadSeconds: a.totalReadSeconds || 0,
-            readingLog:       a.readingLog       || {},
-            wpmHistory:       a.wpmHistory       || [],
+            lastReadDate:          a.lastReadDate          || null,
+            avgWpm:                a.avgWpm                || null,
+            sessionCount:          a.sessionCount          || 0,
+            totalReadSeconds:      a.totalReadSeconds      || 0,
+            totalWordsDisplayed:   a.totalWordsDisplayed   || 0,
+            readingLog:            a.readingLog            || {},
+            wordsLog:              a.wordsLog              || {},
+            wpmHistory:            a.wpmHistory            || [],
             deletedAt:        a.deletedAt        || null,
             pct:              a.pct              || 0,
             coverThumb:       a.coverThumb       || null,
@@ -155,12 +168,14 @@ export async function importBackup(event) {
                             author:           entry.author           || '',
                             lastIndex:        entry.lastIndex        || 0,
                             wordCount:        entry.totalWords       || 0,
-                            lastReadDate:     entry.lastReadDate     || null,
-                            avgWpm:           entry.avgWpm           || null,
-                            sessionCount:     entry.sessionCount     || 0,
-                            totalReadSeconds: entry.totalReadSeconds || 0,
-                            readingLog:       entry.readingLog       || {},
-                            wpmHistory:       entry.wpmHistory       || [],
+                            lastReadDate:          entry.lastReadDate          || null,
+                            avgWpm:                entry.avgWpm                || null,
+                            sessionCount:          entry.sessionCount          || 0,
+                            totalReadSeconds:      entry.totalReadSeconds      || 0,
+                            totalWordsDisplayed:   entry.totalWordsDisplayed   || 0,
+                            readingLog:            entry.readingLog            || {},
+                            wordsLog:              entry.wordsLog              || {},
+                            wpmHistory:            entry.wpmHistory            || [],
                             deletedAt:        null,
                             pct:              entry.totalWords > 0
                                 ? Math.min(100, Math.round((entry.lastIndex || 0) / entry.totalWords * 100))
@@ -176,10 +191,11 @@ export async function importBackup(event) {
             // Shallow copy – Buchinhalte werden nie verändert
             const updated = Object.assign({}, book);
 
-            updated.lastReadDate     = newerDate(book.lastReadDate, entry.lastReadDate);
-            updated.lastIndex        = Math.max(book.lastIndex     || 0, entry.lastIndex     || 0);
-            updated.sessionCount     = Math.max(book.sessionCount  || 0, entry.sessionCount  || 0);
-            updated.totalReadSeconds = Math.max(book.totalReadSeconds || 0, entry.totalReadSeconds || 0);
+            updated.lastReadDate          = newerDate(book.lastReadDate, entry.lastReadDate);
+            updated.lastIndex             = Math.max(book.lastIndex     || 0, entry.lastIndex     || 0);
+            updated.sessionCount          = Math.max(book.sessionCount  || 0, entry.sessionCount  || 0);
+            updated.totalReadSeconds      = Math.max(book.totalReadSeconds    || 0, entry.totalReadSeconds    || 0);
+            updated.totalWordsDisplayed   = Math.max(book.totalWordsDisplayed || 0, entry.totalWordsDisplayed || 0);
 
             if ((entry.sessionCount || 0) > (book.sessionCount || 0) && entry.avgWpm) {
                 updated.avgWpm = entry.avgWpm;
@@ -188,6 +204,7 @@ export async function importBackup(event) {
             }
 
             updated.readingLog = mergeReadingLogs(book.readingLog, entry.readingLog);
+            updated.wordsLog   = mergeWordsLogs(book.wordsLog,   entry.wordsLog);
             updated.wpmHistory = mergeWpmHistory(book.wpmHistory,  entry.wpmHistory);
 
             await saveBookToDB(updated);
@@ -209,16 +226,18 @@ export async function importBackup(event) {
 
                 if (found) {
                     const merged = Object.assign({}, found);
-                    merged.lastReadDate     = newerDate(found.lastReadDate, entry.lastReadDate);
-                    merged.lastIndex        = Math.max(found.lastIndex        || 0, entry.lastIndex        || 0);
-                    merged.sessionCount     = Math.max(found.sessionCount     || 0, entry.sessionCount     || 0);
-                    merged.totalReadSeconds = Math.max(found.totalReadSeconds || 0, entry.totalReadSeconds || 0);
+                    merged.lastReadDate          = newerDate(found.lastReadDate, entry.lastReadDate);
+                    merged.lastIndex             = Math.max(found.lastIndex             || 0, entry.lastIndex             || 0);
+                    merged.sessionCount          = Math.max(found.sessionCount          || 0, entry.sessionCount          || 0);
+                    merged.totalReadSeconds      = Math.max(found.totalReadSeconds      || 0, entry.totalReadSeconds      || 0);
+                    merged.totalWordsDisplayed   = Math.max(found.totalWordsDisplayed   || 0, entry.totalWordsDisplayed   || 0);
                     if ((entry.sessionCount || 0) > (found.sessionCount || 0) && entry.avgWpm) {
                         merged.avgWpm = entry.avgWpm;
                     } else if (!found.avgWpm && entry.avgWpm) {
                         merged.avgWpm = entry.avgWpm;
                     }
                     merged.readingLog = mergeReadingLogs(found.readingLog, entry.readingLog);
+                    merged.wordsLog   = mergeWordsLogs(found.wordsLog,   entry.wordsLog);
                     merged.wpmHistory = mergeWpmHistory(found.wpmHistory,  entry.wpmHistory);
                     if (!found.coverThumb && entry.coverThumb) merged.coverThumb = entry.coverThumb;
                     merged.pct = Math.max(found.pct || 0, entry.pct || 0);
@@ -227,20 +246,22 @@ export async function importBackup(event) {
                     archivedMerged++;
                 } else {
                     await saveToStatsArchive({
-                            id:               entry.id,
-                            title:            entry.title            || '',
-                            author:           entry.author           || '',
-                            lastIndex:        entry.lastIndex        || 0,
-                            wordCount:        entry.totalWords       || 0,
-                            lastReadDate:     entry.lastReadDate     || null,
-                            avgWpm:           entry.avgWpm           || null,
-                            sessionCount:     entry.sessionCount     || 0,
-                            totalReadSeconds: entry.totalReadSeconds || 0,
-                            readingLog:       entry.readingLog       || {},
-                            wpmHistory:       entry.wpmHistory       || [],
-                            deletedAt:        entry.deletedAt        || null,
-                            pct:              entry.pct              || 0,
-                            coverThumb:       entry.coverThumb       || null,
+                            id:                    entry.id,
+                            title:                 entry.title                 || '',
+                            author:                entry.author                || '',
+                            lastIndex:             entry.lastIndex             || 0,
+                            wordCount:             entry.totalWords            || 0,
+                            lastReadDate:          entry.lastReadDate          || null,
+                            avgWpm:                entry.avgWpm                || null,
+                            sessionCount:          entry.sessionCount          || 0,
+                            totalReadSeconds:      entry.totalReadSeconds      || 0,
+                            totalWordsDisplayed:   entry.totalWordsDisplayed   || 0,
+                            readingLog:            entry.readingLog            || {},
+                            wordsLog:              entry.wordsLog              || {},
+                            wpmHistory:            entry.wpmHistory            || [],
+                            deletedAt:             entry.deletedAt             || null,
+                            pct:                   entry.pct                   || 0,
+                            coverThumb:            entry.coverThumb            || null,
                     });
                     archivedRestored++;
                 }
@@ -279,10 +300,10 @@ export async function importBackup(event) {
         renderStatsPanel();
 
         const parts = [];
-        if (matched > 0)          parts.push(`✓ ${matched} Buch${matched !== 1 ? 'er' : ''} aktualisiert`);
+        if (matched > 0)          parts.push(`✓ ${matched} Buch${matched !== 1 ? 'er' : ''} aktualisiert – Lesezeit, gelesene Wörter & Statistik wiederhergestellt`);
         if (skipped > 0)          parts.push(`${skipped} Buch${skipped !== 1 ? 'er' : ''} nicht gefunden → in Bibliothek als "Nicht importiert" markiert`);
-        if (archivedRestored > 0) parts.push(`${archivedRestored} archivierte Einträge neu hinzugefügt`);
-        if (archivedMerged > 0)   parts.push(`${archivedMerged} archivierte Einträge zusammengeführt`);
+        if (archivedRestored > 0) parts.push(`✓ ${archivedRestored} archivierte Einträge neu hinzugefügt (inkl. Statistik)`);
+        if (archivedMerged > 0)   parts.push(`✓ ${archivedMerged} archivierte Einträge zusammengeführt (inkl. Statistik)`);
         if (settingsRestored)     parts.push(`✓ Einstellungen (WPM, Textgröße, Toggles) übernommen`);
         alert(parts.length > 0 ? parts.join('\n') : 'Keine passenden Daten gefunden.');
 
