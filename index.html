@@ -139,11 +139,33 @@
 
         <div id="main-controls">
             <button id="main-btn" class="btn-main">START</button>
-            <button id="btn-back1" class="btn-nav">-1</button>
-            <button id="btn-back" class="btn-nav">-10 Wörter</button>
-            <button id="btn-fwd" class="btn-nav">+10 Wörter</button>
-            <button id="btn-fwd1" class="btn-nav">+1</button>
-            <button id="btn-reset" class="btn-nav btn-reset-full">Neustart</button>
+            <div class="nav-btn-row">
+                <div class="nav-btn-wrap">
+                    <button id="btn-back1" class="btn-nav-round" title="-1 Wort">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+                    </button>
+                    <span class="nav-btn-label" id="btn-back1-label">1</span>
+                </div>
+                <div class="nav-btn-wrap">
+                    <button id="btn-back" class="btn-nav-round" title="-10 Wörter">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z"/></svg>
+                    </button>
+                    <span class="nav-btn-label" id="btn-back-label">10</span>
+                </div>
+                <div class="nav-btn-wrap">
+                    <button id="btn-fwd" class="btn-nav-round" title="+10 Wörter">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                    </button>
+                    <span class="nav-btn-label" id="btn-fwd-label">10</span>
+                </div>
+                <div class="nav-btn-wrap">
+                    <button id="btn-fwd1" class="btn-nav-round" title="+1 Wort">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <span class="nav-btn-label" id="btn-fwd1-label">1</span>
+                </div>
+            </div>
+            <button id="btn-reset" class="btn-reset-full">Neustart</button>
         </div>
 		
 		<div id="mode-controls">
@@ -780,11 +802,11 @@ function updateProgressUI(shouldSaveToDB = true) {
 }
 
 function updateFwdButtonText() {
-    if (!isPageMode) return; const fwdBtn = document.getElementById('btn-fwd'); if (!fwdBtn) return;
+    if (!isPageMode) return; const fwdLabel = document.getElementById('btn-fwd-label'); if (!fwdLabel) return;
     const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
     const colWidth = exactViewportWidth + 40;
-    if (pageTextContent.scrollLeft + colWidth >= pageScrollWidth - 45) { let chapIdx = getActiveChapterIndex(); if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { fwdBtn.innerText = "Nächstes Kapitel"; return; } }
-    fwdBtn.innerText = "Seite vor";
+    if (pageTextContent.scrollLeft + colWidth >= pageScrollWidth - 45) { let chapIdx = getActiveChapterIndex(); if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { fwdLabel.innerText = "Kap. →"; return; } }
+    fwdLabel.innerText = "Seite →";
 }
 
 function renderPageMode() {
@@ -922,8 +944,9 @@ function togglePageMode() {
         setChapterOnPageModeEnter(getActiveChapterIndex());
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
-        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; 
+        document.getElementById('btn-back-label').innerText = "Seite ←"; document.getElementById('btn-fwd-label').innerText = "Seite →"; 
         document.getElementById('btn-back1').style.display = 'none'; document.getElementById('btn-fwd1').style.display = 'none';
+        document.getElementById('btn-back1-label').style.display = 'none'; document.getElementById('btn-fwd1-label').style.display = 'none';
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -937,8 +960,9 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; 
+        document.getElementById('btn-back-label').innerText = "10"; document.getElementById('btn-fwd-label').innerText = "10"; 
         document.getElementById('btn-back1').style.display = ''; document.getElementById('btn-fwd1').style.display = '';
+        document.getElementById('btn-back1-label').style.display = ''; document.getElementById('btn-fwd1-label').style.display = '';
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 

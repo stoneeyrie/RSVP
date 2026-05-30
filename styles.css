@@ -286,7 +286,7 @@ body.amoled-mode .chapter-item:hover { background: #111; }
 
 textarea {
     width: 100%; height: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: white;
-    padding: 12px 84px 12px 12px;
+    padding: 12px 52px 12px 12px;
     border-radius: var(--radius-main); box-sizing: border-box;
     font-family: inherit; resize: none; outline: none; font-size: 13px; transition: background-color 0.2s;
     overflow-y: auto;
@@ -298,7 +298,13 @@ textarea::-webkit-scrollbar { width: 6px; }
 textarea::-webkit-scrollbar-track { background: transparent; }
 textarea::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 
-
+.floating-trash-btn {
+    position: absolute; top: 10px; right: 16px;
+    background: rgba(0,0,0,0.65); border: 1px solid var(--border-color);
+    color: #aaa; border-radius: 6px; padding: 6px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.2s ease; z-index: 10;
+    backdrop-filter: blur(2px);
+}
 .floating-trash-btn:hover { color: var(--highlight-red); border-color: var(--highlight-red); background: rgba(231, 76, 60, 0.15); }
 
 .reader-quick-settings {
@@ -466,9 +472,21 @@ body.amoled-mode .settings-cluster-header { color: #3498db; }
 
 /* --- Hauptsteuerung --- */
 #main-controls { 
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; margin-top: 5px;
+    display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; margin-top: 5px;
 }
-.btn-main { grid-column: span 3; padding: 12px; font-weight: bold; background: var(--accent); color: white; border: none; border-radius: var(--radius-main); cursor: pointer; font-size: 1.1rem; }
+.btn-main { padding: 12px; font-weight: bold; background: var(--accent); color: white; border: none; border-radius: var(--radius-main); cursor: pointer; font-size: 1.1rem; width: 100%; }
+.nav-btn-row { display: flex; justify-content: center; align-items: flex-start; gap: 20px; padding: 4px 0; }
+.nav-btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.nav-btn-label { font-size: 10px; color: #888; line-height: 1; }
+.btn-nav-round { width: 48px; height: 48px; border-radius: 50%; background: #333; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; flex-shrink: 0; }
+.btn-nav-round:hover { background: #444; transform: scale(1.08); }
+.btn-nav-round:active { transform: scale(0.93); }
+body.amoled-mode .btn-nav-round { background: #111; border: 1px solid #333; }
+body.amoled-mode .btn-nav-round:hover { background: #222; }
+.btn-reset-full { width: 100%; background: #333; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12.5px; }
+body.amoled-mode .btn-reset-full { background: #111; border: 1px solid #333; }
+.btn-reset-full:hover { background: #444; }
+body.amoled-mode .btn-reset-full:hover { background: #222; }
 .btn-nav { background: #333; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12.5px; }
 body.amoled-mode .btn-nav { background: #111; border: 1px solid #333; }
 .btn-nav:hover { background: #444; }
@@ -788,10 +806,10 @@ body.amoled-mode .ss-heatmap-grid-wrap { background: #030303; }
 .floating-trash-btn:hover { color: var(--highlight-red) !important; border-color: var(--highlight-red) !important; background: rgba(231,76,60,0.15) !important; }
 
 .url-import-panel {
+    position: absolute; bottom: 0; left: 0; right: 0;
     display: flex; align-items: center; gap: 5px;
-    background: #1a1a1a; border: 1px solid var(--border-color);
-    padding: 7px 10px; border-radius: var(--radius-main);
-    margin-bottom: 8px; flex-shrink: 0;
+    background: #1a1a1a; border-top: 1px solid var(--border-color);
+    padding: 7px 10px; z-index: 11; border-radius: 0 0 var(--radius-main) var(--radius-main);
 }
 body.amoled-mode .url-import-panel { background: #050505; border-color: #222; }
 #url-import-input {
