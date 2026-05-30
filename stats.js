@@ -77,6 +77,17 @@ function getWeekKeys() {
     return keys;
 }
 function getMonthPrefix() { return new Date().toISOString().substring(0, 7); }
+function fmtWords(n) {
+    if (!n) return null;
+    return n >= 1000 ? `${(n/1000).toLocaleString('de-DE', {maximumFractionDigits:1})}k` : `${n}`;
+}
+function aggregateWords(allEntries, keyFilter) {
+    let total = 0;
+    for (const e of allEntries)
+        for (const [k, w] of Object.entries(e.wordsLog || {}))
+            if (keyFilter(k)) total += w;
+    return total;
+}
 function aggregatePeriod(allEntries, keyFilter) {
     let total = 0; const byBook = {};
     for (const e of allEntries) {
@@ -146,6 +157,10 @@ function buildQuickOverview(allEntries) {
     const wAvg  = weeklyAvgSecs(allEntries);
     const mAvg  = monthlyAvgSecs(allEntries);
 
+    const todayWords = aggregateWords(allEntries, k => k === todayKey);
+    const weekWords  = aggregateWords(allEntries, k => weekKeys.has(k));
+    const monthWords = aggregateWords(allEntries, k => k.startsWith(monthPfx));
+
     // ── Heute-Detail: Bücher die heute gelesen wurden ──────────────────────────
     const todayBooks = Object.values(today.byBook).sort((a,b) => b.secs - a.secs);
     const todayMaxSec = todayBooks.length ? todayBooks[0].secs : 1;
@@ -200,9 +215,19 @@ function buildQuickOverview(allEntries) {
             </div>
         </div>`;
 
-    const todaySub  = today.total > 0 ? `${Object.keys(today.byBook).length} Buch${Object.keys(today.byBook).length !== 1 ? 'er' : ''}` : '';
-    const weekSub   = week.total  > 0 ? (wAvg > 0 ? `Ø ${fmtSecs(Math.round(wAvg/7))}/Tag` : '') : '';
-    const monthSub  = month.total > 0 ? (mAvg > 0 ? `Ø ${fmtSecs(Math.round(mAvg/daysInMonth))}/Tag` : '') : '';
+    const todayBookCount = Object.keys(today.byBook).length;
+    const todaySub  = today.total > 0 ? [
+        `${todayBookCount} Buch${todayBookCount !== 1 ? 'er' : ''}`,
+        fmtWords(todayWords) ? `${fmtWords(todayWords)} Wörter` : null
+    ].filter(Boolean).join(' · ') : '';
+    const weekSub   = week.total  > 0 ? [
+        wAvg > 0 ? `Ø ${fmtSecs(Math.round(wAvg/7))}/Tag` : null,
+        fmtWords(weekWords) ? `${fmtWords(weekWords)} Wörter` : null
+    ].filter(Boolean).join(' · ') : '';
+    const monthSub  = month.total > 0 ? [
+        mAvg > 0 ? `Ø ${fmtSecs(Math.round(mAvg/daysInMonth))}/Tag` : null,
+        fmtWords(monthWords) ? `${fmtWords(monthWords)} Wörter` : null
+    ].filter(Boolean).join(' · ') : '';
 
     return `<div class="ss-section">
         ${sectionHeader('<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>', 'Aktuell')}
@@ -433,6 +458,7 @@ export async function renderStatsPanel() {
                         <span class="ss-book-pct">${entry.pct||0}%</span>
                         <span class="ss-book-time">${spentStr}</span>
                         ${wpmStr ? `<span class="ss-book-wpm">${wpmStr}</span>` : ''}
+                        ${entry.totalWordsDisplayed ? `<span class="ss-book-wpm">${fmtWords(entry.totalWordsDisplayed)} Wörter</span>` : ''}
                         ${statusStr ? `<span class="ss-book-status" style="color:${statusColor};margin-left:auto;">${statusStr}</span>` : ''}
                     </div>
                 </div>
