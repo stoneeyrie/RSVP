@@ -65,32 +65,18 @@ export function statsSetMonthFilter(ym) {
 }
 
 // ── Aggregations-Hilfsfunktionen ──────────────────────────────────────────────
-function localDateKey(d = new Date()) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function getTodayKey() { return localDateKey(); }
+function getTodayKey() { return new Date().toISOString().substring(0, 10); }
 function getWeekKeys() {
     const now = new Date();
     const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const keys = [];
     for (let i = 0; i <= day; i++) {
         const d = new Date(now); d.setDate(now.getDate() - (day - i));
-        keys.push(localDateKey(d));
+        keys.push(d.toISOString().substring(0, 10));
     }
     return keys;
 }
-function getMonthPrefix() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
-function fmtWords(n) {
-    if (!n) return null;
-    return n >= 1000 ? `${(n/1000).toLocaleString('de-DE', {maximumFractionDigits:1})}k` : `${n}`;
-}
-function aggregateWords(allEntries, keyFilter) {
-    let total = 0;
-    for (const e of allEntries)
-        for (const [k, w] of Object.entries(e.wordsLog || {}))
-            if (keyFilter(k)) total += w;
-    return total;
-}
+function getMonthPrefix() { return new Date().toISOString().substring(0, 7); }
 function aggregatePeriod(allEntries, keyFilter) {
     let total = 0; const byBook = {};
     for (const e of allEntries) {
@@ -107,7 +93,7 @@ function weeklyAvgSecs(allEntries) {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
             const d = new Date(k), mon = d.getDay() === 0 ? 6 : d.getDay() - 1;
             const monday = new Date(d); monday.setDate(d.getDate() - mon);
-            const wk = localDateKey(monday);
+            const wk = monday.toISOString().substring(0, 10);
             counts[wk] = (counts[wk] || 0) + (e.readingLog[k] || 0);
         }
     }
@@ -159,10 +145,6 @@ function buildQuickOverview(allEntries) {
     const month = aggregatePeriod(allEntries, k => k.startsWith(monthPfx));
     const wAvg  = weeklyAvgSecs(allEntries);
     const mAvg  = monthlyAvgSecs(allEntries);
-
-    const todayWords = aggregateWords(allEntries, k => k === todayKey);
-    const weekWords  = aggregateWords(allEntries, k => weekKeys.has(k));
-    const monthWords = aggregateWords(allEntries, k => k.startsWith(monthPfx));
 
     // ── Heute-Detail: Bücher die heute gelesen wurden ──────────────────────────
     const todayBooks = Object.values(today.byBook).sort((a,b) => b.secs - a.secs);
@@ -218,19 +200,9 @@ function buildQuickOverview(allEntries) {
             </div>
         </div>`;
 
-    const todayBookCount = Object.keys(today.byBook).length;
-    const todaySub  = today.total > 0 ? [
-        `${todayBookCount} Buch${todayBookCount !== 1 ? 'er' : ''}`,
-        fmtWords(todayWords) ? `${fmtWords(todayWords)} Wörter` : null
-    ].filter(Boolean).join(' · ') : '';
-    const weekSub   = week.total  > 0 ? [
-        wAvg > 0 ? `Ø ${fmtSecs(Math.round(wAvg/7))}/Tag` : null,
-        fmtWords(weekWords) ? `${fmtWords(weekWords)} Wörter` : null
-    ].filter(Boolean).join(' · ') : '';
-    const monthSub  = month.total > 0 ? [
-        mAvg > 0 ? `Ø ${fmtSecs(Math.round(mAvg/daysInMonth))}/Tag` : null,
-        fmtWords(monthWords) ? `${fmtWords(monthWords)} Wörter` : null
-    ].filter(Boolean).join(' · ') : '';
+    const todaySub  = today.total > 0 ? `${Object.keys(today.byBook).length} Buch${Object.keys(today.byBook).length !== 1 ? 'er' : ''}` : '';
+    const weekSub   = week.total  > 0 ? (wAvg > 0 ? `Ø ${fmtSecs(Math.round(wAvg/7))}/Tag` : '') : '';
+    const monthSub  = month.total > 0 ? (mAvg > 0 ? `Ø ${fmtSecs(Math.round(mAvg/daysInMonth))}/Tag` : '') : '';
 
     return `<div class="ss-section">
         ${sectionHeader('<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>', 'Aktuell')}
@@ -282,7 +254,7 @@ export async function renderStatsPanel() {
     const finishedCount = allEntries.filter(e => e.pct >= 99).length;
     const startedCount  = allEntries.filter(e => (e.lastIndex||0) > 0 && e.pct < 99).length;
     const totalSecs     = allEntries.reduce((s, e) => s + (e.totalReadSeconds||0), 0);
-    const totalWords    = allEntries.reduce((s, e) => s + (e.lastIndex||0), 0);
+    const totalWords    = allEntries.reduce((s, e) => s + (e.totalWordsDisplayed||0), 0);
     const wpmEntries    = allEntries.filter(e => e.avgWpm && e.sessionCount);
     const wAvgWpm       = wpmEntries.length > 0
         ? Math.round(wpmEntries.reduce((s,e) => s + e.avgWpm * e.sessionCount, 0) / wpmEntries.reduce((s,e) => s + e.sessionCount, 0))
@@ -306,7 +278,7 @@ export async function renderStatsPanel() {
             ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'), startedCount, 'Begonnen', '#f39c12')}
             ${kpiCard(kpiIcon('<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>'), fmtSecs(totalSecs), 'Lesezeit')}
             ${kpiCard(kpiIcon('<path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>'), wAvgWpm > 0 ? `${wAvgWpm}` : '–', 'Ø WPM')}
-            ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>'), wordsStr, 'Wörter')}
+            ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>'), totalWords > 0 ? wordsStr : '–', 'Wörter gelesen')}
         </div>
     </div>`;
 
@@ -461,7 +433,6 @@ export async function renderStatsPanel() {
                         <span class="ss-book-pct">${entry.pct||0}%</span>
                         <span class="ss-book-time">${spentStr}</span>
                         ${wpmStr ? `<span class="ss-book-wpm">${wpmStr}</span>` : ''}
-                        ${entry.totalWordsDisplayed ? `<span class="ss-book-wpm">${fmtWords(entry.totalWordsDisplayed)} Wörter</span>` : ''}
                         ${statusStr ? `<span class="ss-book-status" style="color:${statusColor};margin-left:auto;">${statusStr}</span>` : ''}
                     </div>
                 </div>
