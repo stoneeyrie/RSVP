@@ -109,6 +109,15 @@ export function buildBookData(htmlString, startIdx) {
     while ((node = walker.nextNode())) {
         let text = node.nodeValue;
         let tokens = text.split(/(\s+)/);
+        // Satzgrenzen innerhalb eines Tokens aufbrechen: "Wort.Wort" → "Wort." + "Wort"
+        // Nur trennen wenn nach dem Satzzeichen ein Großbuchstabe folgt (kein Dezimaltrennzeichen etc.)
+        const splitTokens = [];
+        for (const t of tokens) {
+            if (/^\s*$/.test(t)) { splitTokens.push(t); continue; }
+            const parts = t.split(/(?<=[.!?])(?=\p{Lu})/u);
+            splitTokens.push(...parts);
+        }
+        tokens = splitTokens;
         // Eigenständige Satzzeichen (.!?,;:…) an das vorherige Wort anhängen
         const mergedTokens = [];
         for (const t of tokens) {
