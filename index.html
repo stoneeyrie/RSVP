@@ -140,7 +140,9 @@
         <div id="main-controls">
             <button id="main-btn" class="btn-main">START</button>
             <button id="btn-back" class="btn-nav">-10 Wörter</button>
+            <button id="btn-back1" class="btn-nav">-1 Wort</button>
             <button id="btn-reset" class="btn-nav">Neustart</button>
+            <button id="btn-fwd1" class="btn-nav">+1 Wort</button>
             <button id="btn-fwd" class="btn-nav">+10 Wörter</button>
         </div>
 		
@@ -1168,6 +1170,16 @@ document.getElementById('btn-fwd').onclick = async () => {
             if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { setCurrentIndex(chapterOffsets[chapIdx + 1].start); setCurrentPageScrollOffset(0); renderPageMode(); } 
         }
     } else { setCurrentIndex(Math.min(words.length - 1, currentIndex + 10)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
+};
+
+document.getElementById('btn-fwd1').onclick = async () => {
+    setHyphenFragments(null);
+    if (!isPageMode) { setCurrentIndex(Math.min(words.length - 1, currentIndex + 1)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
+};
+
+document.getElementById('btn-back1').onclick = async () => {
+    setHyphenFragments(null);
+    if (!isPageMode) { setCurrentIndex(Math.max(0, currentIndex - 1)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
 };
 
 document.getElementById('btn-back').onclick = async () => { 
