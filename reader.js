@@ -28,8 +28,7 @@ export let chapterOffsets      = [];
 export let activeBookId        = 'schnellstart';
 export let activeBookTitle     = 'Freier Text';
 export let activeBookAuthor    = '';
-export let totalSessionSeconds   = 0;
-export let sessionWordsDisplayed = 0;
+export let totalSessionSeconds = 0;
 export let lastTickTime        = null;
 export let lastSavedIndex      = -1;
 export let lastSaveTime        = 0;
@@ -67,7 +66,6 @@ export function setActiveBookId(v)           { activeBookId = v; }
 export function setActiveBookTitle(v)        { activeBookTitle = v; }
 export function setActiveBookAuthor(v)       { activeBookAuthor = v; }
 export function setTotalSessionSeconds(v)    { totalSessionSeconds = v; }
-export function setSessionWordsDisplayed(v)  { sessionWordsDisplayed = v; }
 export function setLastTickTime(v)           { lastTickTime = v; }
 export function setLastSavedIndex(v)         { lastSavedIndex = v; }
 export function setLastSaveTime(v)           { lastSaveTime = v; }
@@ -111,6 +109,20 @@ export function buildBookData(htmlString, startIdx) {
     while ((node = walker.nextNode())) {
         let text = node.nodeValue;
         let tokens = text.split(/(\s+)/);
+        // Eigenständige Satzzeichen (.!?,;:…) an das vorherige Wort anhängen
+        const mergedTokens = [];
+        for (const t of tokens) {
+            if (/^[.!?,;:…]+$/.test(t) && mergedTokens.length > 0) {
+                let appended = false;
+                for (let i = mergedTokens.length - 1; i >= 0; i--) {
+                    if (mergedTokens[i].trim().length > 0) { mergedTokens[i] += t; appended = true; break; }
+                }
+                if (!appended) mergedTokens.push(t);
+            } else {
+                mergedTokens.push(t);
+            }
+        }
+        tokens = mergedTokens;
         let newHtml = "";
         let hasWords = false;
 
@@ -232,8 +244,10 @@ export function estimateBookRemainingSeconds(bookWords, lastIndex) {
         if (isPause    && /[.!?]/.test(w))              pauseCount++;
         if (isPause    && /[,]/.test(w))                pauseCount += 0.44; // 0.6/1.8*1.3 Anteil
         if (isLongWord && w.length > lwTrigger)          longWordCount++;
-        if (isHyphen   && w.includes('-') && w.length > 5) {
-            extraFragments += w.split(/(?<=-)/).length - 1;
+        if (isHyphen && w.length > 5) {
+            if      (w.includes('-')) extraFragments += w.split(/(?<=-)/).length - 1;
+            else if (w.includes('/')) extraFragments += w.split(/(?=\/)/).length - 1;
+            else if (/[a-zäöüß\d][A-ZÄÖÜ]/u.test(w)) extraFragments += w.split(/(?<=[a-zäöüß\d])(?=[A-ZÄÖÜ])/u).length - 1;
         }
     }
 
@@ -279,12 +293,21 @@ export function render() {
     if (currentIndex >= words.length) { currentIndex = words.length; stopEngineOnly(); updateProgressUI(true); return; }
     
     let wordStr = words[currentIndex] || "";
-    if (hyphenMode.checked && wordStr.includes('-') && wordStr.length > 5) {
-        if (!hyphenFragments) {
-            hyphenFragments = wordStr.split(/(?<=-)/);
-            hyphenFragmentIdx = 0;
+    if (hyphenMode.checked && wordStr.length > 5) {
+        const hasHyphen = wordStr.includes('-');
+        const hasSlash  = !hasHyphen && wordStr.includes('/');
+        const hasCamel  = !hasHyphen && !hasSlash && /[a-zäöüß\d][A-ZÄÖÜ]/u.test(wordStr);
+        if (hasHyphen || hasSlash || hasCamel) {
+            if (!hyphenFragments) {
+                if      (hasHyphen) hyphenFragments = wordStr.split(/(?<=-)/);
+                else if (hasSlash)  hyphenFragments = wordStr.split(/(?=\/)/);
+                else                hyphenFragments = wordStr.split(/(?<=[a-zäöüß\d])(?=[A-ZÄÖÜ])/u);
+                hyphenFragmentIdx = 0;
+            }
+            wordStr = hyphenFragments[hyphenFragmentIdx];
+        } else {
+            hyphenFragments = null;
         }
-        wordStr = hyphenFragments[hyphenFragmentIdx];
     } else {
         hyphenFragments = null;
     }
@@ -332,9 +355,8 @@ export function step() {
     if (lastTickTime) { const elapsedSeconds = (now - lastTickTime) / 1000; totalSessionSeconds += elapsedSeconds; }
     lastTickTime = now;
 
-    render();
-    sessionWordsDisplayed++;
-    if (!isPlaying) { lastTickTime = null; return; }
+    render(); 
+    if (!isPlaying) { lastTickTime = null; return; } 
     let delay = 60000 / (parseInt(wpmIn.value) || 300);
     
     let currentRenderedString = words[currentIndex] || "";
@@ -450,19 +472,13 @@ export async function saveSessionStats() {
             book.lastReadDate = new Date().toISOString();
             book.totalReadSeconds = (book.totalReadSeconds || 0) + totalSessionSeconds;
             // Tägliches Leseprotokoll direkt im Buch (für Timeline + Heute/Woche/Monat)
-            const _d = new Date();
-            const ymd = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`; // "YYYY-MM-DD" lokal
+            const ymd = new Date().toISOString().substring(0, 10); // "YYYY-MM-DD"
             book.readingLog = book.readingLog || {};
             book.readingLog[ymd] = (book.readingLog[ymd] || 0) + Math.round(totalSessionSeconds);
-            // Tatsächlich angezeigte RSVP-Wörter (inkl. Rücksprünge)
-            book.totalWordsDisplayed = (book.totalWordsDisplayed || 0) + sessionWordsDisplayed;
-            book.wordsLog = book.wordsLog || {};
-            book.wordsLog[ymd] = (book.wordsLog[ymd] || 0) + sessionWordsDisplayed;
             await saveBookToDB(book);
         }
     }
     totalSessionSeconds = 0;
-    sessionWordsDisplayed = 0;
 }
 
 
