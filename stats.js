@@ -65,18 +65,21 @@ export function statsSetMonthFilter(ym) {
 }
 
 // ── Aggregations-Hilfsfunktionen ──────────────────────────────────────────────
-function getTodayKey() { return new Date().toISOString().substring(0, 10); }
+function localDateKey(d = new Date()) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getTodayKey() { return localDateKey(); }
 function getWeekKeys() {
     const now = new Date();
     const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const keys = [];
     for (let i = 0; i <= day; i++) {
         const d = new Date(now); d.setDate(now.getDate() - (day - i));
-        keys.push(d.toISOString().substring(0, 10));
+        keys.push(localDateKey(d));
     }
     return keys;
 }
-function getMonthPrefix() { return new Date().toISOString().substring(0, 7); }
+function getMonthPrefix() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
 function aggregatePeriod(allEntries, keyFilter) {
     let total = 0; const byBook = {};
     for (const e of allEntries) {
@@ -93,7 +96,7 @@ function weeklyAvgSecs(allEntries) {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
             const d = new Date(k), mon = d.getDay() === 0 ? 6 : d.getDay() - 1;
             const monday = new Date(d); monday.setDate(d.getDate() - mon);
-            const wk = monday.toISOString().substring(0, 10);
+            const wk = localDateKey(monday);
             counts[wk] = (counts[wk] || 0) + (e.readingLog[k] || 0);
         }
     }

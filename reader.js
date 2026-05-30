@@ -447,7 +447,8 @@ export async function saveSessionStats() {
             book.lastReadDate = new Date().toISOString();
             book.totalReadSeconds = (book.totalReadSeconds || 0) + totalSessionSeconds;
             // Tägliches Leseprotokoll direkt im Buch (für Timeline + Heute/Woche/Monat)
-            const ymd = new Date().toISOString().substring(0, 10); // "YYYY-MM-DD"
+            const _d = new Date();
+            const ymd = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`; // "YYYY-MM-DD" lokal
             book.readingLog = book.readingLog || {};
             book.readingLog[ymd] = (book.readingLog[ymd] || 0) + Math.round(totalSessionSeconds);
             await saveBookToDB(book);
