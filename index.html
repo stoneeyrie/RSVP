@@ -127,45 +127,21 @@
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </button>
             </div>
-            <div id="url-import-panel" class="url-import-panel" style="display:none;">
-                <input type="url" id="url-import-input" placeholder="https://…" autocomplete="off" spellcheck="false">
-                <button id="url-import-go" class="url-import-go-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
-                </button>
-                <button id="url-import-cancel" class="url-import-cancel-btn">✕</button>
-            </div>
             <textarea id="input-text" placeholder="Füge hier deinen Text für den Schnellstart ein..."></textarea>
+        </div>
+        <div id="url-import-panel" class="url-import-panel" style="display:none;">
+            <input type="url" id="url-import-input" placeholder="https://…" autocomplete="off" spellcheck="false">
+            <button id="url-import-go" class="url-import-go-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+            </button>
+            <button id="url-import-cancel" class="url-import-cancel-btn">✕</button>
         </div>
 
         <div id="main-controls">
             <button id="main-btn" class="btn-main">START</button>
-            <div class="nav-btn-row">
-                <div class="nav-btn-wrap">
-                    <button id="btn-back1" class="btn-nav-round" title="-1 Wort">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
-                    </button>
-                    <span class="nav-btn-label" id="btn-back1-label">1</span>
-                </div>
-                <div class="nav-btn-wrap">
-                    <button id="btn-back" class="btn-nav-round" title="-10 Wörter">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6 8.5 6V6l-8.5 6z"/></svg>
-                    </button>
-                    <span class="nav-btn-label" id="btn-back-label">10</span>
-                </div>
-                <div class="nav-btn-wrap">
-                    <button id="btn-fwd" class="btn-nav-round" title="+10 Wörter">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
-                    </button>
-                    <span class="nav-btn-label" id="btn-fwd-label">10</span>
-                </div>
-                <div class="nav-btn-wrap">
-                    <button id="btn-fwd1" class="btn-nav-round" title="+1 Wort">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                    </button>
-                    <span class="nav-btn-label" id="btn-fwd1-label">1</span>
-                </div>
-            </div>
-            <button id="btn-reset" class="btn-reset-full">Neustart</button>
+            <button id="btn-back" class="btn-nav">-10 Wörter</button>
+            <button id="btn-reset" class="btn-nav">Neustart</button>
+            <button id="btn-fwd" class="btn-nav">+10 Wörter</button>
         </div>
 		
 		<div id="mode-controls">
@@ -802,11 +778,11 @@ function updateProgressUI(shouldSaveToDB = true) {
 }
 
 function updateFwdButtonText() {
-    if (!isPageMode) return; const fwdLabel = document.getElementById('btn-fwd-label'); if (!fwdLabel) return;
+    if (!isPageMode) return; const fwdBtn = document.getElementById('btn-fwd'); if (!fwdBtn) return;
     const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
     const colWidth = exactViewportWidth + 40;
-    if (pageTextContent.scrollLeft + colWidth >= pageScrollWidth - 45) { let chapIdx = getActiveChapterIndex(); if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { fwdLabel.innerText = "Kap. →"; return; } }
-    fwdLabel.innerText = "Seite →";
+    if (pageTextContent.scrollLeft + colWidth >= pageScrollWidth - 45) { let chapIdx = getActiveChapterIndex(); if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { fwdBtn.innerText = "Nächstes Kapitel"; return; } }
+    fwdBtn.innerText = "Seite vor";
 }
 
 function renderPageMode() {
@@ -944,9 +920,7 @@ function togglePageMode() {
         setChapterOnPageModeEnter(getActiveChapterIndex());
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
-        document.getElementById('btn-back-label').innerText = "Seite ←"; document.getElementById('btn-fwd-label').innerText = "Seite →"; 
-        document.getElementById('btn-back1').style.display = 'none'; document.getElementById('btn-fwd1').style.display = 'none';
-        document.getElementById('btn-back1-label').style.display = 'none'; document.getElementById('btn-fwd1-label').style.display = 'none';
+        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; 
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -960,9 +934,7 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back-label').innerText = "10"; document.getElementById('btn-fwd-label').innerText = "10"; 
-        document.getElementById('btn-back1').style.display = ''; document.getElementById('btn-fwd1').style.display = '';
-        document.getElementById('btn-back1-label').style.display = ''; document.getElementById('btn-fwd1-label').style.display = '';
+        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; 
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
@@ -1236,24 +1208,6 @@ document.getElementById('btn-back').onclick = async () => {
     }
 };
 
-document.getElementById('btn-back1').onclick = async () => {
-    if (isPageMode) return;
-    setHyphenFragments(null);
-    setCurrentIndex(Math.max(0, currentIndex - 1));
-    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
-    if (sideChapterPanel.classList.contains('active')) renderReaderChapterList();
-    render();
-};
-
-document.getElementById('btn-fwd1').onclick = async () => {
-    if (isPageMode) return;
-    setHyphenFragments(null);
-    setCurrentIndex(Math.min(words.length - 1, currentIndex + 1));
-    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
-    if (sideChapterPanel.classList.contains('active')) renderReaderChapterList();
-    render();
-};
-
 pageTextContent.onscroll = () => { 
     if (!isPageMode) return; 
     if (isSnapping) return; 
@@ -1322,15 +1276,14 @@ urlImportGo.onclick = async () => {
     urlImportGo.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="animation:spin 0.7s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>';
 
     try {
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
         const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data.contents) throw new Error('Keine Inhalte empfangen');
+        const htmlText = await res.text();
 
         // HTML parsen und Text extrahieren
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, 'text/html');
+        const doc = parser.parseFromString(htmlText, 'text/html');
 
         // Navigations- und Boilerplate-Elemente entfernen
         ['script','style','nav','header','footer','aside','iframe','noscript',
@@ -1343,10 +1296,7 @@ urlImportGo.onclick = async () => {
             || doc.body;
 
         const text = (main.innerText || main.textContent || '').trim()
-            .replace(/
-{3,}/g, '
-
-')
+            .replace(/\n{3,}/g, '\n\n')
             .replace(/[ 	]{2,}/g, ' ');
 
         if (text.length < 50) throw new Error('Zu wenig Text gefunden. Manche Seiten erlauben keinen externen Abruf.');
@@ -1356,8 +1306,7 @@ urlImportGo.onclick = async () => {
         urlImportPanel.style.display = 'none';
         urlImportInput.value = '';
     } catch (err) {
-        alert('Fehler beim Laden der URL:
-' + err.message);
+        alert('Fehler beim Laden der URL:\n' + err.message);
     } finally {
         urlImportGo.disabled = false;
         urlImportGo.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>';
