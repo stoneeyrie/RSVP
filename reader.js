@@ -28,7 +28,8 @@ export let chapterOffsets      = [];
 export let activeBookId        = 'schnellstart';
 export let activeBookTitle     = 'Freier Text';
 export let activeBookAuthor    = '';
-export let totalSessionSeconds = 0;
+export let totalSessionSeconds   = 0;
+export let sessionWordsDisplayed = 0;
 export let lastTickTime        = null;
 export let lastSavedIndex      = -1;
 export let lastSaveTime        = 0;
@@ -66,6 +67,7 @@ export function setActiveBookId(v)           { activeBookId = v; }
 export function setActiveBookTitle(v)        { activeBookTitle = v; }
 export function setActiveBookAuthor(v)       { activeBookAuthor = v; }
 export function setTotalSessionSeconds(v)    { totalSessionSeconds = v; }
+export function setSessionWordsDisplayed(v)  { sessionWordsDisplayed = v; }
 export function setLastTickTime(v)           { lastTickTime = v; }
 export function setLastSavedIndex(v)         { lastSavedIndex = v; }
 export function setLastSaveTime(v)           { lastSaveTime = v; }
@@ -330,8 +332,9 @@ export function step() {
     if (lastTickTime) { const elapsedSeconds = (now - lastTickTime) / 1000; totalSessionSeconds += elapsedSeconds; }
     lastTickTime = now;
 
-    render(); 
-    if (!isPlaying) { lastTickTime = null; return; } 
+    render();
+    sessionWordsDisplayed++;
+    if (!isPlaying) { lastTickTime = null; return; }
     let delay = 60000 / (parseInt(wpmIn.value) || 300);
     
     let currentRenderedString = words[currentIndex] || "";
@@ -451,10 +454,15 @@ export async function saveSessionStats() {
             const ymd = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`; // "YYYY-MM-DD" lokal
             book.readingLog = book.readingLog || {};
             book.readingLog[ymd] = (book.readingLog[ymd] || 0) + Math.round(totalSessionSeconds);
+            // Tatsächlich angezeigte RSVP-Wörter (inkl. Rücksprünge)
+            book.totalWordsDisplayed = (book.totalWordsDisplayed || 0) + sessionWordsDisplayed;
+            book.wordsLog = book.wordsLog || {};
+            book.wordsLog[ymd] = (book.wordsLog[ymd] || 0) + sessionWordsDisplayed;
             await saveBookToDB(book);
         }
     }
     totalSessionSeconds = 0;
+    sessionWordsDisplayed = 0;
 }
 
 
