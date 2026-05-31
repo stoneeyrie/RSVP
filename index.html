@@ -949,8 +949,19 @@ function togglePageMode() {
         setChapterOnPageModeEnter(getActiveChapterIndex());
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
-        document.getElementById('btn-back').querySelector('.skip-number').textContent = "←"; document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "→";
-        document.getElementById('btn-back1').style.display = "none"; document.getElementById('btn-fwd1').style.display = "none";
+        // eReader: nur Seite-vor/zurück als Text, Rest ausblenden
+        ['btn-back','btn-fwd'].forEach(id => {
+            const btn = document.getElementById(id);
+            btn.querySelector('.skip-icon').style.display = "none";
+            btn.querySelector('.skip-number').style.position = "relative";
+            btn.querySelector('.skip-number').style.top = "auto"; btn.querySelector('.skip-number').style.left = "auto"; btn.querySelector('.skip-number').style.transform = "none";
+            btn.querySelector('.skip-number').style.fontSize = "12px";
+        });
+        document.getElementById('btn-back').querySelector('.skip-number').textContent = "◀ Seite";
+        document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "Seite ▶";
+        document.getElementById('btn-back1').style.display = "none";
+        document.getElementById('btn-fwd1').style.display = "none";
+        document.getElementById('btn-reset').style.display = "none";
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -964,8 +975,19 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').querySelector('.skip-number').textContent = "-10"; document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "+10";
-        document.getElementById('btn-back1').style.display = ""; document.getElementById('btn-fwd1').style.display = "";
+        // RSVP: Icons und alle Buttons wiederherstellen
+        ['btn-back','btn-fwd'].forEach(id => {
+            const btn = document.getElementById(id);
+            btn.querySelector('.skip-icon').style.display = "";
+            const num = btn.querySelector('.skip-number');
+            num.style.position = "absolute"; num.style.top = "52.5%"; num.style.left = "50%";
+            num.style.transform = "translate(-50%, -50%)"; num.style.fontSize = "";
+        });
+        document.getElementById('btn-back').querySelector('.skip-number').textContent = "-10";
+        document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "+10";
+        document.getElementById('btn-back1').style.display = "";
+        document.getElementById('btn-fwd1').style.display = "";
+        document.getElementById('btn-reset').style.display = "";
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
