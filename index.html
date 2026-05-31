@@ -949,7 +949,8 @@ function togglePageMode() {
         setChapterOnPageModeEnter(getActiveChapterIndex());
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
-        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; 
+        document.getElementById('btn-back').querySelector('.skip-number').textContent = "←"; document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "→";
+        document.getElementById('btn-back1').style.display = "none"; document.getElementById('btn-fwd1').style.display = "none";
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -963,7 +964,8 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; 
+        document.getElementById('btn-back').querySelector('.skip-number').textContent = "-10"; document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "+10";
+        document.getElementById('btn-back1').style.display = ""; document.getElementById('btn-fwd1').style.display = "";
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
