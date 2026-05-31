@@ -483,23 +483,21 @@ body.amoled-mode .settings-cluster-header { color: #3498db; }
 .btn-nav {
     width: 46px; height: 46px; flex-shrink: 0;
     background: transparent; color: #ccc;
-    border: 2px solid #555; border-radius: 50%; cursor: pointer;
+    border: none; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    transition: color 0.2s, opacity 0.2s;
     padding: 0;
 }
 .btn-nav svg { display: block; }
-.btn-nav:hover { border-color: #aaa; color: #fff; background: rgba(255,255,255,0.05); }
+.btn-nav:hover { color: #fff; opacity: 0.85; }
 
-/* Neustart-Button: kleiner, abgerundet */
+/* Neustart-Button */
 .btn-nav-reset {
-    width: 36px; height: 36px;
-    border-color: #444; font-size: 18px; color: #888;
+    font-size: 22px; color: #888;
 }
-.btn-nav-reset:hover { border-color: #888; color: #fff; }
+.btn-nav-reset:hover { color: #fff; opacity: 1; }
 
-body.amoled-mode .btn-nav { border-color: #444; }
-body.amoled-mode .btn-nav:hover { background: rgba(255,255,255,0.07); }
+body.amoled-mode .btn-nav { color: #aaa; }
 
 		/* NEU: Zentrierter Container für die Modus-Buttons */
 		#mode-controls {
