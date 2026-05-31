@@ -481,23 +481,32 @@ body.amoled-mode .settings-cluster-header { color: #3498db; }
 
 /* Runde Skip-Buttons im Audible-Stil */
 .btn-nav {
-    width: 46px; height: 46px; flex-shrink: 0;
+    position: relative;
+    width: 54px; height: 54px; flex-shrink: 0;
     background: transparent; color: #ccc;
     border: none; border-radius: 50%; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: color 0.2s, opacity 0.2s;
+    transition: color 0.2s, background-color 0.2s, transform 0.1s;
     padding: 0;
 }
-.btn-nav svg { display: block; }
-.btn-nav:hover { color: #fff; opacity: 0.85; }
-
-/* Neustart-Button */
-.btn-nav-reset {
-    font-size: 22px; color: #888;
+.btn-nav .skip-icon { width: 46px; height: 46px; }
+.btn-nav .skip-number {
+    position: absolute;
+    font-size: 10px; font-weight: 700;
+    top: 52.5%; left: 50%;
+    transform: translate(-50%, -50%);
+    letter-spacing: -0.5px; color: #ccc;
+    transition: color 0.2s;
 }
-.btn-nav-reset:hover { color: #fff; opacity: 1; }
+.btn-nav:hover { color: var(--accent); background-color: rgba(52,152,219,0.12); }
+.btn-nav:hover .skip-number { color: var(--accent); }
+.btn-nav:active { transform: scale(0.94); }
+
+.btn-nav-reset { font-size: 24px; color: #888; }
+.btn-nav-reset:hover { color: #fff; background-color: rgba(255,255,255,0.08); }
 
 body.amoled-mode .btn-nav { color: #aaa; }
+body.amoled-mode .btn-nav .skip-number { color: #aaa; }
 
 		/* NEU: Zentrierter Container für die Modus-Buttons */
 		#mode-controls {
