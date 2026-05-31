@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	
+    <title>RSVP Speed Reader Pro v2.9.6</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RSVP Reader">
+    <meta name="theme-color" content="#121212">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+</head>
+<body>
+
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<div id="sidebar-menu" class="sidebar-panel sidebar-left">
+    <div class="sidebar-panel-header">
+        <span class="sidebar-panel-title">Menü Navigation</span>
+        <button id="sidebar-close-btn" class="sidebar-panel-close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+    </div>
+    <div class="sidebar-menu">
+        <button id="nav-faststart" class="menu-item-btn" onclick="navigateToFaststart()">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            Freier Text
+        </button>
+        <button id="nav-active-book" class="menu-item-btn" onclick="jumpToActiveBook()" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H4c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h16c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zM8 8l7 4-7 4V8z"/></svg>
+            Aktuelles Buch
+        </button>
+        <button id="nav-library" class="menu-item-btn" onclick="switchUIMode('library', 'library')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+            Meine Bibliothek
+        </button>
+        <button id="nav-stats" class="menu-item-btn" onclick="switchUIMode('library', 'stats')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+            Meine Statistik
+        </button>
+        <button id="nav-settings" class="menu-item-btn" onclick="switchUIMode('library', 'settings')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c1.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0-.44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Einstellungen
+        </button>
+        <button id="nav-backup" class="menu-item-btn" onclick="switchUIMode('library', 'backup')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+            Backup &amp; Restore
+        </button>
+        <button id="nav-about" class="menu-item-btn" onclick="switchUIMode('library', 'about')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Was ist RSVP?
+        </button>
+        <button id="nav-support" class="menu-item-btn" onclick="switchUIMode('library', 'support')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 3H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h4v2h8v-2h4c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 14H4V5h16v12zm-2-6.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm-6 0c0 .83-.67 1.5-1.5 1.5S8 11.33 8 10.5 8.67 9 9.5 9s1.5.67 1.5 1.5z"/></svg>
+            Unterstützen
+        </button>
+    </div>
+</div>
+
+<div id="chapter-side-panel" class="sidebar-panel sidebar-right">
+    <div class="sidebar-panel-header">
+        <span class="sidebar-panel-title">Buchkapitel</span>
+        <button id="chapter-panel-close-btn" class="sidebar-panel-close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+    </div>
+    <div id="chapter-list-scroll" class="chapter-list-scroll"></div>
+</div>
+
+<div id="reader-card">
+    <div class="top-bar">
+        <button id="hamburger-trigger" class="hamburger-btn" title="Menü öffnen">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <div class="progress-header">
+            <div class="title-wrapper">
+                <span id="author-label"></span>
+                <span id="time-label">Freier Text</span>
+            </div>
+            <div class="progress-stats-right">
+                <div id="global-chapter-counter" class="time-row-style"></div>
+                <div id="global-time-counter" class="time-row-style"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="progress-row-container" class="progress-row-container">
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <span id="percent-label">0%</span>
+    </div>
+
+    <div id="main-reader-view" class="view-active">
+        <div id="word-display">
+            <div id="anchor-guide"></div>
+            <div id="word-canvas">
+                <span id="txt-left"></span><span id="txt-center" class="highlight"></span><span id="txt-right"></span>
+            </div>
+        </div>
+
+        <div id="page-display-container">
+            <div id="page-text-content"></div>
+        </div>
+
+        <div class="reader-quick-settings">
+            <div class="quick-input-card"><span>WPM (Tempo)</span><input type="number" id="wpm" value="300"></div>
+            <div class="quick-input-card"><span>Schrift (px)</span><input type="number" id="font-size" value="50"></div>
+        </div>
+
+        <div id="faststart-textbox-container" class="textbox-active">
+            <div class="floating-btn-group">
+                <button id="btn-url-import" class="floating-action-btn" title="Text von URL laden">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+                </button>
+                <button id="btn-clear-floating" class="floating-action-btn floating-trash-btn" title="Text komplett löschen">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+            </div>
+            <textarea id="input-text" placeholder="Füge hier deinen Text für den Schnellstart ein..."></textarea>
+        </div>
+        <div id="url-import-panel" class="url-import-panel" style="display:none;">
+            <input type="url" id="url-import-input" placeholder="https://…" autocomplete="off" spellcheck="false">
+            <button id="url-import-go" class="url-import-go-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+            </button>
+            <button id="url-import-cancel" class="url-import-cancel-btn">✕</button>
+        </div>
+
+        <div id="main-controls">
+            <button id="btn-back" class="btn-nav" title="-10 Wörter">
+                <svg class="skip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </svg>
+                <span class="skip-number">-10</span>
+            </button>
+            <button id="btn-back1" class="btn-nav" title="-1 Wort">
+                <svg class="skip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </svg>
+                <span class="skip-number">-1</span>
+            </button>
+
+            <button id="main-btn" class="btn-main">START</button>
+
+            <button id="btn-fwd1" class="btn-nav" title="+1 Wort">
+                <svg class="skip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                </svg>
+                <span class="skip-number">+1</span>
+            </button>
+            <button id="btn-fwd" class="btn-nav" title="+10 Wörter">
+                <svg class="skip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                </svg>
+                <span class="skip-number">+10</span>
+            </button>
+
+            <button id="btn-reset" class="btn-nav btn-nav-reset" title="Neustart">↺</button>
+        </div>
+		
+		<div id="mode-controls">
+        <button id="reader-chapter-toggle" class="btn-mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="4" cy="6" r="2"/><rect x="8" y="5" width="14" height="2"/>
+                <circle cx="4" cy="12" r="2"/><rect x="8" y="11" width="14" height="2"/>
+                <circle cx="4" cy="18" r="2"/><rect x="8" y="17" width="14" height="2"/>
+            </svg>
+            Kapitelübersicht
+        </button>
+		<div class="mode-divider"></div>
+        <button id="reader-mode-toggle" class="btn-mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <span>eReader-Modus</span>
+        </button>
+    </div>
+	
+    </div>
+
+    <div id="main-dynamic-view" class="dynamic-content-area">
+        <div id="panel-library" class="app-panel">
+            <div class="lib-header-row">
+                <div class="lib-tabs">
+                    <button class="lib-tab active" onclick="filterLibrary('all', this)">Alle</button>
+                    <button class="lib-tab" onclick="filterLibrary('new', this)">Neu</button>
+                    <button class="lib-tab" onclick="filterLibrary('reading', this)">Begonnen</button>
+                    <button class="lib-tab" onclick="filterLibrary('finished', this)">Beendet</button>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <button id="btn-author-filter" class="lib-filter-author-btn" onclick="toggleAuthorFilter()" title="Nach Autor filtern">
+                        <svg width="13" height="13" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                        Autor
+                    </button>
+                    <button class="btn-import" onclick="document.getElementById('file-input').click()">Importieren</button>
+                </div>
+            </div>
+            <div id="lib-author-filter-row" class="lib-author-filter-row">
+                <select id="lib-author-select" class="lib-author-select" onchange="onAuthorSelectChange(this)">
+                    <option value="">— Alle Autoren —</option>
+                </select>
+            </div>
+            <div id="library-list"></div>
+        </div>
+
+        <div id="panel-settings" class="app-panel">
+            <div class="settings-grid">
+
+                <!-- CLUSTER: Allgemein -->
+                <div class="settings-cluster-header">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    Allgemein
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Auto-Resume</span>
+                        <span class="setting-desc">Lädt beim Start automatisch das zuletzt gelesene Buch.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="resume-book-toggle"><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: Darstellung -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    Darstellung
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">AMOLED Black Mode</span>
+                        <span class="setting-desc">Setzt alle Hintergründe auf reines Schwarz – spart bei OLED-Displays maximal Akku.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="amoled-mode-toggle"><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Fortschrittsbalken anzeigen</span>
+                        <span class="setting-desc">Zeigt den Lese-Fortschrittsbalken mit Prozentangabe im Reader an.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-progress-bar-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Reset-Button bei Büchern</span>
+                        <span class="setting-desc">Zeigt den Neustart-Button auch an, wenn ein Buch aus der Bibliothek geladen ist.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-reset-button-toggle" checked><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: Zeitanzeigen -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                    Zeitanzeigen
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Kapitel: Gelesene / Gesamtzeit</span>
+                        <span class="setting-desc">Zeigt aktuelle und Gesamtdauer des aktuellen Kapitels oben rechts.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-chapter-time-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Kapitel: Verbleibende Restzeit</span>
+                        <span class="setting-desc">Zeigt die noch verbleibende Lesezeit im aktuellen Kapitel.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-chapter-remaining-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Buch: Gelesene / Gesamtzeit</span>
+                        <span class="setting-desc">Zeigt aktuelle und Gesamtdauer des gesamten Buches.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-book-time-toggle" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Buch: Verbleibende Restzeit</span>
+                        <span class="setting-desc">Zeigt die noch verbleibende Lesezeit für das gesamte Buch.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="show-book-remaining-toggle" checked><span class="slider"></span></label>
+                </div>
+
+                <!-- CLUSTER: RSVP-Modus -->
+                <div class="settings-cluster-header" style="margin-top:6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>
+                    RSVP-Modus
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Intelligente Satzpausen</span>
+                        <span class="setting-desc">Verlängert die Anzeigezeit bei Satzzeichen (. ! ? ,) automatisch – starke Pausen (. ! ?) um das 1,8-fache, Komma um das 1,6-fache.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="pause-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Silbentrennung erlauben</span>
+                        <span class="setting-desc">Trennt lange Wörter an Bindestrichen auf und zeigt sie Silbe für Silbe.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="hyphen-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Extra-Zeit für lange Wörter</span>
+                        <span class="setting-desc">Gibt Wörtern ab <span class="inline-setting-input"><input type="number" id="long-word-trigger" value="8"> Zeichen</span> das 1,4-fache an Anzeigezeit.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="long-word-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Automatischer Rücksprung</span>
+                        <span class="setting-desc">Springt beim Öffnen um <span class="inline-setting-input"><input type="number" id="rewind-amount" value="10"> Wörter</span> zurück, um den Einstieg zu erleichtern.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="rewind-mode" checked><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
+                        <span class="setting-title">Stopp nach Kapitelende</span>
+                        <span class="setting-desc">Hält die Wiedergabe automatisch am Ende eines Kapitels an und zeigt den Namen des nächsten Kapitels im Reader an.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="stop-at-chapter-end"><span class="slider"></span></label>
+                </div>
+
+
+            </div>
+        </div>
+
+        <div id="panel-backup" class="app-panel">
+            <div class="info-container">
+                <div class="settings-cluster-header">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                    Backup &amp; Restore
+                </div>
+                <div class="setting-toggle-card" style="flex-direction:column;align-items:flex-start;gap:0;">
+                    <div class="setting-text-group" style="width:100%;">
+                        <span class="setting-title">Lesedaten sichern &amp; übertragen</span>
+                        <span class="setting-desc">Exportiert Lesefortschritt, letzten Lesetag und Ø-WPM aller Bücher als JSON. Beim Import auf einem neuen Gerät werden die Daten anhand von Titel &amp; Autor automatisch zugeordnet.</span>
+                    </div>
+                    <div class="backup-btn-row">
+                        <button class="backup-btn" onclick="exportBackup()">
+                            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z"/></svg>
+                            Exportieren
+                        </button>
+                        <button class="backup-btn restore-btn" onclick="document.getElementById('backup-file-input').click()">
+                            <svg width="15" height="15" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6-7.83L10.41 5.59 9 4.17 12 1.17l3 3-1.41 1.42L13 4.17v8.5h-2v-8.5z"/></svg>
+                            Importieren
+                        </button>
+                        <input type="file" id="backup-file-input" accept=".json" style="display:none;" onchange="importBackup(event)">
+                    </div>
+                    <div class="backup-info-text">
+                        <strong>Was wird gesichert:</strong> Fortschritt, letzter Lesetag, Ø-WPM, Gesamtlesezeit, Einstellungen.<br>
+                        <strong>Was nicht:</strong> Buchinhalte (urheberrechtlich geschützt).
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-about" class="app-panel">
+            <div class="info-container">
+
+                <!-- Was ist RSVP -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        Was ist RSVP Speed Reading?
+                    </div>
+                    <div class="info-body">
+                        <strong>Rapid Serial Visual Presentation (RSVP)</strong> ist eine kognitionswissenschaftliche Lesetechnik, bei der Wörter einzeln und nacheinander an einem fixen Punkt auf dem Bildschirm erscheinen. Entwickelt wurde das Konzept in den 1970er-Jahren von Forschern wie <strong>Lawrence Forster</strong> (MIT, 1970) und später insbesondere von <strong>Keith Rayner</strong>, dessen jahrzehntelange Augenbewegungsforschung die Grundlagen des schnellen Lesens maßgeblich geprägt hat.
+                        <br><br>
+                        Der Kern des Prinzips: Beim normalen Lesen verbringt das Auge bis zu <strong>30 % der Zeit mit sogenannten Sakkaden</strong> – ruckartigen Sprüngen zwischen Wörtern. RSVP eliminiert diese Bewegungen vollständig, indem der Text zur Fixierung kommt, nicht umgekehrt.
+                    </div>
+                </div>
+
+                <!-- Wie das Gehirn liest -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7zm-1-11h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        Wie das Gehirn beim Lesen arbeitet
+                    </div>
+                    <div class="info-body">
+                        Das menschliche Gehirn verarbeitet Sprache nicht Buchstabe für Buchstabe, sondern erkennt Wörter als visuelle Muster – ein Effekt, der als <strong>Worterkennung durch Mustererkennung</strong> (parallel letter recognition, Grainger &amp; Jacobs, 1996) bekannt ist. RSVP nutzt genau diesen Mechanismus.
+                        <br><br>
+                        Dabei spielen drei Prozesse eine Rolle:
+                    </div>
+                    <div class="info-tip-row" style="margin-top:10px;">
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">👁️</div>
+                            <div class="info-tip-text"><strong>Fixation:</strong> Das Auge hält 200–250 ms auf einem Punkt. RSVP erzwingt eine konstante Fixation – keine Energie wird für Augenbewegungen verschwendet.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🧠</div>
+                            <div class="info-tip-text"><strong>Lexikalischer Zugriff:</strong> Wörter werden aus dem mentalen Lexikon abgerufen. Bei geübten Lesern geschieht dies in unter 150 ms pro Wort (Perfetti, 1985).</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🔗</div>
+                            <div class="info-tip-text"><strong>Satzintegration:</strong> Das Arbeitsgedächtnis verknüpft aufeinanderfolgende Wörter zu Bedeutung. RSVP trainiert diesen Puffer, effizienter zu arbeiten.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lesegeschwindigkeiten -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.81 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5V2.05z"/></svg>
+                        Lesegeschwindigkeiten im Vergleich
+                    </div>
+                    <table class="info-wpm-table">
+                        <thead><tr><th>Niveau</th><th>WPM</th><th class="wpm-bar-cell">Tempo</th></tr></thead>
+                        <tbody>
+                            <tr><td>Langsamer Leser</td><td>150–200</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:20%;background:#e74c3c;"></div></div></td></tr>
+                            <tr><td>Durchschnitt</td><td>200–300</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:35%;background:#f39c12;"></div></div></td></tr>
+                            <tr><td>Geübter Leser</td><td>300–400</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:50%;"></div></div></td></tr>
+                            <tr><td>RSVP-Einsteiger</td><td>400–500</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:65%;"></div></div></td></tr>
+                            <tr><td>RSVP geübt</td><td>500–700</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:82%;background:var(--accent-green);"></div></div></td></tr>
+                            <tr><td>RSVP Fortgeschritten</td><td>700–1000+</td><td class="wpm-bar-cell"><div class="wpm-bar-bg"><div class="wpm-bar-fill" style="width:100%;background:var(--accent-green);"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                    <div class="info-body" style="margin-top:9px; font-size:11.5px; color:#777;">
+                        Quelle: Rayner et al. (2016), „So Much to Read, So Little Time", Psychological Science in the Public Interest.
+                    </div>
+                </div>
+
+                <!-- Vorteile & Grenzen -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        Stärken &amp; ehrliche Grenzen
+                    </div>
+                    <div class="info-pro-con-grid">
+                        <div class="info-pro-col">
+                            <div class="info-col-label green">Stärken</div>
+                            <div class="info-pro-item">Eliminiert Sakkaden – bis zu 30 % Zeitgewinn allein dadurch</div>
+                            <div class="info-pro-item">Erzwingt Fokus – Ablenkung durch Rückspringen im Text entfällt</div>
+                            <div class="info-pro-item">Ideal für lineare Texte, Sachbücher und Romane</div>
+                            <div class="info-pro-item">Trainingseffekt: das Arbeitsgedächtnis wächst mit der Übung</div>
+                            <div class="info-pro-item">Kein Gerät außer dem Smartphone nötig</div>
+                        </div>
+                        <div class="info-con-col">
+                            <div class="info-col-label orange">Grenzen</div>
+                            <div class="info-con-item">Kein Zurückspringen möglich – Verständnis leidet bei sehr hohem Tempo</div>
+                            <div class="info-con-item">Komplexe Fachtexte erfordern Verlangsamung</div>
+                            <div class="info-con-item">Anfangs ungewohnt – Eingewöhnungszeit von 1–2 Wochen einplanen</div>
+                            <div class="info-con-item">Nicht geeignet für Texte, die visuell navigiert werden (Tabellen, Formeln)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORP Erklärung -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        Der rote Buchstabe – Optimal Recognition Point
+                    </div>
+                    <div class="info-body">
+                        Der rot hervorgehobene Buchstabe in dieser App markiert den <strong>Optimal Recognition Point (ORP)</strong> – auch bekannt als „Optimal Viewing Position" (O'Regan &amp; Lévy-Schoen, 1987). Studien zeigen, dass das Gehirn ein Wort am schnellsten verarbeitet, wenn das Auge <strong>leicht links von der Wortmitte</strong> fixiert – bei einem 4-buchstabigen Wort etwa auf Position 2, bei einem 10-buchstabigen auf Position 3–4.
+                        <br><br>
+                        Durch die konstante Ausrichtung am ORP muss das Gehirn <strong>keine Korrektur-Sakkade</strong> mehr durchführen, und die Erkennungslatenz sinkt messbar.
+                    </div>
+                </div>
+
+                <!-- Tipps -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        Tipps für den Einstieg
+                    </div>
+                    <div class="info-tip-row">
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🐢</div>
+                            <div class="info-tip-text"><strong>Starte bei 200–250 WPM</strong> – auch wenn es langsam wirkt. Lass das Gehirn die Technik verinnerlichen, bevor du steigerst.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">📈</div>
+                            <div class="info-tip-text"><strong>Steigere in 25er-Schritten</strong>, sobald du merkst, dass du bei deiner aktuellen Geschwindigkeit entspannt mitkommst – nicht wenn du dich durchbeißt.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">⏱️</div>
+                            <div class="info-tip-text"><strong>15–20 Minuten täglich</strong> sind effektiver als seltene Marathonsitzungen. Das Gehirn konsolidiert Lesetechniken im Schlaf.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">📚</div>
+                            <div class="info-tip-text"><strong>Starte mit Romanen oder leichten Sachbüchern</strong> – dichte Fachtexte erfordern mehr kognitive Kapazität und eignen sich für den Anfang weniger gut.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">🔁</div>
+                            <div class="info-tip-text"><strong>Nutze den Auto-Rücksprung</strong> (in den Einstellungen aktivierbar) – ein kurzer Rücksprung beim Öffnen hilft, den Faden sofort wieder aufzunehmen.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats & Version -->
+                <div class="info-highlight-box">
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">~250</div>
+                        <div class="info-stat-lbl">Ø WPM normales Lesen</div>
+                    </div>
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">30 %</div>
+                        <div class="info-stat-lbl">Zeit durch Sakkaden verschwendet</div>
+                    </div>
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">150 ms</div>
+                        <div class="info-stat-lbl">Minimale Wort-Erkennungszeit</div>
+                    </div>
+                    <div class="info-stat-card">
+                        <div class="info-stat-num">700+</div>
+                        <div class="info-stat-lbl">WPM mit RSVP möglich</div>
+                    </div>
+                </div>
+
+                <div class="info-version-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="fill:var(--accent);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    RSVP Speed Reader Pro &nbsp;·&nbsp; <span>v2.9.6</span> &nbsp;·&nbsp; Alle Daten bleiben lokal auf deinem Gerät
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Support Panel -->
+        <div id="panel-support" class="app-panel">
+            <div class="info-container">
+                
+                <!-- Danke Header -->
+                <div class="info-section">
+                    <div style="text-align:center; padding:20px 0 10px 0;">
+                        <h2 style="margin:0; font-size:24px; color:var(--accent);">Danke, dass du diese App nutzt!</h2>
+                    </div>
+                    <div class="info-body" style="text-align:center;">
+                        Diese App ist und bleibt <strong>100% kostenlos, werbefrei und ohne Datensammlung</strong>. 
+                        Alle deine Bücher und Einstellungen bleiben lokal auf deinem Gerät – kein Cloud-Upload, kein Tracking.
+                        <br><br>
+                        Falls dir die App gefällt und du das Projekt unterstützen möchtest, freue ich mich über einen kleinen Kaffee! ☕
+                    </div>
+                </div>
+
+                <!-- Buy Me a Coffee -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 3H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h4v2h8v-2h4c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 14H4V5h16v12zm-2-6.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5.67-1.5 1.5-1.5 1.5.67 1.5 1.5zm-6 0c0 .83-.67 1.5-1.5 1.5S8 11.33 8 10.5 8.67 9 9.5 9s1.5.67 1.5 1.5z"/></svg>
+                        Buy Me a Coffee
+                    </div>
+                    <div class="info-body" style="text-align:center; padding:20px 0;">
+                        <!-- HIER DEINEN LINK EINFÜGEN -->
+                        <a href="https://buymeacoffee.com/DEIN_USERNAME" 
+                           target="_blank" 
+                           style="display:inline-block; padding:14px 32px; background:#FFDD00; color:#000; text-decoration:none; border-radius:8px; font-weight:bold; font-size:16px; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 12px rgba(255,221,0,0.3);"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255,221,0,0.4)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(255,221,0,0.3)';">
+                            ☕ Kauf mir einen Kaffee
+                        </a>
+                        <div style="margin-top:12px; font-size:12px; color:#888;">
+                            Jeder Beitrag hilft, diese App weiterzuentwickeln!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alternative Unterstützung -->
+                <div class="info-section">
+                    <div class="info-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        Andere Wege zu helfen
+                    </div>
+                    <div class="info-tip-row">
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">⭐</div>
+                            <div class="info-tip-text"><strong>Bewerte die App</strong> – Eine gute Bewertung im App Store hilft anderen, diese kostenlose App zu entdecken.</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">📢</div>
+                            <div class="info-tip-text"><strong>Empfehle sie weiter</strong> – Erzähle Freunden und Familie von dieser App, wenn sie dir gefällt!</div>
+                        </div>
+                        <div class="info-tip-item">
+                            <div class="info-tip-icon">💡</div>
+                            <div class="info-tip-text"><strong>Schicke Feedback</strong> – Ideen für neue Features sind immer willkommen und helfen, die App besser zu machen.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistik Panel -->
+        <div id="panel-stats" class="app-panel">
+            <div id="stats-content"></div>
+        </div>
+
+    </div>
+</div>
+<input type="file" id="file-input" accept=".txt,.epub,.pdf">
+
+<script type="module">
+import { initDB, migrateLibraryContent, getAllBooksFromDB, getBookFromDB, saveBookToDB, getAppState, saveAppState } from './db.js';
+import {
+    // Funktionen
+    render, step, start, stopEngineOnly, saveSessionStats, estimateSeconds, formatDuration, buildBookData, estimateBookRemainingSeconds, buildEstimatedTimeCumulative, generateThumbnail, resizeCoverImage, setupPageSnapStyles,
+    // State (read)
+    words, currentIndex, timer, isPlaying, chapterOffsets, activeBookId, activeBookTitle, activeBookAuthor, totalSessionSeconds, lastTickTime, lastSavedIndex, lastSaveTime, hyphenFragments, hyphenFragmentIdx, estimatedTimeCache, estimatedTimeCacheKey, isCurrentlyInRSVPFlow, isSnapping, isPageMode, currentPageScrollOffset, pageScrollWidth, indexOnPageModeEnter, initialPageOnEnter, chapterOnPageModeEnter, pageRenderTimeout, currentLibraryFilter, currentAuthorFilter,
+    // Setter (write)
+    setWords, setCurrentIndex, setTimer, setIsPlaying, setChapterOffsets, setActiveBookId, setActiveBookTitle, setActiveBookAuthor, setTotalSessionSeconds, setLastTickTime, setLastSavedIndex, setLastSaveTime, setHyphenFragments, setHyphenFragmentIdx, setEstimatedTimeCache, setEstimatedTimeCacheKey, setIsCurrentlyInRSVPFlow, setIsSnapping, setIsPageMode, setCurrentPageScrollOffset, setPageScrollWidth, setIndexOnPageModeEnter, setInitialPageOnEnter, setChapterOnPageModeEnter, setPageRenderTimeout, setCurrentLibraryFilter, setCurrentAuthorFilter,
+} from './reader.js';
+import {
+    canvas, tLeft, tCenter, tRight, input,
+    wpmIn, fsIn, mainBtn, pauseMode, hyphenMode, longWordMode,
+    longWordTrigger, rewindMode, rewindAmount, stopAtChapterEnd,
+    resumeToggle, showChapterTimeToggle, showChapterRemainingToggle,
+    showBookTimeToggle, showBookRemainingToggle,
+    showProgressBarToggle, amoledModeToggle,
+    viewReader, viewDynamic, textboxContainer,
+    sideChapterPanel, chapterSubheaderBar, chapterToggleBtn,
+    chapterPanelCloseBtn, chapterListScroll,
+    sidebarMenu, sidebarOverlay, hamburgerTrigger, sidebarCloseBtn,
+    wordDisplay, pageDisplayContainer, pageTextContent, readerModeToggle,
+    authorLabel, timeLabel, percentLabel,
+    globalTimeCounter, globalChapterCounter,
+    progressBar, progressRowContainer,
+    appPanels, navButtons, libraryList, fileInput,
+} from './dom.js';
+import { renderStatsPanel, showStatsTab, statsSetMonthFilter, handleStatsDelete, statsToggleDetail } from './stats.js';
+import { exportBackup, importBackup } from './backup.js';
+import { saveSettings, applySettingsToUI, updateResetButtonVisibility } from './settings.js';
+import { renderLibraryList, loadLibraryBook, finalizeBookImport, filterLibrary, toggleAuthorFilter, onAuthorSelectChange, populateAuthorDropdown, renderReaderChapterList } from './library.js';
+import { switchUIMode, openLeftMenu, closeLeftMenu, openRightMenu, closeRightMenu, closeAllMenus, navigateToFaststart, jumpToActiveBook, updateActiveBookMenuState, cleanBookTitle } from './ui.js';
+
+// ── Window-Bindungen für inline onclick-Handler ───────────────────────────────
+// Inline HTML-Handler (onclick="...") brauchen globalen Zugriff via window.*
+window.start                = start;
+window.closeRightMenu       = closeRightMenu;
+window.filterLibrary        = filterLibrary;
+// impl-Bindungen: Brücken von Stubs in reader.js zu den echten Funktionen hier
+window.togglePageMode_impl        = togglePageMode;
+window.renderPageMode_impl        = renderPageMode;
+window.getActiveChapterIndex_impl = getActiveChapterIndex;
+window.updateProgressUI_impl      = updateProgressUI;
+window.updateActiveBookMenuState_impl = updateActiveBookMenuState;
+window.toggleAuthorFilter   = toggleAuthorFilter;
+window.onAuthorSelectChange = onAuthorSelectChange;
+window.exportBackup         = exportBackup;
+window.importBackup         = importBackup;
+window.navigateToFaststart  = navigateToFaststart;
+window.jumpToActiveBook     = jumpToActiveBook;
+window.switchUIMode         = switchUIMode;
+window.statsSetMonthFilter  = statsSetMonthFilter;
+window.handleStatsDelete    = handleStatsDelete;
+window.showStatsTab         = showStatsTab;
+window.statsToggleDetail    = statsToggleDetail;
+
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+let scrollTimeout;
+
+// DOM-Refs → dom.js
+// → ui.js
+
+function getActiveChapterIndex() {
+    if (chapterOffsets.length === 0) return -1;
+    for (let i = chapterOffsets.length - 1; i >= 0; i--) { if (chapterOffsets[i].start <= currentIndex) return i; }
+    return 0;
+}
+
+// -------------------------------------------------------------------------------
+
+// --- Statistik-Panel rendern --------------------------------------------------
+// → stats.js
+
+// --- Tab-Umschaltung im Statistik-Panel ----------------------------------------
+// → stats.js
+
+// → stats.js
+
+// → stats.js
+
+// → stats.js
+
+// -------------------------------------------------------------------------------
+
+// --- OPTIMIERT: Flexibel konfigurierbare Zeitanzeige nach Logik getrennt ---
+function updateProgressUI(shouldSaveToDB = true) {
+    return new Promise((resolve) => {
+        if (viewDynamic.classList.contains('view-active')) { progressRowContainer.classList.remove('bar-visible'); return resolve(); }
+        if (showProgressBarToggle.checked && viewReader.classList.contains('view-active')) progressRowContainer.classList.add('bar-visible'); else progressRowContainer.classList.remove('bar-visible');
+
+        const hasText = words.length > 0;
+        if (!hasText) { authorLabel.innerText = ""; timeLabel.innerText = "Freier Text"; percentLabel.innerText = "0%"; globalTimeCounter.innerHTML = ""; globalChapterCounter.innerHTML = ""; progressBar.style.width = "0%"; return resolve(); }
+        
+        const wpm = parseInt(wpmIn.value) || 300; 
+        
+        // Globale Berechnungen – realistisch inkl. Pause- & Langwort-Modifier
+        const totalSecGlobal     = estimateSeconds(0, words.length);
+        const currentSecGlobal   = estimateSeconds(0, currentIndex);
+        const remainingSecGlobal = Math.max(0, totalSecGlobal - currentSecGlobal);
+        
+        const showBookTime = showBookTimeToggle && showBookTimeToggle.checked;
+        const showBookRemaining = showBookRemainingToggle && showBookRemainingToggle.checked;
+        const showChapterTime = showChapterTimeToggle && showChapterTimeToggle.checked;
+        const showChapterRemaining = showChapterRemainingToggle && showChapterRemainingToggle.checked;
+
+        if (activeBookId !== "schnellstart") {
+            authorLabel.innerText = activeBookAuthor ? activeBookAuthor : "Unbekannter Autor";
+            const cleanedTitle = cleanBookTitle(activeBookTitle);
+            const chapIdx = getActiveChapterIndex();
+            
+            if (chapIdx !== -1 && chapterOffsets[chapIdx]) {
+                const currentChap = chapterOffsets[chapIdx]; const nextChap = chapterOffsets[chapIdx + 1];
+                const chapStartIdx = currentChap.start; const chapEndIdx = nextChap ? nextChap.start : words.length;
+                const totalWordsInChapter = chapEndIdx - chapStartIdx; const currentWordsInChapter = Math.max(0, Math.min(currentIndex - chapStartIdx, totalWordsInChapter));
+                
+                // Kapitel-Zeitberechnung – realistisch inkl. Modifier
+                const totalSecChapter     = estimateSeconds(chapStartIdx, chapEndIdx);
+                const currentSecChapter   = estimateSeconds(chapStartIdx, currentIndex);
+                const remainingSecChapter = Math.max(0, totalSecChapter - currentSecChapter);
+                
+                timeLabel.innerText = `${cleanedTitle} › ${currentChap.name}`;
+                
+                // Aufbau der Kapitel-Zeitanzeige anhand der aktiven Toggles
+                let chapStr = "";
+                if (showChapterTime) {
+                    chapStr += `Kapitel: <span>${formatDuration(currentSecChapter)}</span> / <span>${formatDuration(totalSecChapter)}</span>`;
+                }
+                if (showChapterRemaining) {
+                    if (chapStr) chapStr += " ";
+                    chapStr += `<span style="opacity:0.75;">(Noch ${formatDuration(remainingSecChapter)})</span>`;
+                }
+                globalChapterCounter.innerHTML = chapStr;
+                
+                if ((showChapterTime || showChapterRemaining) && chapterOffsets.length > 0) globalChapterCounter.classList.add('show-stat'); else globalChapterCounter.classList.remove('show-stat');
+            } else { timeLabel.innerText = cleanedTitle; globalChapterCounter.innerHTML = ""; globalChapterCounter.classList.remove('show-stat'); }
+            
+            // Aufbau der Buch-Zeitanzeige anhand der aktiven Toggles
+            let bookStr = "";
+            if (showBookTime) {
+                bookStr += `Buch: <span>${formatDuration(currentSecGlobal)}</span> / <span>${formatDuration(totalSecGlobal)}</span>`;
+            }
+            if (showBookRemaining) {
+                if (bookStr) bookStr += " ";
+                bookStr += `<span style="opacity:0.75;">(Noch ${formatDuration(remainingSecGlobal)})</span>`;
+            }
+            globalTimeCounter.innerHTML = bookStr;
+            
+            if (showBookTime || showBookRemaining) globalTimeCounter.classList.add('show-stat'); else globalTimeCounter.classList.remove('show-stat');
+        } else { 
+            authorLabel.innerText = ""; 
+            timeLabel.innerText = "Freier Text"; 
+            globalChapterCounter.innerHTML = ""; 
+            globalChapterCounter.classList.remove('show-stat');
+            
+            let fastStr = "";
+            if (showBookTime) {
+                fastStr += `Text: <span>${formatDuration(currentSecGlobal)}</span> / <span>${formatDuration(totalSecGlobal)}</span>`;
+            }
+            if (showBookRemaining) {
+                if (fastStr) fastStr += " ";
+                fastStr += `<span style="opacity:0.75;">(Noch ${formatDuration(remainingSecGlobal)})</span>`;
+            }
+            globalTimeCounter.innerHTML = fastStr;
+            
+            if (showBookTime || showBookRemaining) globalTimeCounter.classList.add('show-stat'); else globalTimeCounter.classList.remove('show-stat');
+        }
+
+        const percent = words.length > 0 ? (currentIndex / words.length) * 100 : 0;
+        percentLabel.innerText = `${Math.round(Math.min(100, Math.max(0, percent)))}%`; progressBar.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+
+        if (!shouldSaveToDB) return resolve();
+        const indexToSave = parseInt(currentIndex) || 0;
+        if (activeBookId === "schnellstart") {
+            // Schnellstart: nur speichern wenn Index sich geändert hat
+            if (indexToSave !== lastSavedIndex) {
+                setLastSavedIndex(indexToSave);
+                saveAppState('rsvp-fast-index', indexToSave).then(() => resolve());
+            } else { resolve(); }
+        } else {
+            // Bibliotheksbuch: maximal alle 5 Sekunden speichern (während Wiedergabe)
+            // Bei Pause/Stop wird immer sofort gespeichert (isPlaying === false)
+            const now = Date.now();
+            const forceNow = !isPlaying || indexToSave === words.length;
+            if (forceNow || indexToSave !== lastSavedIndex && (now - lastSaveTime >= 5000)) {
+                setLastSavedIndex(indexToSave);
+                setLastSaveTime(now);
+                getBookFromDB(activeBookId).then(book => {
+                    if (book) {
+                        book.lastIndex = indexToSave;
+                        // Exakte Rest- und Gesamtzeit direkt aus dem geladenen words-Array
+                        // (600 Stichproben, aktuelle WPM + Modifier) – einmal pro Save-Intervall
+                        // estimatedRemainingSeconds wird nur beim Tab-Wechsel (ui.js) geschrieben
+                        // damit Bibliothek und Statistik immer identische Werte zeigen
+                        saveBookToDB(book).then(() => resolve());
+                    }
+                    else resolve();
+                });
+            } else { resolve(); }
+        }
+    });
+}
+
+function updateFwdButtonText() {
+    if (!isPageMode) return; const fwdBtn = document.getElementById('btn-fwd'); if (!fwdBtn) return;
+    const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+    const colWidth = exactViewportWidth + 40;
+    if (pageTextContent.scrollLeft + colWidth >= pageScrollWidth - 45) { let chapIdx = getActiveChapterIndex(); if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { fwdBtn.innerText = "Nächstes Kapitel"; return; } }
+    fwdBtn.innerText = "Seite vor";
+}
+
+function renderPageMode() {
+    if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
+    let chapIdx = getActiveChapterIndex();
+    if (chapIdx === -1 || !chapterOffsets[chapIdx]) { pageTextContent.innerHTML = "<p style='color:#666;'>Kein Kapitel geladen.</p>"; return; }
+
+    setupPageSnapStyles();
+    let currentChapter = chapterOffsets[chapIdx];
+    pageTextContent.innerHTML = currentChapter.html;
+
+    // --- NEU: Bilder für das Spaltenlayout (eReader-Modus) bändigen ---
+    const bookImgs = pageTextContent.querySelectorAll('img');
+    bookImgs.forEach(img => {
+        img.style.maxWidth = '100%';       
+        img.style.maxHeight = '100%';      
+        img.style.height = 'auto';         
+        img.style.width = 'auto';          
+        img.style.objectFit = 'contain';   
+        img.style.display = 'block';       
+        img.style.margin = '12px auto';    
+        img.style.breakInside = 'avoid';   
+        img.style.webkitBreakInside = 'avoid'; 
+    });
+
+    // Links im Buch scharf schalten und Interceptor aktivieren
+    const bookLinks = pageTextContent.querySelectorAll('a');
+    bookLinks.forEach(link => { 
+        link.style.pointerEvents = 'auto'; 
+        link.style.cursor = 'pointer'; 
+        link.style.textDecoration = 'underline'; 
+        link.style.color = 'var(--accent, #3498db)'; 
+        
+        link.onclick = async (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (href) await handleInternalBookLink(href);
+        };
+    });
+
+    const targetSpan = pageTextContent.querySelector(`span[data-word-idx="${currentIndex}"]`);
+    if (targetSpan) {
+        targetSpan.id = "highlighted-rsvp-word";
+        targetSpan.style.backgroundColor = "rgba(52, 152, 219, 0.35)";
+        targetSpan.style.color = "#ffffff";
+        targetSpan.style.padding = "2px 4px";
+        targetSpan.style.borderRadius = "4px";
+        targetSpan.style.fontWeight = "bold";
+    }
+
+    const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+    const gapWidth = 40;
+    pageTextContent.style.columnWidth = `${exactViewportWidth}px`;
+    pageTextContent.style.columnGap = `${gapWidth}px`;
+    pageTextContent.style.height = `${pageDisplayContainer.clientHeight - 20}px`;
+
+    setPageRenderTimeout(setTimeout(() => {
+        if (!isPageMode) return; 
+        setPageScrollWidth(pageTextContent.scrollWidth);
+        const colFullWidth = exactViewportWidth + gapWidth;
+
+        if (targetSpan) {
+            const markLeft = targetSpan.offsetLeft;
+            const targetPage = Math.floor(markLeft / colFullWidth);
+            pageTextContent.scrollLeft = targetPage * colFullWidth;
+            setCurrentPageScrollOffset(pageTextContent.scrollLeft);
+            setInitialPageOnEnter(targetPage);
+        } else { pageTextContent.scrollLeft = 0; }
+        updateProgressUI(false); updateFwdButtonText();
+    }, 60));
+}
+
+// --- NEU: Interner Link-Router für dateiübergreifende und lokale Sprünge ---
+async function handleInternalBookLink(href) {
+    const parts = href.split('#');
+    let fileTarget = parts[0].split('/').pop(); 
+    const hashTarget = parts[1];
+    
+    let targetIndex = -1;
+    
+    if (fileTarget) {
+        const targetChap = chapterOffsets.find(c => c.fileRef === fileTarget);
+        if (targetChap) {
+            targetIndex = targetChap.start;
+            
+            if (hashTarget) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = targetChap.html;
+                const anchorEl = tempDiv.querySelector(`#${hashTarget}`) || tempDiv.querySelector(`[name="${hashTarget}"]`);
+                if (anchorEl) {
+                    const spanWithIdx = anchorEl.hasAttribute('data-word-idx') ? anchorEl : anchorEl.querySelector('[data-word-idx]');
+                    if (spanWithIdx) {
+                        targetIndex = parseInt(spanWithIdx.getAttribute('data-word-idx'));
+                    }
+                }
+            }
+        }
+    } else if (hashTarget) {
+        const anchorEl = pageTextContent.querySelector(`#${hashTarget}`) || pageTextContent.querySelector(`[name="${hashTarget}"]`);
+        if (anchorEl) {
+            const spanWithIdx = anchorEl.hasAttribute('data-word-idx') ? anchorEl : anchorEl.querySelector('[data-word-idx]');
+            if (spanWithIdx) {
+                targetIndex = parseInt(spanWithIdx.getAttribute('data-word-idx'));
+            } else {
+                let walker = document.createTreeWalker(pageTextContent, NodeFilter.SHOW_ELEMENT, null, false);
+                while(walker.nextNode()) { if (walker.currentNode === anchorEl) break; }
+                while(walker.nextNode()) {
+                    if (walker.currentNode.hasAttribute('data-word-idx')) {
+                        targetIndex = parseInt(walker.currentNode.getAttribute('data-word-idx'));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (targetIndex !== -1) {
+        setCurrentIndex(targetIndex);
+        await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+        await updateProgressUI(true);
+        renderPageMode();
+    }
+}
+
+function togglePageMode() {
+    closeAllMenus(); 
+    if (!isPageMode) {
+        if (activeBookId === "schnellstart") return;
+        if (isCurrentlyInRSVPFlow && currentIndex > 0) { setIndexOnPageModeEnter(currentIndex - 1); } else { setIndexOnPageModeEnter(currentIndex); }
+        setIsCurrentlyInRSVPFlow(false); 
+        
+        stopEngineOnly();
+        setHyphenFragments(null);
+        setIsPageMode(true);
+        setChapterOnPageModeEnter(getActiveChapterIndex());
+
+        wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
+        // eReader: SVG ausblenden, nur Text anzeigen
+        ['btn-back','btn-fwd'].forEach(id => { const b = document.getElementById(id); b.querySelector('.skip-icon').style.display='none'; b.querySelector('.skip-number').style.cssText='position:relative;top:auto;left:auto;transform:none;font-size:13px;'; });
+        document.getElementById('btn-back').querySelector('.skip-number').textContent = "◀ Seite zurück";
+        document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "Seite vor ▶";
+        document.getElementById('btn-back1').style.display = "none";
+        document.getElementById('btn-fwd1').style.display = "none";
+        document.getElementById('btn-reset').style.display = "none";
+        
+        if (readerModeToggle) {
+            readerModeToggle.classList.add('active-mode'); 
+            readerModeToggle.querySelector('span').innerText = "RSVP-Modus";
+        }
+        
+        setCurrentIndex(indexOnPageModeEnter);
+        renderPageMode();
+    } else {
+        setIsPageMode(false); 
+        if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
+
+        wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
+        // RSVP: SVG wiederherstellen
+        ['btn-back','btn-fwd'].forEach(id => { const b = document.getElementById(id); b.querySelector('.skip-icon').style.display=''; b.querySelector('.skip-number').style.cssText=''; });
+        document.getElementById('btn-back').querySelector('.skip-number').textContent = "-10";
+        document.getElementById('btn-fwd').querySelector('.skip-number').textContent = "+10";
+        document.getElementById('btn-back1').style.display = "";
+        document.getElementById('btn-fwd1').style.display = "";
+        document.getElementById('btn-reset').style.display = "";
+        
+        if (readerModeToggle) {
+            readerModeToggle.classList.remove('active-mode'); 
+            readerModeToggle.querySelector('span').innerText = "eReader-Modus";
+        }
+        
+        saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+        render(); updateProgressUI(true);
+    }
+}
+
+function updateIndexFromPageScroll() {
+    if (!isPageMode) return; 
+    let chapIdx = getActiveChapterIndex(); if (chapIdx === -1 || chapterOffsets.length === 0) return;
+    
+    const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+    const colFullWidth = exactViewportWidth + 40;
+    let currentPage = Math.round(pageTextContent.scrollLeft / colFullWidth);
+    
+    if (currentPage === initialPageOnEnter && chapIdx === chapterOnPageModeEnter) {
+        setCurrentIndex(indexOnPageModeEnter); setCurrentPageScrollOffset(pageTextContent.scrollLeft); updateProgressUI(true); updateFwdButtonText(); return;
+    }
+    
+    const allSpans = pageTextContent.querySelectorAll('span[data-word-idx]');
+    let wordsOnNewPage = [];
+    
+    for (let el of allSpans) {
+        let elLeft = el.offsetLeft;
+        let elPage = Math.floor(elLeft / colFullWidth);
+        if (elPage === currentPage) wordsOnNewPage.push(parseInt(el.getAttribute('data-word-idx')));
+    }
+    
+    if (wordsOnNewPage.length > 0) {
+        wordsOnNewPage.sort((a, b) => a - b);
+        setCurrentIndex(wordsOnNewPage[0]);
+    } else {
+        let currentChapter = chapterOffsets[chapIdx]; let nextChapter = chapterOffsets[chapIdx + 1];
+        let startIdx = currentChapter.start; let endIdx = nextChapter ? nextChapter.start : words.length;
+        let totalWordsInChapter = endIdx - startIdx; let totalPages = Math.max(1, Math.round(pageScrollWidth / colFullWidth));
+        let ratio = currentPage / totalPages; let newOffset = Math.round(totalWordsInChapter * ratio);
+        setCurrentIndex(Math.min(endIdx - 1, Math.max(startIdx, startIdx + newOffset)));
+    }
+    
+    setCurrentPageScrollOffset(pageTextContent.scrollLeft); updateProgressUI(true); updateFwdButtonText();
+}
+
+fileInput.onchange = async (e) => { 
+    const file = e.target.files[0]; if (!file) return; stopEngineOnly(); 
+    let bookTitle = file.name.replace(/\.[^/.]+$/, ""); let bookAuthor = "Unbekannter Autor"; let docType = "txt"; let coverBase64 = null;
+    let fullTextFallback = ""; let localChapters = []; 
+
+    if (file.name.endsWith('.txt')) { 
+        docType = "txt"; const reader = new FileReader(); 
+        reader.onload = async (e) => { 
+            const bookData = buildBookData(e.target.result, 0);
+            await finalizeBookImport(bookTitle, bookAuthor, bookData.html, bookData.words, [], docType, null); 
+        }; reader.readAsText(file); 
+    } else if (file.name.endsWith('.pdf')) { 
+        docType = "pdf"; const reader = new FileReader(); 
+        reader.onload = async (e) => { 
+            try { 
+                const typedarray = new Uint8Array(e.target.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; let rawPdfText = "";
+                for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); rawPdfText += content.items.map(item => item.str).join(" ") + " \n\n "; } 
+                const bookData = buildBookData(rawPdfText, 0);
+                await finalizeBookImport(bookTitle, bookAuthor, bookData.html, bookData.words, [], docType, null); 
+            } catch (err) { alert("Fehler beim Parsen der PDF."); } 
+        }; reader.readAsArrayBuffer(file); 
+    } else if (file.name.endsWith('.epub')) { 
+        docType = "epub"; const reader = new FileReader(); 
+        reader.onload = async (e) => { 
+            try { 
+                const zip = await JSZip.loadAsync(e.target.result); const opfFileKey = Object.keys(zip.files).find(f => f.endsWith('.opf')); if (!opfFileKey) throw new Error("Keine OPF-Manifest-Datei gefunden."); 
+                const opfDir = opfFileKey.includes('/') ? opfFileKey.substring(0, opfFileKey.lastIndexOf('/') + 1) : ""; const opfContent = await zip.files[opfFileKey].async("string"); const opfDoc = new DOMParser().parseFromString(opfContent, "text/xml"); 
+                
+                const titleElements = opfDoc.getElementsByTagName("dc:title"); if (titleElements && titleElements.length > 0) bookTitle = titleElements[0].textContent.trim();
+                const creatorElements = opfDoc.getElementsByTagName("dc:creator"); if (creatorElements && creatorElements.length > 0) bookAuthor = creatorElements[0].textContent.trim();
+
+                const manifestItems = opfDoc.getElementsByTagName("item"); let idToHrefMap = {}; let coverId = null;
+                for(let i=0; i<manifestItems.length; i++) { const id = manifestItems[i].getAttribute("id"); const href = manifestItems[i].getAttribute("href"); const properties = manifestItems[i].getAttribute("properties"); if(id && href) idToHrefMap[id] = href; if (properties === "cover-image") coverId = id; } 
+                if (!coverId) { const metaElements = opfDoc.getElementsByTagName("meta"); for (let i = 0; i < metaElements.length; i++) { if (metaElements[i].getAttribute("name") === "cover") coverId = metaElements[i].getAttribute("content"); } }
+
+                if (coverId && idToHrefMap[coverId]) {
+                    const coverPath = opfDir + idToHrefMap[coverId];
+                    if (zip.files[coverPath]) {
+                        const imgUint8 = await zip.files[coverPath].async("uint8array"); let binary = ''; for (let i = 0; i < imgUint8.byteLength; i++) binary += String.fromCharCode(imgUint8[i]);
+                        const base64Str = btoa(binary); const fileExt = coverPath.split('.').pop().toLowerCase(); const mime = (fileExt === 'png') ? 'image/png' : 'image/jpeg'; coverBase64 = `data:${mime};base64,${base64Str}`;
+                    }
+                }
+                
+                const itemrefs = opfDoc.getElementsByTagName("itemref"); let sortedFileNames = []; 
+                for(let i=0; i<itemrefs.length; i++) { const idref = itemrefs[i].getAttribute("idref"); const relativeHref = idToHrefMap[idref]; if(relativeHref) { const pureHref = relativeHref.split('#')[0]; const fullZipPath = opfDir + pureHref; if(zip.files[fullZipPath] && (fullZipPath.endsWith('.html') || fullZipPath.endsWith('.xhtml'))) { if(!sortedFileNames.includes(fullZipPath)) sortedFileNames.push(fullZipPath); } } } 
+                if(sortedFileNames.length === 0) { sortedFileNames = Object.keys(zip.files).filter(f => f.endsWith('.html') || f.endsWith('.xhtml')); sortedFileNames.sort(); } 
+                
+                let epubChaptersMap = []; const ncxFile = Object.keys(zip.files).find(f => f.endsWith('.ncx')); const navFile = Object.keys(zip.files).find(f => f.toLowerCase().endsWith('nav.xhtml') || f.toLowerCase().endsWith('nav.html')); 
+                if (ncxFile) { 
+                    const ncxContent = await zip.files[ncxFile].async("string"); const xmlDoc = new DOMParser().parseFromString(ncxContent, "text/xml"); const navPoints = xmlDoc.getElementsByTagName("navPoint"); 
+                    for (let i = 0; i < navPoints.length; i++) { const src = navPoints[i].getElementsByTagName("content")[0]?.getAttribute("src") || ""; const text = navPoints[i].getElementsByTagName("text")[0]?.textContent || ""; if (src && text) { const pureSrc = src.split('#')[0].split('/').pop(); epubChaptersMap.push({ fileRef: pureSrc, title: text.trim() }); } } 
+                } else if (navFile) { 
+                    const navContent = await zip.files[navFile].async("string"); const doc = new DOMParser().parseFromString(navContent, "text/html"); const links = doc.querySelectorAll('nav a, ol a, ul a'); 
+                    links.forEach(link => { const src = link.getAttribute('href') || ""; const text = link.innerText || ""; if (src && text) { const pureSrc = src.split('#')[0].split('/').pop(); epubChaptersMap.push({ fileRef: pureSrc, title: text.trim() }); } }); 
+                } 
+                
+                let tempFileOffsets = {}; let tempFileHtmls = {}; let globalWords = []; let globalIndex = 0;
+                for (let path of sortedFileNames) { 
+                    const content = await zip.files[path].async("string"); const doc = new DOMParser().parseFromString(content, "text/html"); 
+                    
+                    const imgs = doc.querySelectorAll('img');
+                    for (let img of imgs) {
+                        const src = img.getAttribute('src');
+                        if (src && !/^(https?|data):/i.test(src)) {
+                            let imgPath = path.split('/');
+                            imgPath.pop(); 
+                            const srcParts = src.split('/');
+                            for (let part of srcParts) {
+                                if (part === '.') continue;
+                                if (part === '..') imgPath.pop();
+                                else imgPath.push(part);
+                            }
+                            const fullImgPath = imgPath.join('/');
+                            
+                            let imgFile = zip.files[fullImgPath];
+                            if (!imgFile) {
+                                const filename = src.split('/').pop();
+                                const foundKey = Object.keys(zip.files).find(k => k.endsWith('/' + filename) || k === filename);
+                                if (foundKey) imgFile = zip.files[foundKey];
+                            }
+                            
+                            if (imgFile) {
+                                const imgUint8 = await imgFile.async("uint8array");
+                                let binary = '';
+                                for (let i = 0; i < imgUint8.byteLength; i++) {
+                                    binary += String.fromCharCode(imgUint8[i]);
+                                }
+                                const base64Str = btoa(binary);
+                                const ext = imgFile.name.split('.').pop().toLowerCase();
+                                const mime = ext === 'png' ? 'image/png' : ext === 'gif' ? 'image/gif' : ext === 'svg' ? 'image/svg+xml' : 'image/jpeg';
+                                img.setAttribute('src', `data:${mime};base64,${base64Str}`);
+                            }
+                        }
+                    }
+
+                    const chapterHtmlRaw = doc.body.innerHTML || "";
+                    const bookData = buildBookData(chapterHtmlRaw, globalIndex);
+                    const filenameOnly = path.split('/').pop(); 
+                    tempFileOffsets[filenameOnly] = globalIndex; tempFileHtmls[filenameOnly] = bookData.html;
+                    globalWords = globalWords.concat(bookData.words); globalIndex = bookData.nextIndex;
+                    fullTextFallback += (doc.body.innerText || "") + " \n "; 
+                }
+                
+                if (epubChaptersMap.length > 0) { 
+                    epubChaptersMap.forEach(mapItem => { 
+                        if (tempFileOffsets[mapItem.fileRef] !== undefined) { 
+                            let title = mapItem.title; if (title.length > 50) title = title.substring(0, 47) + "..."; 
+                            if (!localChapters.some(c => c.start === tempFileOffsets[mapItem.fileRef])) localChapters.push({ name: title, start: tempFileOffsets[mapItem.fileRef], html: tempFileHtmls[mapItem.fileRef] || "", fileRef: mapItem.fileRef }); 
+                        } 
+                    }); 
+                } else { 
+                    for (let path of sortedFileNames) { 
+                        const filenameOnly = path.split('/').pop(); const offset = tempFileOffsets[filenameOnly]; const html = tempFileHtmls[filenameOnly];
+                        const content = await zip.files[path].async("string"); const doc = new DOMParser().parseFromString(content, "text/html"); 
+                        let heading = doc.body.querySelector('h1, h2, h3'); 
+                        if (heading && heading.innerText.trim()) { 
+                            let title = heading.innerText.trim(); if (title.length > 50) title = title.substring(0, 47) + "..."; 
+                            localChapters.push({ name: title, start: offset, html: html || "", fileRef: filenameOnly }); 
+                        } 
+                    } 
+                } 
+                if (localChapters.length === 0) localChapters.push({ name: "Buchstart", start: 0, html: tempFileHtmls[Object.keys(tempFileHtmls)[0]] || "", fileRef: Object.keys(tempFileHtmls)[0] }); else localChapters.sort((a, b) => a.start - b.start); 
+                await finalizeBookImport(bookTitle, bookAuthor, fullTextFallback, globalWords, localChapters, docType, coverBase64); 
+            } catch (err) { alert("Fehler beim Parsen der EPUB: " + err.message); } 
+        }; reader.readAsArrayBuffer(file); 
+    } 
+};
+
+// → library.js
+
+// → settings.js
+
+async function init() {
+    await initDB();
+    applySettingsToUI();
+
+    const savedFastText = await getAppState('rsvp-fast-text'); if(savedFastText) input.value = savedFastText;
+    
+    // Auto-Resume Logik: Wenn aktiviert, letztes Buch laden, sonst Schnellstart
+    if (resumeToggle.checked) {
+        const lastBookId = await getAppState('rsvp-last-library-book-id');
+        if (lastBookId && lastBookId !== "schnellstart") {
+            await loadLibraryBook(lastBookId, false);
+        } else {
+            await loadLibraryBook("schnellstart", false);
+        }
+    } else {
+        await loadLibraryBook("schnellstart", false);
+    }
+    
+    switchUIMode('reader');
+}
+
+mainBtn.onclick = start;
+chapterToggleBtn.onclick = () => { if(sideChapterPanel.classList.contains('active')) closeRightMenu(); else openRightMenu(); };
+chapterPanelCloseBtn.onclick = closeRightMenu; 
+
+if (readerModeToggle) readerModeToggle.onclick = togglePageMode;
+
+document.getElementById('btn-reset').onclick = async () => { 
+    if (activeBookId !== "schnellstart") { const confirmReset = confirm(`Möchtest du den Lesefortschritt von "${activeBookTitle}" wirklich an den Anfang zurücksetzen?`); if (!confirmReset) return; }
+    await stopEngineOnly(); setHyphenFragments(null); setCurrentIndex(0);
+    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+    if (activeBookId !== "schnellstart") {
+        const book = await getBookFromDB(activeBookId);
+        if (book) { book.lastIndex = 0; await saveBookToDB(book); }
+    } else {
+        await saveAppState('rsvp-fast-index', 0);
+    }
+    if (sideChapterPanel.classList.contains('active')) renderReaderChapterList(); if (isPageMode) renderPageMode(); else await updateProgressUI(true); render(); 
+};
+
+document.getElementById('btn-fwd').onclick = async () => { 
+    setHyphenFragments(null);
+    if (isPageMode) {
+        const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+        const colWidth = exactViewportWidth + 40;
+        if (pageTextContent.scrollLeft + colWidth < pageScrollWidth - 45) { 
+            let currentPage = Math.round(pageTextContent.scrollLeft / colWidth); 
+            pageTextContent.scrollLeft = (currentPage + 1) * colWidth; 
+            setCurrentPageScrollOffset(pageTextContent.scrollLeft); 
+            setTimeout(updateIndexFromPageScroll, 100); 
+        } else { 
+            let chapIdx = getActiveChapterIndex(); 
+            if (chapIdx !== -1 && chapIdx < chapterOffsets.length - 1) { setCurrentIndex(chapterOffsets[chapIdx + 1].start); setCurrentPageScrollOffset(0); renderPageMode(); } 
+        }
+    } else { setCurrentIndex(Math.min(words.length - 1, currentIndex + 10)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
+};
+
+document.getElementById('btn-back').onclick = async () => { 
+    setHyphenFragments(null);
+    if (isPageMode) {
+        const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+        const colWidth = exactViewportWidth + 40;
+        
+        if (pageTextContent.scrollLeft - colWidth >= -10) { 
+            let currentPage = Math.round(pageTextContent.scrollLeft / colWidth); 
+            pageTextContent.scrollLeft = (currentPage - 1) * colWidth; 
+            setCurrentPageScrollOffset(pageTextContent.scrollLeft); 
+            setTimeout(updateIndexFromPageScroll, 100); 
+        } else { 
+            let chapIdx = getActiveChapterIndex(); 
+            if (chapIdx > 0) { 
+                pageTextContent.style.opacity = '0';
+                pageTextContent.style.transition = 'none'; 
+
+                setCurrentIndex(chapterOffsets[chapIdx - 1].start); 
+                setCurrentPageScrollOffset(0); 
+                
+                renderPageMode(); 
+                
+                setTimeout(() => {
+                    if (!isPageMode) return;
+                    pageTextContent.scrollLeft = pageTextContent.scrollWidth;
+                    updateIndexFromPageScroll();
+                    pageTextContent.style.opacity = '1';
+                }, 80);
+            } 
+        }
+    } else { 
+        setCurrentIndex(Math.max(0, currentIndex - 10)); 
+        await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); 
+        if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); 
+        render(); 
+    }
+};
+
+document.getElementById('btn-back1').onclick = async () => {
+    setHyphenFragments(null);
+    if (!isPageMode) { setCurrentIndex(Math.max(0, currentIndex - 1)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
+};
+
+document.getElementById('btn-fwd1').onclick = async () => {
+    setHyphenFragments(null);
+    if (!isPageMode) { setCurrentIndex(Math.min(words.length - 1, currentIndex + 1)); await saveAppState('rsvp-rewind-permitted-' + activeBookId, false); if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); render(); }
+};
+
+pageTextContent.onscroll = () => { 
+    if (!isPageMode) return; 
+    if (isSnapping) return; 
+    clearTimeout(scrollTimeout); 
+    scrollTimeout = setTimeout(() => { 
+        const exactViewportWidth = pageDisplayContainer.getBoundingClientRect().width;
+        const colFullWidth = exactViewportWidth + 40;
+        let currentPage = Math.round(pageTextContent.scrollLeft / colFullWidth);
+        let targetLeft = currentPage * colFullWidth;
+
+        if (Math.abs(pageTextContent.scrollLeft - targetLeft) > 1) {
+            setIsSnapping(true); pageTextContent.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            setTimeout(() => { setIsSnapping(false); updateIndexFromPageScroll(); }, 250); 
+        } else { updateIndexFromPageScroll(); }
+    }, 60); 
+};
+
+pageTextContent.ontouchstart = () => { setIsSnapping(false); };
+hamburgerTrigger.onclick = openLeftMenu; sidebarCloseBtn.onclick = closeLeftMenu; sidebarOverlay.onclick = closeAllMenus;
+
+input.oninput = () => {
+    if (activeBookId === "schnellstart") {
+        let data = buildBookData(input.value, 0); setWords(data.words); setHyphenFragments(null); setCurrentIndex(0); setTotalSessionSeconds(0); saveAppState('rsvp-rewind-permitted-schnellstart', false);
+        setEstimatedTimeCache(null); // Cache invalidieren – Text hat sich geändert
+        saveAppState('rsvp-fast-index', 0); saveAppState('rsvp-fast-text', input.value); updateProgressUI(true);
+    }
+};
+
+[wpmIn, fsIn, longWordTrigger, rewindAmount].forEach(el => el.oninput = () => { setEstimatedTimeCache(null); saveSettings(); });
+[pauseMode, hyphenMode, longWordMode, rewindMode, stopAtChapterEnd, showChapterTimeToggle, showChapterRemainingToggle, showBookTimeToggle, showBookRemainingToggle, showProgressBarToggle, amoledModeToggle, resumeToggle, document.getElementById('show-reset-button-toggle')].forEach(el => el.onchange = () => { setEstimatedTimeCache(null); saveSettings(); });
+
+document.getElementById('btn-clear-floating').onclick = async () => {
+    if(activeBookId === "schnellstart") {
+        stopEngineOnly(); input.value = ""; setWords([]); setHyphenFragments(null); setCurrentIndex(0); setTotalSessionSeconds(0); await saveAppState('rsvp-rewind-permitted-schnellstart', false);
+        await saveAppState('rsvp-fast-index', 0); await saveAppState('rsvp-fast-text', ""); tLeft.innerText = ""; tCenter.innerText = ""; tRight.innerText = ""; await updateProgressUI(true);
+    }
+};
+
+// ── URL-Import ────────────────────────────────────────────────────────────────
+const urlImportPanel  = document.getElementById('url-import-panel');
+const urlImportInput  = document.getElementById('url-import-input');
+const urlImportGo     = document.getElementById('url-import-go');
+const urlImportCancel = document.getElementById('url-import-cancel');
+const urlImportBtn    = document.getElementById('btn-url-import');
+
+urlImportBtn.onclick = () => {
+    const isOpen = urlImportPanel.style.display !== 'none';
+    urlImportPanel.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) { urlImportInput.value = ''; urlImportInput.focus(); }
+};
+
+urlImportCancel.onclick = () => {
+    urlImportPanel.style.display = 'none';
+    urlImportInput.value = '';
+};
+
+urlImportInput.onkeydown = (e) => { if (e.key === 'Enter') urlImportGo.click(); if (e.key === 'Escape') urlImportCancel.click(); };
+
+urlImportGo.onclick = async () => {
+    const rawUrl = urlImportInput.value.trim();
+    if (!rawUrl) return;
+    let url = rawUrl;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+    urlImportGo.disabled = true;
+    urlImportGo.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="animation:spin 0.7s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>';
+
+    try {
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const htmlText = await res.text();
+
+        // HTML parsen und Text extrahieren
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+
+        // Navigations- und Boilerplate-Elemente entfernen
+        ['script','style','nav','header','footer','aside','iframe','noscript',
+         '[role="navigation"]','[role="banner"]','[role="complementary"]'].forEach(sel => {
+            doc.querySelectorAll(sel).forEach(el => el.remove());
+        });
+
+        // Hauptinhalt bevorzugen
+        const main = doc.querySelector('article, main, [role="main"], .article-body, .post-content, .entry-content, #content, #main')
+            || doc.body;
+
+        const text = (main.innerText || main.textContent || '').trim()
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/[ 	]{2,}/g, ' ');
+
+        if (text.length < 50) throw new Error('Zu wenig Text gefunden. Manche Seiten erlauben keinen externen Abruf.');
+
+        input.value = text;
+        input.dispatchEvent(new Event('input'));
+        urlImportPanel.style.display = 'none';
+        urlImportInput.value = '';
+    } catch (err) {
+        alert('Fehler beim Laden der URL:\n' + err.message);
+    } finally {
+        urlImportGo.disabled = false;
+        urlImportGo.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>';
+    }
+};
+
+window.onresize = () => { if (isPageMode) renderPageMode(); };
+
+init();
+
+// ── Backup & Restore ─────────────────────────────────────────────────────────
+//
+// Design-Prinzipien:
+//   1. Idempotenz: Dasselbe Backup mehrfach importieren → keine doppelten Werte
+//   2. Non-destructive: Buchinhalte (words, text, chapters, cover, id) werden NIE berührt
+//   3. "Neuestes gewinnt" für skalare Felder (lastReadDate, avgWpm, sessionCount, totalReadSeconds)
+//   4. "Union / Max" für Fortschritt: lastIndex = max(lokal, backup)
+//   5. readingLog: pro Monat wird der HÖHERE Wert genommen (nicht addiert)
+//   6. wpmHistory: Arrays werden zusammengeführt, Duplikate (gleicher Timestamp) entfernt
+//   7. Archivierte Einträge: Merge wenn Titel+Autor schon existiert (statt überspringen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// → backup.js
+
+// → ui.js
+</script>
+
+</body>
+</html>
