@@ -932,6 +932,7 @@ function togglePageMode() {
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
         document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; document.getElementById('btn-back-1').style.display = "none"; document.getElementById('btn-fwd-1').style.display = "none"; document.getElementById('btn-reset').style.display = "none";
+        document.getElementById('main-controls').style.gridTemplateColumns = 'repeat(2, 1fr)';
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -945,7 +946,9 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = ""; document.getElementById('btn-reset').style.display = "";
+        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = "";
+        document.getElementById('main-controls').style.gridTemplateColumns = '';
+        updateResetButtonVisibility();
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
@@ -1342,7 +1345,7 @@ urlImportGo.onclick = async () => {
 
 window.onresize = () => { if (isPageMode) renderPageMode(); };
 
-// ── OCR: Kamera-Scan (TextDetector → Tesseract.js Fallback) ──────────────────
+// ── OCR: Kamera-Scan via Tesseract.js ────────────────────────────────────────
 const ocrBtn       = document.getElementById('btn-ocr');
 const ocrFileInput = document.getElementById('ocr-file-input');
 const ocrStatus    = document.getElementById('ocr-status');
@@ -1350,73 +1353,29 @@ const ocrStatusTxt = document.getElementById('ocr-status-text');
 
 ocrBtn.onclick = () => ocrFileInput.click();
 
-// Hilfsfunktion: Bild-File → HTMLImageElement (für TextDetector)
-function fileToImageBitmap(file) {
-    return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Bild konnte nicht geladen werden')); };
-        img.src = url;
-    });
-}
-
-// Native OCR via Shape Detection API (TextDetector)
-async function runNativeOCR(file) {
-    const detector = new TextDetector();
-    const img = await fileToImageBitmap(file);
-    const results = await detector.detect(img);
-    if (!results || results.length === 0) return null;
-    // Zeilen anhand der Y-Position der Bounding Box sortieren
-    results.sort((a, b) => a.boundingBox.top - b.boundingBox.top);
-    return results.map(r => r.rawValue).join('\n');
-}
-
-// Tesseract OCR als Fallback
-async function runTesseractOCR(file) {
-    const worker = await Tesseract.createWorker('deu', 1, {
-        logger: m => {
-            if (m.status === 'recognizing text') {
-                ocrStatusTxt.textContent = `Wird erkannt… ${Math.round((m.progress||0)*100)}%`;
-            }
-        }
-    });
-    ocrStatusTxt.textContent = 'Text wird erkannt…';
-    const { data: { text } } = await worker.recognize(file);
-    await worker.terminate();
-    return text;
-}
-
 ocrFileInput.onchange = async () => {
     const file = ocrFileInput.files[0];
     if (!file) return;
     ocrFileInput.value = '';
 
+    // Ladeoverlay anzeigen
     ocrStatus.style.display = 'flex';
     ocrStatusTxt.textContent = 'Bild wird vorbereitet…';
 
     try {
-        let rawText = null;
-
-        if ('TextDetector' in window) {
-            // Native TextDetector verfügbar (Chrome Android)
-            ocrStatusTxt.textContent = 'Native Erkennung läuft…';
-            try {
-                rawText = await runNativeOCR(file);
-            } catch (nativeErr) {
-                console.warn('TextDetector fehlgeschlagen, Tesseract wird genutzt:', nativeErr);
-                rawText = null;
+        const worker = await Tesseract.createWorker('deu', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    ocrStatusTxt.textContent = `Wird erkannt… ${Math.round((m.progress||0)*100)}%`;
+                }
             }
-        }
+        });
+        ocrStatusTxt.textContent = 'Text wird erkannt…';
+        const { data: { text } } = await worker.recognize(file);
+        await worker.terminate();
 
-        if (!rawText) {
-            // Fallback: Tesseract.js
-            ocrStatusTxt.textContent = 'Tesseract wird geladen…';
-            rawText = await runTesseractOCR(file);
-        }
-
-        // Text bereinigen und in Textarea setzen
-        const clean = rawText.replace(/\f/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+        // Erkannten Text bereinigen und in Textarea setzen
+        const clean = text.replace(/\f/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
         document.getElementById('input-text').value = clean;
         document.getElementById('input-text').dispatchEvent(new Event('input'));
     } catch (err) {
