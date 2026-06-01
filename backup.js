@@ -38,6 +38,11 @@ export function mergeWpmHistory(local, backup) {
 }
 
 // "Neuestes Datum" gewinnt (ISO-String-Vergleich).
+// wordsLog summieren – Summe aller Tageswerte als totalWordsDisplayed
+export function sumWordsLog(wordsLog) {
+    return Object.values(wordsLog || {}).reduce((s, v) => s + (v || 0), 0);
+}
+
 // wordsLog zusammenführen – pro Tag den HÖHEREN Wert nehmen (idempotent).
 export function mergeWordsLogs(local, backup) {
     const result = Object.assign({}, local || {});
@@ -195,7 +200,6 @@ export async function importBackup(event) {
             updated.lastIndex             = Math.max(book.lastIndex     || 0, entry.lastIndex     || 0);
             updated.sessionCount          = Math.max(book.sessionCount  || 0, entry.sessionCount  || 0);
             updated.totalReadSeconds      = Math.max(book.totalReadSeconds    || 0, entry.totalReadSeconds    || 0);
-            updated.totalWordsDisplayed   = Math.max(book.totalWordsDisplayed || 0, entry.totalWordsDisplayed || 0);
 
             if ((entry.sessionCount || 0) > (book.sessionCount || 0) && entry.avgWpm) {
                 updated.avgWpm = entry.avgWpm;
@@ -206,6 +210,7 @@ export async function importBackup(event) {
             updated.readingLog = mergeReadingLogs(book.readingLog, entry.readingLog);
             updated.wordsLog   = mergeWordsLogs(book.wordsLog,   entry.wordsLog);
             updated.wpmHistory = mergeWpmHistory(book.wpmHistory,  entry.wpmHistory);
+            updated.totalWordsDisplayed = sumWordsLog(updated.wordsLog);
 
             await saveBookToDB(updated);
             matched++;
@@ -230,7 +235,6 @@ export async function importBackup(event) {
                     merged.lastIndex             = Math.max(found.lastIndex             || 0, entry.lastIndex             || 0);
                     merged.sessionCount          = Math.max(found.sessionCount          || 0, entry.sessionCount          || 0);
                     merged.totalReadSeconds      = Math.max(found.totalReadSeconds      || 0, entry.totalReadSeconds      || 0);
-                    merged.totalWordsDisplayed   = Math.max(found.totalWordsDisplayed   || 0, entry.totalWordsDisplayed   || 0);
                     if ((entry.sessionCount || 0) > (found.sessionCount || 0) && entry.avgWpm) {
                         merged.avgWpm = entry.avgWpm;
                     } else if (!found.avgWpm && entry.avgWpm) {
@@ -239,12 +243,14 @@ export async function importBackup(event) {
                     merged.readingLog = mergeReadingLogs(found.readingLog, entry.readingLog);
                     merged.wordsLog   = mergeWordsLogs(found.wordsLog,   entry.wordsLog);
                     merged.wpmHistory = mergeWpmHistory(found.wpmHistory,  entry.wpmHistory);
+                    merged.totalWordsDisplayed = sumWordsLog(merged.wordsLog);
                     if (!found.coverThumb && entry.coverThumb) merged.coverThumb = entry.coverThumb;
                     merged.pct = Math.max(found.pct || 0, entry.pct || 0);
 
                     await saveToStatsArchive(merged);
                     archivedMerged++;
                 } else {
+                    const newWordsLog = entry.wordsLog || {};
                     await saveToStatsArchive({
                             id:                    entry.id,
                             title:                 entry.title                 || '',
@@ -255,9 +261,9 @@ export async function importBackup(event) {
                             avgWpm:                entry.avgWpm                || null,
                             sessionCount:          entry.sessionCount          || 0,
                             totalReadSeconds:      entry.totalReadSeconds      || 0,
-                            totalWordsDisplayed:   entry.totalWordsDisplayed   || 0,
+                            totalWordsDisplayed:   sumWordsLog(newWordsLog),
                             readingLog:            entry.readingLog            || {},
-                            wordsLog:              entry.wordsLog              || {},
+                            wordsLog:              newWordsLog,
                             wpmHistory:            entry.wpmHistory            || [],
                             deletedAt:             entry.deletedAt             || null,
                             pct:                   entry.pct                   || 0,
