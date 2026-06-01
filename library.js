@@ -199,21 +199,23 @@ export function renderLibraryList() {
                     const isBookDone = book_pct >= 99;
 
                     await saveToStatsArchive({
-                        id:               book.id,
-                        title:            book.title,
-                        author:           book.author,
+                        id:                   book.id,
+                        title:                book.title,
+                        author:               book.author,
                         coverThumb,
-                        totalReadSeconds: book.totalReadSeconds || 0,
-                        avgWpm:           book.avgWpm           || 0,
-                        sessionCount:     book.sessionCount     || 0,
-                        lastReadDate:     book.lastReadDate     || null,
-                        wordCount:        total_w,
-                        lastIndex:        book.lastIndex        || 0,
-                        pct:              book_pct,
-                        readingLog:       book.readingLog       || {},
-                        wpmHistory:       book.wpmHistory       || [],
-                        deletedAt:        new Date().toISOString(),
-                        _notFinished:     !isBookDone,
+                        totalReadSeconds:     book.totalReadSeconds     || 0,
+                        avgWpm:               book.avgWpm               || 0,
+                        sessionCount:         book.sessionCount         || 0,
+                        lastReadDate:         book.lastReadDate         || null,
+                        wordCount:            total_w,
+                        lastIndex:            book.lastIndex            || 0,
+                        pct:                  book_pct,
+                        readingLog:           book.readingLog           || {},
+                        wordsLog:             book.wordsLog             || {},
+                        totalWordsDisplayed:  book.totalWordsDisplayed  || 0,
+                        wpmHistory:           book.wpmHistory           || [],
+                        deletedAt:            new Date().toISOString(),
+                        _notFinished:         !isBookDone,
                     });
                     await deleteBookFromDB(book.id);
 
