@@ -213,7 +213,7 @@
                         <span class="setting-title">Auto-Resume</span>
                         <span class="setting-desc">Lädt beim Start automatisch das zuletzt gelesene Buch.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="resume-book-toggle"><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="resume-book-toggle"> checked<span class="slider"></span></label>
                 </div>
 
                 <!-- CLUSTER: Darstellung -->
@@ -240,7 +240,7 @@
                         <span class="setting-title">Reset-Button bei Büchern</span>
                         <span class="setting-desc">Zeigt den Neustart-Button auch an, wenn ein Buch aus der Bibliothek geladen ist.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="show-reset-button-toggle" checked><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="show-reset-button-toggle"><span class="slider"></span></label>
                 </div>
 
                 <!-- CLUSTER: Zeitanzeigen -->
@@ -260,7 +260,7 @@
                         <span class="setting-title">Kapitel: Verbleibende Restzeit</span>
                         <span class="setting-desc">Zeigt die noch verbleibende Lesezeit im aktuellen Kapitel.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="show-chapter-remaining-toggle" checked><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="show-chapter-remaining-toggle"><span class="slider"></span></label>
                 </div>
                 <div class="setting-toggle-card">
                     <div class="setting-text-group">
@@ -274,7 +274,7 @@
                         <span class="setting-title">Buch: Verbleibende Restzeit</span>
                         <span class="setting-desc">Zeigt die noch verbleibende Lesezeit für das gesamte Buch.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="show-book-remaining-toggle" checked><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="show-book-remaining-toggle"><span class="slider"></span></label>
                 </div>
 
                 <!-- CLUSTER: RSVP-Modus -->
@@ -315,7 +315,7 @@
                         <span class="setting-title">Stopp nach Kapitelende</span>
                         <span class="setting-desc">Hält die Wiedergabe automatisch am Ende eines Kapitels an und zeigt den Namen des nächsten Kapitels im Reader an.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="stop-at-chapter-end"><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="stop-at-chapter-end"> checked<span class="slider"></span></label>
                 </div>
 
 
@@ -345,7 +345,7 @@
                         <input type="file" id="backup-file-input" accept=".json" style="display:none;" onchange="importBackup(event)">
                     </div>
                     <div class="backup-info-text">
-                        <strong>Was wird gesichert:</strong> Fortschritt, letzter Lesetag, Ø-WPM, Gesamtlesezeit, Einstellungen.<br>
+                        <strong>Was wird gesichert:</strong> Fortschritt, letzter Lesetag, Ø-WPM, Gesamtlesezeit, Einstellungen, alle Statistiken.<br>
                         <strong>Was nicht:</strong> Buchinhalte (urheberrechtlich geschützt).
                     </div>
                 </div>
@@ -434,7 +434,6 @@
                         </div>
                         <div class="info-con-col">
                             <div class="info-col-label orange">Grenzen</div>
-                            <div class="info-con-item">Kein Zurückspringen möglich – Verständnis leidet bei sehr hohem Tempo</div>
                             <div class="info-con-item">Komplexe Fachtexte erfordern Verlangsamung</div>
                             <div class="info-con-item">Anfangs ungewohnt – Eingewöhnungszeit von 1–2 Wochen einplanen</div>
                             <div class="info-con-item">Nicht geeignet für Texte, die visuell navigiert werden (Tabellen, Formeln)</div>
@@ -504,12 +503,6 @@
                         <div class="info-stat-lbl">WPM mit RSVP möglich</div>
                     </div>
                 </div>
-
-                <div class="info-version-badge">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="fill:var(--accent);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    RSVP Speed Reader Pro &nbsp;·&nbsp; <span>v2.9.6</span> &nbsp;·&nbsp; Alle Daten bleiben lokal auf deinem Gerät
-                </div>
-
             </div>
         </div>
 
@@ -524,9 +517,10 @@
                     </div>
                     <div class="info-body" style="text-align:center;">
                         Diese App ist und bleibt <strong>100% kostenlos, werbefrei und ohne Datensammlung</strong>. 
-                        Alle deine Bücher und Einstellungen bleiben lokal auf deinem Gerät – kein Cloud-Upload, kein Tracking.
+                        Alle deine Bücher und Einstellungen bleiben lokal auf deinem Gerät.
+						Kein Cloud-Upload, kein Tracking.
                         <br><br>
-                        Falls dir die App gefällt und du das Projekt unterstützen möchtest, freue ich mich über einen kleinen Kaffee! ☕
+                        Falls dir die App gefällt und du das Projekt unterstützen möchtest, freue ich mich über einen Kaffee! ☕
                     </div>
                 </div>
 
@@ -538,7 +532,7 @@
                     </div>
                     <div class="info-body" style="text-align:center; padding:20px 0;">
                         <!-- HIER DEINEN LINK EINFÜGEN -->
-                        <a href="https://buymeacoffee.com/DEIN_USERNAME" 
+                        <a href="https://buymeacoffee.com/stoneeyrie" 
                            target="_blank" 
                            style="display:inline-block; padding:14px 32px; background:#FFDD00; color:#000; text-decoration:none; border-radius:8px; font-weight:bold; font-size:16px; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 12px rgba(255,221,0,0.3);"
                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255,221,0,0.4)';"
