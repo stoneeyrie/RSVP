@@ -454,12 +454,14 @@ export async function finalizeBookImport(title, author, text, parsedWords, chapt
         lastIndex:                startIndex,
         type,
         thumbnail,
-        lastReadDate:     statsToMerge ? statsToMerge.lastReadDate     : null,
-        avgWpm:           statsToMerge ? statsToMerge.avgWpm           : null,
-        sessionCount:     statsToMerge ? statsToMerge.sessionCount     : 0,
-        totalReadSeconds: statsToMerge ? statsToMerge.totalReadSeconds : 0,
-        readingLog:       statsToMerge ? statsToMerge.readingLog       : {},
-        wpmHistory:       statsToMerge ? statsToMerge.wpmHistory       : [],
+        lastReadDate:          statsToMerge ? statsToMerge.lastReadDate          : null,
+        avgWpm:                statsToMerge ? statsToMerge.avgWpm                : null,
+        sessionCount:          statsToMerge ? statsToMerge.sessionCount          : 0,
+        totalReadSeconds:      statsToMerge ? statsToMerge.totalReadSeconds      : 0,
+        readingLog:            statsToMerge ? statsToMerge.readingLog            : {},
+        wordsLog:              statsToMerge ? statsToMerge.wordsLog              : {},
+        totalWordsDisplayed:   statsToMerge ? statsToMerge.totalWordsDisplayed   : 0,
+        wpmHistory:            statsToMerge ? statsToMerge.wpmHistory            : [],
     };
 
     await Promise.all([

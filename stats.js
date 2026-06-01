@@ -492,7 +492,9 @@ export async function handleStatsDelete(id, isArchived, title) {
             totalReadSeconds: book.totalReadSeconds||0, avgWpm: book.avgWpm||0,
             sessionCount: book.sessionCount||0, lastReadDate: book.lastReadDate||null,
             wordCount: total, lastIndex: book.lastIndex||0, pct: Math.min(100, pct),
-            readingLog: book.readingLog||{}, wpmHistory: book.wpmHistory||[],
+            readingLog: book.readingLog||{}, wordsLog: book.wordsLog||{},
+            totalWordsDisplayed: book.totalWordsDisplayed||0,
+            wpmHistory: book.wpmHistory||[],
             deletedAt: new Date().toISOString(),
         });
         await deleteBookFromDB(id);
