@@ -384,7 +384,11 @@ export async function renderStatsPanel() {
     let monthFilterSecs = 0;
     if (statsMonthFilter) {
         listEntries = allEntries
-            .map(e => ({ ...e, _monthSecs: Object.entries(e.readingLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0) }))
+            .map(e => ({
+                ...e,
+                _monthSecs:  Object.entries(e.readingLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0),
+                _monthWords: Object.entries(e.wordsLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0),
+            }))
             .filter(e => e._monthSecs > 0)
             .sort((a, b) => b._monthSecs - a._monthSecs);
         monthFilterSecs = listEntries.reduce((s, e) => s + e._monthSecs, 0);
@@ -462,7 +466,7 @@ export async function renderStatsPanel() {
                         <span class="ss-book-pct">${entry.pct||0}%</span>
                         <span class="ss-book-time">${spentStr}</span>
                         ${wpmStr ? `<span class="ss-book-wpm">${wpmStr}</span>` : ''}
-                        ${entry.totalWordsDisplayed ? `<span class="ss-book-wpm">${fmtWords(entry.totalWordsDisplayed)} Wörter</span>` : ''}
+                        ${(() => { const w = statsMonthFilter ? (entry._monthWords||0) : (entry.totalWordsDisplayed||0); return w ? `<span class="ss-book-wpm">${fmtWords(w)} Wörter</span>` : ''; })()}
                         ${statusStr ? `<span class="ss-book-status" style="color:${statusColor};margin-left:auto;">${statusStr}</span>` : ''}
                     </div>
                 </div>
