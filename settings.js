@@ -19,12 +19,14 @@ export function updateResetButtonVisibility() {
     const toggle   = document.getElementById('show-reset-button-toggle');
     if (!btnReset || !controls || !toggle) return;
     const isSchnellstart = (typeof activeBookId === 'undefined' || activeBookId === 'schnellstart' || activeBookId === '');
+    const isPageMode = controls.dataset.pageMode === 'true';
+    if (isPageMode) return;
     if (isSchnellstart || toggle.checked) {
         btnReset.style.display = '';
-        controls.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        controls.style.gridTemplateColumns = 'repeat(5, 1fr)';
     } else {
         btnReset.style.display = 'none';
-        controls.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        controls.style.gridTemplateColumns = 'repeat(4, 1fr)';
     }
 }
 

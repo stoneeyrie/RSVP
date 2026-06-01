@@ -466,9 +466,9 @@ body.amoled-mode .settings-cluster-header { color: #3498db; }
 
 /* --- Hauptsteuerung --- */
 #main-controls { 
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex-shrink: 0; margin-top: 5px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; flex-shrink: 0; margin-top: 5px;
 }
-.btn-main { grid-column: span 3; padding: 12px; font-weight: bold; background: var(--accent); color: white; border: none; border-radius: var(--radius-main); cursor: pointer; font-size: 1.1rem; }
+.btn-main { grid-column: span 5; padding: 12px; font-weight: bold; background: var(--accent); color: white; border: none; border-radius: var(--radius-main); cursor: pointer; font-size: 1.1rem; }
 .btn-nav { background: #333; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 12.5px; }
 body.amoled-mode .btn-nav { background: #111; border: 1px solid #333; }
 .btn-nav:hover { background: #444; }
