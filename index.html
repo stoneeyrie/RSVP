@@ -8,6 +8,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
     <link rel="stylesheet" href="styles.css">
 
@@ -123,11 +124,19 @@
                 <button id="btn-url-import" class="floating-action-btn" title="Text von URL laden">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
                 </button>
+                <button id="btn-ocr" class="floating-action-btn" title="Text per Kamera scannen (OCR)">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.2A3.2 3.2 0 0 1 8.8 12 3.2 3.2 0 0 1 12 8.8 3.2 3.2 0 0 1 15.2 12 3.2 3.2 0 0 1 12 15.2M12 7a5 5 0 0 0-5 5 5 5 0 0 0 5 5 5 5 0 0 0 5-5 5 5 0 0 0-5-5m-7 2H3V5c0-1.1.9-2 2-2h4v2H5v2M19 3h-4v2h4v2h2V5c0-1.1-.9-2-2-2m2 16h-2v2h2c1.1 0 2-.9 2-2v-4h-2v4M5 19v-2H3v4h4v-2H5m0 0"/></svg>
+                </button>
+                <input type="file" id="ocr-file-input" accept="image/*" capture="environment" style="display:none;">
                 <button id="btn-clear-floating" class="floating-action-btn floating-trash-btn" title="Text komplett löschen">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                 </button>
             </div>
             <textarea id="input-text" placeholder="Füge hier deinen Text für den Schnellstart ein..."></textarea>
+            <div id="ocr-status" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.75); border-radius:var(--radius-main); display:none; flex-direction:column; align-items:center; justify-content:center; gap:10px; z-index:10;">
+                <div id="ocr-spinner" style="width:32px;height:32px;border:3px solid #444;border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                <div id="ocr-status-text" style="color:#ccc;font-size:13px;">Wird analysiert…</div>
+            </div>
         </div>
         <div id="url-import-panel" class="url-import-panel" style="display:none;">
             <input type="url" id="url-import-input" placeholder="https://…" autocomplete="off" spellcheck="false">
@@ -922,9 +931,7 @@ function togglePageMode() {
         setChapterOnPageModeEnter(getActiveChapterIndex());
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
-        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor";
-        document.getElementById('btn-back-1').style.display = "none"; document.getElementById('btn-fwd-1').style.display = "none"; document.getElementById('btn-reset').style.display = "none";
-        document.getElementById('main-controls').dataset.pageMode = 'true'; document.getElementById('main-controls').style.gridTemplateColumns = 'repeat(2, 1fr)';
+        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; document.getElementById('btn-back-1').style.display = "none"; document.getElementById('btn-fwd-1').style.display = "none"; document.getElementById('btn-reset').style.display = "none";
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -938,9 +945,7 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter";
-        document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = "";
-        document.getElementById('main-controls').dataset.pageMode = 'false'; updateResetButtonVisibility();
+        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = ""; document.getElementById('btn-reset').style.display = "";
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
@@ -1336,6 +1341,46 @@ urlImportGo.onclick = async () => {
 };
 
 window.onresize = () => { if (isPageMode) renderPageMode(); };
+
+// ── OCR: Kamera-Scan via Tesseract.js ────────────────────────────────────────
+const ocrBtn       = document.getElementById('btn-ocr');
+const ocrFileInput = document.getElementById('ocr-file-input');
+const ocrStatus    = document.getElementById('ocr-status');
+const ocrStatusTxt = document.getElementById('ocr-status-text');
+
+ocrBtn.onclick = () => ocrFileInput.click();
+
+ocrFileInput.onchange = async () => {
+    const file = ocrFileInput.files[0];
+    if (!file) return;
+    ocrFileInput.value = '';
+
+    // Ladeoverlay anzeigen
+    ocrStatus.style.display = 'flex';
+    ocrStatusTxt.textContent = 'Bild wird vorbereitet…';
+
+    try {
+        const worker = await Tesseract.createWorker('deu', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    ocrStatusTxt.textContent = `Wird erkannt… ${Math.round((m.progress||0)*100)}%`;
+                }
+            }
+        });
+        ocrStatusTxt.textContent = 'Text wird erkannt…';
+        const { data: { text } } = await worker.recognize(file);
+        await worker.terminate();
+
+        // Erkannten Text bereinigen und in Textarea setzen
+        const clean = text.replace(/\f/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+        document.getElementById('input-text').value = clean;
+        document.getElementById('input-text').dispatchEvent(new Event('input'));
+    } catch (err) {
+        alert('OCR fehlgeschlagen: ' + err.message);
+    } finally {
+        ocrStatus.style.display = 'none';
+    }
+};
 
 init();
 
