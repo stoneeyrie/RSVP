@@ -79,7 +79,7 @@ function getWeekKeys() {
 function getMonthPrefix() { return new Date().toISOString().substring(0, 7); }
 function fmtWords(n) {
     if (!n) return null;
-    return n >= 1000 ? `${(n/1000).toLocaleString('de-DE', {maximumFractionDigits:1})}k` : `${n}`;
+    return n.toLocaleString('de-DE');
 }
 function aggregateWords(allEntries, keyFilter) {
     let total = 0;
@@ -284,13 +284,17 @@ export async function renderStatsPanel() {
     const wAvgWpm       = wpmEntries.length > 0
         ? Math.round(wpmEntries.reduce((s,e) => s + e.avgWpm * e.sessionCount, 0) / wpmEntries.reduce((s,e) => s + e.sessionCount, 0))
         : 0;
-    const wordsStr = totalWords >= 1000000 ? `${(totalWords/1000000).toFixed(1)}M`
-        : totalWords >= 1000 ? `${Math.round(totalWords/1000)}k` : `${totalWords}`;
+    const wordsStr = totalWords > 0 ? totalWords.toLocaleString('de-DE') : '–';
+    const wordsLen = wordsStr.length;
 
     // KPI-Grid: 2×3 einheitliche Kacheln
     const kpiIcon = (path) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">${path}</svg>`;
     const kpiCard = (icon, num, lbl, color='var(--accent)') =>
         `<div class="ss-kpi-card"><div class="ss-kpi-icon">${icon}</div><div class="ss-kpi-num" style="color:${color};">${num}</div><div class="ss-kpi-lbl">${lbl}</div></div>`;
+    const kpiCardWords = (icon, num, lbl, color='var(--accent)') => {
+        const fs = wordsLen <= 7 ? '19px' : wordsLen <= 9 ? '15px' : '12px';
+        return `<div class="ss-kpi-card"><div class="ss-kpi-icon">${icon}</div><div class="ss-kpi-num" style="color:${color};font-size:${fs};">${num}</div><div class="ss-kpi-lbl">${lbl}</div></div>`;
+    };
 
     let html = `<div class="ss-wrap">`;
 
@@ -303,7 +307,7 @@ export async function renderStatsPanel() {
             ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>'), startedCount, 'Begonnen', '#f39c12')}
             ${kpiCard(kpiIcon('<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>'), fmtSecs(totalSecs), 'Lesezeit')}
             ${kpiCard(kpiIcon('<path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44zm-9.79 6.84a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>'), wAvgWpm > 0 ? `${wAvgWpm}` : '–', 'Ø WPM')}
-            ${kpiCard(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>'), totalWords > 0 ? wordsStr : '–', 'Wörter gelesen')}
+            ${kpiCardWords(kpiIcon('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>'), wordsStr, 'Wörter gelesen')}
         </div>
     </div>`;
 
@@ -380,11 +384,7 @@ export async function renderStatsPanel() {
     let monthFilterSecs = 0;
     if (statsMonthFilter) {
         listEntries = allEntries
-            .map(e => ({
-                ...e,
-                _monthSecs:  Object.entries(e.readingLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0),
-                _monthWords: Object.entries(e.wordsLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0),
-            }))
+            .map(e => ({ ...e, _monthSecs: Object.entries(e.readingLog||{}).filter(([k]) => k.startsWith(statsMonthFilter)).reduce((s,[,v]) => s+v, 0) }))
             .filter(e => e._monthSecs > 0)
             .sort((a, b) => b._monthSecs - a._monthSecs);
         monthFilterSecs = listEntries.reduce((s, e) => s + e._monthSecs, 0);
@@ -462,7 +462,7 @@ export async function renderStatsPanel() {
                         <span class="ss-book-pct">${entry.pct||0}%</span>
                         <span class="ss-book-time">${spentStr}</span>
                         ${wpmStr ? `<span class="ss-book-wpm">${wpmStr}</span>` : ''}
-                        ${(() => { const w = statsMonthFilter ? (entry._monthWords||0) : (entry.totalWordsDisplayed||0); return w ? `<span class="ss-book-wpm">${fmtWords(w)} Wörter</span>` : ''; })()}
+                        ${entry.totalWordsDisplayed ? `<span class="ss-book-wpm">${fmtWords(entry.totalWordsDisplayed)} Wörter</span>` : ''}
                         ${statusStr ? `<span class="ss-book-status" style="color:${statusColor};margin-left:auto;">${statusStr}</span>` : ''}
                     </div>
                 </div>
@@ -496,9 +496,7 @@ export async function handleStatsDelete(id, isArchived, title) {
             totalReadSeconds: book.totalReadSeconds||0, avgWpm: book.avgWpm||0,
             sessionCount: book.sessionCount||0, lastReadDate: book.lastReadDate||null,
             wordCount: total, lastIndex: book.lastIndex||0, pct: Math.min(100, pct),
-            readingLog: book.readingLog||{}, wordsLog: book.wordsLog||{},
-            totalWordsDisplayed: book.totalWordsDisplayed||0,
-            wpmHistory: book.wpmHistory||[],
+            readingLog: book.readingLog||{}, wpmHistory: book.wpmHistory||[],
             deletedAt: new Date().toISOString(),
         });
         await deleteBookFromDB(id);
