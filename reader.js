@@ -489,9 +489,9 @@ export async function saveSessionStats() {
             book.readingLog = book.readingLog || {};
             book.readingLog[ymd] = (book.readingLog[ymd] || 0) + Math.round(totalSessionSeconds);
             // Tatsächlich angezeigte RSVP-Wörter (inkl. Rücksprünge)
-            book.totalWordsDisplayed = (book.totalWordsDisplayed || 0) + sessionWordsDisplayed;
             book.wordsLog = book.wordsLog || {};
             book.wordsLog[ymd] = (book.wordsLog[ymd] || 0) + sessionWordsDisplayed;
+            book.totalWordsDisplayed = Object.values(book.wordsLog).reduce((s, v) => s + (v || 0), 0);
             await saveBookToDB(book);
         }
     }
