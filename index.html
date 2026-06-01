@@ -140,7 +140,9 @@
         <div id="main-controls">
             <button id="main-btn" class="btn-main">START</button>
             <button id="btn-back" class="btn-nav">-10 Wörter</button>
+            <button id="btn-back-1" class="btn-nav">-1 Wort</button>
             <button id="btn-reset" class="btn-nav">Neustart</button>
+            <button id="btn-fwd-1" class="btn-nav">+1 Wort</button>
             <button id="btn-fwd" class="btn-nav">+10 Wörter</button>
         </div>
 		
@@ -920,7 +922,7 @@ function togglePageMode() {
         setChapterOnPageModeEnter(getActiveChapterIndex());
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
-        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; 
+        document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; document.getElementById('btn-back-1').style.display = "none"; document.getElementById('btn-fwd-1').style.display = "none"; document.getElementById('btn-reset').style.display = "none";
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -934,7 +936,7 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; 
+        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = ""; document.getElementById('btn-reset').style.display = "";
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
@@ -1206,6 +1208,22 @@ document.getElementById('btn-back').onclick = async () => {
         if(sideChapterPanel.classList.contains('active')) renderReaderChapterList(); 
         render(); 
     }
+};
+
+document.getElementById('btn-fwd-1').onclick = async () => {
+    setHyphenFragments(null);
+    setCurrentIndex(Math.min(words.length - 1, currentIndex + 1));
+    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+    if(sideChapterPanel.classList.contains('active')) renderReaderChapterList();
+    render();
+};
+
+document.getElementById('btn-back-1').onclick = async () => {
+    setHyphenFragments(null);
+    setCurrentIndex(Math.max(0, currentIndex - 1));
+    await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
+    if(sideChapterPanel.classList.contains('active')) renderReaderChapterList();
+    render();
 };
 
 pageTextContent.onscroll = () => { 
