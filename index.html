@@ -1339,12 +1339,6 @@ urlImportGo.onclick = async () => {
 
 window.onresize = () => { if (isPageMode) renderPageMode(); };
 
-// ── OCR: Native TextDetector (Android/Chrome) + Tesseract Fallback ───────────
-const ocrBtn       = document.getElementById('btn-ocr');
-const ocrFileInput = document.getElementById('ocr-file-input');
-const ocrStatus    = document.getElementById('ocr-status');
-const ocrStatusTxt = document.getElementById('ocr-status-text');
-
 // ── OCR: Kamera-Scan via Tesseract.js ────────────────────────────────────────
 const ocrBtn       = document.getElementById('btn-ocr');
 const ocrFileInput = document.getElementById('ocr-file-input');
