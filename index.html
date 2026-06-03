@@ -1386,8 +1386,16 @@ function preprocessImage(file) {
 async function ocrWithTextDetector(blob) {
     const bitmap  = await createImageBitmap(blob);
     const detector = new TextDetector();
-    const results  = await detector.detect(bitmap);
+    let results;
+    try {
+        results = await detector.detect(bitmap);
+    } catch(e) {
+        bitmap.close();
+        console.error('TextDetector.detect() Fehler:', e);
+        throw e;
+    }
     bitmap.close();
+    console.log('TextDetector Ergebnisse:', results.length, results);
     if (!results.length) throw new Error('Kein Text erkannt');
     results.sort((a, b) => a.boundingBox.top - b.boundingBox.top);
     return results.map(r => r.rawValue).join('\n');
