@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	
-    <title>RSVP Speed Reader Pro v2.9.6</title>
+    <title>RSVP Speed Reader Pro</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -213,7 +213,7 @@
                         <span class="setting-title">Auto-Resume</span>
                         <span class="setting-desc">Lädt beim Start automatisch das zuletzt gelesene Buch.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="resume-book-toggle"><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="resume-book-toggle" checked><span class="slider"></span></label>
                 </div>
 
                 <!-- CLUSTER: Darstellung -->
@@ -240,7 +240,7 @@
                         <span class="setting-title">Reset-Button bei Büchern</span>
                         <span class="setting-desc">Zeigt den Neustart-Button auch an, wenn ein Buch aus der Bibliothek geladen ist.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="show-reset-button-toggle" checked><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="show-reset-button-toggle"><span class="slider"></span></label>
                 </div>
 
                 <!-- CLUSTER: Zeitanzeigen -->
@@ -260,7 +260,7 @@
                         <span class="setting-title">Kapitel: Verbleibende Restzeit</span>
                         <span class="setting-desc">Zeigt die noch verbleibende Lesezeit im aktuellen Kapitel.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="show-chapter-remaining-toggle" checked><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="show-chapter-remaining-toggle"><span class="slider"></span></label>
                 </div>
                 <div class="setting-toggle-card">
                     <div class="setting-text-group">
@@ -274,7 +274,7 @@
                         <span class="setting-title">Buch: Verbleibende Restzeit</span>
                         <span class="setting-desc">Zeigt die noch verbleibende Lesezeit für das gesamte Buch.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="show-book-remaining-toggle" checked><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="show-book-remaining-toggle"><span class="slider"></span></label>
                 </div>
 
                 <!-- CLUSTER: RSVP-Modus -->
@@ -315,7 +315,7 @@
                         <span class="setting-title">Stopp nach Kapitelende</span>
                         <span class="setting-desc">Hält die Wiedergabe automatisch am Ende eines Kapitels an und zeigt den Namen des nächsten Kapitels im Reader an.</span>
                     </div>
-                    <label class="switch"><input type="checkbox" id="stop-at-chapter-end"><span class="slider"></span></label>
+                    <label class="switch"><input type="checkbox" id="stop-at-chapter-end" checked><span class="slider"></span></label>
                 </div>
 
 
@@ -345,7 +345,7 @@
                         <input type="file" id="backup-file-input" accept=".json" style="display:none;" onchange="importBackup(event)">
                     </div>
                     <div class="backup-info-text">
-                        <strong>Was wird gesichert:</strong> Fortschritt, letzter Lesetag, Ø-WPM, Gesamtlesezeit, Einstellungen.<br>
+                        <strong>Was wird gesichert:</strong> Fortschritt, letzter Lesetag, Ø-WPM, Gesamtlesezeit, Einstellungen, alle Statistiken.<br>
                         <strong>Was nicht:</strong> Buchinhalte (urheberrechtlich geschützt).
                     </div>
                 </div>
@@ -434,7 +434,6 @@
                         </div>
                         <div class="info-con-col">
                             <div class="info-col-label orange">Grenzen</div>
-                            <div class="info-con-item">Kein Zurückspringen möglich – Verständnis leidet bei sehr hohem Tempo</div>
                             <div class="info-con-item">Komplexe Fachtexte erfordern Verlangsamung</div>
                             <div class="info-con-item">Anfangs ungewohnt – Eingewöhnungszeit von 1–2 Wochen einplanen</div>
                             <div class="info-con-item">Nicht geeignet für Texte, die visuell navigiert werden (Tabellen, Formeln)</div>
@@ -504,12 +503,6 @@
                         <div class="info-stat-lbl">WPM mit RSVP möglich</div>
                     </div>
                 </div>
-
-                <div class="info-version-badge">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="fill:var(--accent);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                    RSVP Speed Reader Pro &nbsp;·&nbsp; <span>v2.9.6</span> &nbsp;·&nbsp; Alle Daten bleiben lokal auf deinem Gerät
-                </div>
-
             </div>
         </div>
 
@@ -524,9 +517,10 @@
                     </div>
                     <div class="info-body" style="text-align:center;">
                         Diese App ist und bleibt <strong>100% kostenlos, werbefrei und ohne Datensammlung</strong>. 
-                        Alle deine Bücher und Einstellungen bleiben lokal auf deinem Gerät – kein Cloud-Upload, kein Tracking.
+                        Alle deine Bücher und Einstellungen bleiben lokal auf deinem Gerät.
+						Kein Cloud-Upload, kein Tracking.
                         <br><br>
-                        Falls dir die App gefällt und du das Projekt unterstützen möchtest, freue ich mich über einen kleinen Kaffee! ☕
+                        Falls dir die App gefällt und du das Projekt unterstützen möchtest, freue ich mich über einen Kaffee! ☕
                     </div>
                 </div>
 
@@ -538,7 +532,7 @@
                     </div>
                     <div class="info-body" style="text-align:center; padding:20px 0;">
                         <!-- HIER DEINEN LINK EINFÜGEN -->
-                        <a href="https://buymeacoffee.com/DEIN_USERNAME" 
+                        <a href="https://buymeacoffee.com/stoneeyrie" 
                            target="_blank" 
                            style="display:inline-block; padding:14px 32px; background:#FFDD00; color:#000; text-decoration:none; border-radius:8px; font-weight:bold; font-size:16px; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 4px 12px rgba(255,221,0,0.3);"
                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(255,221,0,0.4)';"
@@ -932,6 +926,7 @@ function togglePageMode() {
 
         wordDisplay.style.display = "none"; textboxContainer.classList.remove('textbox-active'); document.querySelector('.reader-quick-settings').style.display = "none"; pageDisplayContainer.style.display = "block"; mainBtn.style.display = "none";
         document.getElementById('btn-back').innerText = "Seite zurück"; document.getElementById('btn-fwd').innerText = "Seite vor"; document.getElementById('btn-back-1').style.display = "none"; document.getElementById('btn-fwd-1').style.display = "none"; document.getElementById('btn-reset').style.display = "none";
+        document.getElementById('main-controls').style.gridTemplateColumns = 'repeat(2, 1fr)';
         
         if (readerModeToggle) {
             readerModeToggle.classList.add('active-mode'); 
@@ -945,7 +940,9 @@ function togglePageMode() {
         if (pageRenderTimeout) clearTimeout(pageRenderTimeout);
 
         wordDisplay.style.display = "block"; document.querySelector('.reader-quick-settings').style.display = "flex"; if (activeBookId === "schnellstart") textboxContainer.classList.add('textbox-active'); pageDisplayContainer.style.display = "none"; mainBtn.style.background = "var(--accent)"; mainBtn.style.display = "block";
-        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = ""; document.getElementById('btn-reset').style.display = "";
+        document.getElementById('btn-back').innerText = "-10 Wörter"; document.getElementById('btn-fwd').innerText = "+10 Wörter"; document.getElementById('btn-back-1').style.display = ""; document.getElementById('btn-fwd-1').style.display = "";
+        document.getElementById('main-controls').style.gridTemplateColumns = '';
+        updateResetButtonVisibility();
         
         if (readerModeToggle) {
             readerModeToggle.classList.remove('active-mode'); 
@@ -1350,18 +1347,53 @@ const ocrStatusTxt = document.getElementById('ocr-status-text');
 
 ocrBtn.onclick = () => ocrFileInput.click();
 
-async function ocrWithTextDetector(file) {
-    const bitmap = await createImageBitmap(file);
+// Bildvorverarbeitung: Graustufen + Kontrast für bessere Erkennung
+function preprocessImage(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas  = document.createElement('canvas');
+            canvas.width  = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Bild zeichnen
+            ctx.drawImage(img, 0, 0);
+            URL.revokeObjectURL(url);
+
+            // Graustufen + Kontrast per Pixel
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const contrast = 1.6; // Kontrast-Faktor
+            const factor   = (255 + 128 * contrast) / (255 * (1 + contrast - contrast));
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Graustufen (Luminanz-gewichtet)
+                const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+                // Kontrast anwenden
+                const c = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
+                data[i] = data[i+1] = data[i+2] = c;
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            canvas.toBlob(resolve, 'image/png');
+        };
+        img.src = url;
+    });
+}
+
+async function ocrWithTextDetector(blob) {
+    const bitmap  = await createImageBitmap(blob);
     const detector = new TextDetector();
     const results  = await detector.detect(bitmap);
     bitmap.close();
     if (!results.length) throw new Error('Kein Text erkannt');
-    // Blöcke nach vertikaler Position sortieren und zusammenführen
     results.sort((a, b) => a.boundingBox.top - b.boundingBox.top);
     return results.map(r => r.rawValue).join('\n');
 }
 
-async function ocrWithTesseract(file) {
+async function ocrWithTesseract(blob) {
     ocrStatusTxt.textContent = 'Sprachmodell wird geladen…';
     const worker = await Tesseract.createWorker('deu', 1, {
         logger: m => {
@@ -1370,7 +1402,7 @@ async function ocrWithTesseract(file) {
         }
     });
     ocrStatusTxt.textContent = 'Text wird erkannt…';
-    const { data: { text } } = await worker.recognize(file);
+    const { data: { text } } = await worker.recognize(blob);
     await worker.terminate();
     return text;
 }
@@ -1381,34 +1413,37 @@ ocrFileInput.onchange = async () => {
     ocrFileInput.value = '';
 
     ocrStatus.style.display = 'flex';
-    ocrStatusTxt.textContent = 'Text wird erkannt…';
+    ocrStatusTxt.textContent = 'Bild wird vorbereitet…';
 
     try {
-        let text = '';
+        // Vorverarbeitung: Graustufen + Kontrast
+        const processed = await preprocessImage(file);
+
+        let text   = '';
         let engine = '';
         if ('TextDetector' in window) {
             try {
-                text   = await ocrWithTextDetector(file);
+                text   = await ocrWithTextDetector(processed);
                 engine = '📱 Native Android OCR';
             } catch (e) {
                 ocrStatusTxt.textContent = 'Fallback wird gestartet…';
-                text   = await ocrWithTesseract(file);
+                text   = await ocrWithTesseract(processed);
                 engine = '🔡 Tesseract.js (Fallback)';
             }
         } else {
-            text   = await ocrWithTesseract(file);
+            text   = await ocrWithTesseract(processed);
             engine = '🔡 Tesseract.js';
         }
 
         const clean = text.replace(/\f/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
         document.getElementById('input-text').value = clean;
         document.getElementById('input-text').dispatchEvent(new Event('input'));
+
+        // Kurze Engine-Info anzeigen, dann ausblenden
         ocrStatusTxt.textContent = `✓ Erkannt via ${engine}`;
-        ocrStatus.style.display = 'flex';
         setTimeout(() => { ocrStatus.style.display = 'none'; }, 2500);
     } catch (err) {
         alert('OCR fehlgeschlagen: ' + err.message);
-    } finally {
         ocrStatus.style.display = 'none';
     }
 };
