@@ -1345,6 +1345,12 @@ const ocrFileInput = document.getElementById('ocr-file-input');
 const ocrStatus    = document.getElementById('ocr-status');
 const ocrStatusTxt = document.getElementById('ocr-status-text');
 
+// ── OCR: Kamera-Scan via Tesseract.js ────────────────────────────────────────
+const ocrBtn       = document.getElementById('btn-ocr');
+const ocrFileInput = document.getElementById('ocr-file-input');
+const ocrStatus    = document.getElementById('ocr-status');
+const ocrStatusTxt = document.getElementById('ocr-status-text');
+
 ocrBtn.onclick = () => ocrFileInput.click();
 
 // Bildvorverarbeitung: Graustufen + Kontrast für bessere Erkennung
@@ -1357,62 +1363,23 @@ function preprocessImage(file) {
             canvas.width  = img.naturalWidth;
             canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
-
-            // Bild zeichnen
             ctx.drawImage(img, 0, 0);
             URL.revokeObjectURL(url);
 
-            // Graustufen + Kontrast per Pixel
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
-            const contrast = 1.6; // Kontrast-Faktor
+            const contrast = 1.6;
             const factor   = (255 + 128 * contrast) / (255 * (1 + contrast - contrast));
-
             for (let i = 0; i < data.length; i += 4) {
-                // Graustufen (Luminanz-gewichtet)
                 const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
-                // Kontrast anwenden
                 const c = Math.min(255, Math.max(0, factor * (gray - 128) + 128));
                 data[i] = data[i+1] = data[i+2] = c;
             }
             ctx.putImageData(imageData, 0, 0);
-
             canvas.toBlob(resolve, 'image/png');
         };
         img.src = url;
     });
-}
-
-async function ocrWithTextDetector(blob) {
-    const bitmap  = await createImageBitmap(blob);
-    const detector = new TextDetector();
-    let results;
-    try {
-        results = await detector.detect(bitmap);
-    } catch(e) {
-        bitmap.close();
-        console.error('TextDetector.detect() Fehler:', e);
-        throw e;
-    }
-    bitmap.close();
-    console.log('TextDetector Ergebnisse:', results.length, results);
-    if (!results.length) throw new Error('Kein Text erkannt');
-    results.sort((a, b) => a.boundingBox.top - b.boundingBox.top);
-    return results.map(r => r.rawValue).join('\n');
-}
-
-async function ocrWithTesseract(blob) {
-    ocrStatusTxt.textContent = 'Sprachmodell wird geladen…';
-    const worker = await Tesseract.createWorker('deu', 1, {
-        logger: m => {
-            if (m.status === 'recognizing text')
-                ocrStatusTxt.textContent = `Wird erkannt… ${Math.round((m.progress||0)*100)}%`;
-        }
-    });
-    ocrStatusTxt.textContent = 'Text wird erkannt…';
-    const { data: { text } } = await worker.recognize(blob);
-    await worker.terminate();
-    return text;
 }
 
 ocrFileInput.onchange = async () => {
@@ -1424,32 +1391,22 @@ ocrFileInput.onchange = async () => {
     ocrStatusTxt.textContent = 'Bild wird vorbereitet…';
 
     try {
-        // Vorverarbeitung: Graustufen + Kontrast
         const processed = await preprocessImage(file);
-
-        let text   = '';
-        let engine = '';
-        if ('TextDetector' in window) {
-            try {
-                text   = await ocrWithTextDetector(processed);
-                engine = '📱 Native Android OCR';
-            } catch (e) {
-                ocrStatusTxt.textContent = 'Fallback wird gestartet…';
-                text   = await ocrWithTesseract(processed);
-                engine = '🔡 Tesseract.js (Fallback)';
+        ocrStatusTxt.textContent = 'Sprachmodell wird geladen…';
+        const worker = await Tesseract.createWorker('deu', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text')
+                    ocrStatusTxt.textContent = `Wird erkannt… ${Math.round((m.progress||0)*100)}%`;
             }
-        } else {
-            text   = await ocrWithTesseract(processed);
-            engine = '🔡 Tesseract.js';
-        }
+        });
+        ocrStatusTxt.textContent = 'Text wird erkannt…';
+        const { data: { text } } = await worker.recognize(processed);
+        await worker.terminate();
 
         const clean = text.replace(/\f/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
         document.getElementById('input-text').value = clean;
         document.getElementById('input-text').dispatchEvent(new Event('input'));
-
-        // Kurze Engine-Info anzeigen, dann ausblenden
-        ocrStatusTxt.textContent = `✓ Erkannt via ${engine}`;
-        setTimeout(() => { ocrStatus.style.display = 'none'; }, 2500);
+        ocrStatus.style.display = 'none';
     } catch (err) {
         alert('OCR fehlgeschlagen: ' + err.message);
         ocrStatus.style.display = 'none';
