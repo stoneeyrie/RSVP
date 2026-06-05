@@ -254,6 +254,33 @@ export async function renderAchievementsPanel() {
         </div>
     </div>`;
 
+    // ── Schnellübersicht: Kategorien mit Fortschritt ─────────────────────────
+    const catsWithProgress = BADGE_CATEGORIES.filter(cat => (values[cat.id] || 0) >= cat.levels[0].threshold);
+
+    if (catsWithProgress.length > 0) {
+        html += `<div class="ach-overview-grid">`;
+        for (const cat of catsWithProgress) {
+            const val          = values[cat.id] || 0;
+            const unlockedCount = cat.levels.filter(l => val >= l.threshold).length;
+            const totalCount   = cat.levels.length;
+            const allDone      = unlockedCount === totalCount;
+            const currentLevel = cat.levels[unlockedCount - 1]; // höchste erreichte Stufe
+
+            html += `<div class="ach-overview-card${allDone ? ' ach-overview-done' : ''}">
+                <div class="ach-overview-top">
+                    <span class="ach-overview-icon">${cat.icon}</span>
+                    <span class="ach-overview-name">${cat.name}</span>
+                </div>
+                <div class="ach-overview-label">${currentLevel.label}</div>
+                <div class="ach-overview-pips">
+                    ${cat.levels.map((l, i) => `<div class="ach-pip${i < unlockedCount ? ' ach-pip-on' : ''}${i === unlockedCount - 1 ? ' ach-pip-current' : ''}"></div>`).join('')}
+                </div>
+                <div class="ach-overview-sub">${unlockedCount}/${totalCount} Stufen</div>
+            </div>`;
+        }
+        html += `</div>`;
+    }
+
     // ── Neu freigeschaltet ────────────────────────────────────────────────────
     if (newBadges.length > 0) {
         html += `<div class="ach-new-banner">🎉 Neu freigeschaltet: ${newBadges.map(b => `<strong>${b.label}</strong>`).join(', ')}</div>`;
@@ -265,6 +292,9 @@ export async function renderAchievementsPanel() {
         const catUnlocked = cat.levels.filter(l => val >= l.threshold);
         const nextLevel   = cat.levels.find(l => val < l.threshold);
         const allDone     = catUnlocked.length === cat.levels.length;
+
+        // Kategorien ohne Fortschritt ausblenden
+        if (catUnlocked.length === 0) continue;
 
         html += `<div class="ach-category">
             <div class="ach-cat-header">

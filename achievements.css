@@ -1,4 +1,107 @@
-/* ── Achievements Panel ──────────────────────────────────────────────────────── */
+/* ── Schnellübersicht Grid ───────────────────────────────────────────────────── */
+.ach-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.ach-overview-card {
+    background: linear-gradient(135deg, #1a1f2e, #161b28);
+    border: 1px solid #2a2f42;
+    border-radius: 12px;
+    padding: 12px 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ach-overview-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 100% 0%, rgba(52,152,219,0.08) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.ach-overview-done {
+    background: linear-gradient(135deg, #1a2e1e, #162318);
+    border-color: rgba(46,204,113,0.3);
+}
+
+.ach-overview-done::before {
+    background: radial-gradient(ellipse at 100% 0%, rgba(46,204,113,0.1) 0%, transparent 60%);
+}
+
+.ach-overview-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ach-overview-icon {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.ach-overview-name {
+    font-size: 10.5px;
+    color: #888;
+    line-height: 1.2;
+}
+
+.ach-overview-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e0e0e0;
+    line-height: 1.2;
+}
+
+.ach-overview-done .ach-overview-label {
+    color: #2ecc71;
+}
+
+.ach-overview-pips {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.ach-pip {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: #252a3a;
+    transition: background 0.3s ease;
+}
+
+.ach-pip-on {
+    background: var(--accent, #3498db);
+}
+
+.ach-overview-done .ach-pip-on {
+    background: #2ecc71;
+}
+
+.ach-pip-current {
+    box-shadow: 0 0 6px rgba(52,152,219,0.6);
+}
+
+.ach-overview-done .ach-pip-current {
+    box-shadow: 0 0 6px rgba(46,204,113,0.6);
+}
+
+.ach-overview-sub {
+    font-size: 10px;
+    color: #555;
+}
+
+.ach-overview-done .ach-overview-sub {
+    color: rgba(46,204,113,0.6);
+}
+
 
 .ach-wrap {
     padding: 4px 0 24px 0;
