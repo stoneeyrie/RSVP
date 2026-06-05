@@ -162,6 +162,10 @@
     margin-top: 8px;
 }
 
+.ach-streak-hint-done {
+    color: #2ecc71 !important;
+}
+
 /* ── Gesamt-Fortschritt ──────────────────────────────────────────────────────── */
 .ach-progress-section {
     background: var(--card-bg, #1e1e1e);

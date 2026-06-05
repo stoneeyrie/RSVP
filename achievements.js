@@ -10,11 +10,11 @@ export const BADGE_CATEGORIES = [
         name: 'Täglicher Streak',
         icon: '🔥',
         levels: [
-            { id: 'streak_3',    label: 'Funke',         desc: '3 Tage in Folge gelesen',     threshold: 3   },
-            { id: 'streak_7',    label: 'Wochenleser',   desc: '7 Tage in Folge gelesen',     threshold: 7   },
-            { id: 'streak_30',   label: 'Monatsleser',   desc: '30 Tage in Folge gelesen',    threshold: 30  },
-            { id: 'streak_100',  label: 'Unaufhaltsam',  desc: '100 Tage in Folge gelesen',   threshold: 100 },
-            { id: 'streak_365',  label: 'Jahresleser',   desc: '365 Tage in Folge gelesen',   threshold: 365 },
+            { id: 'streak_3',   label: 'Zündfunke',      desc: '3 Tage in Folge gelesen',   threshold: 3   },
+            { id: 'streak_7',   label: 'Glut',           desc: '7 Tage in Folge gelesen',   threshold: 7   },
+            { id: 'streak_30',  label: 'Flamme',         desc: '30 Tage in Folge gelesen',  threshold: 30  },
+            { id: 'streak_100', label: 'Inferno',        desc: '100 Tage in Folge gelesen', threshold: 100 },
+            { id: 'streak_365', label: 'Ewiges Feuer',   desc: '365 Tage in Folge gelesen', threshold: 365 },
         ],
     },
     {
@@ -59,11 +59,11 @@ export const BADGE_CATEGORIES = [
         name: 'Gesamte Lesezeit',
         icon: '⏱️',
         levels: [
-            { id: 'time_1h',   label: 'Erste Stunde',   desc: '1 Stunde gelesen',            threshold: 3600   },
-            { id: 'time_10h',  label: 'Zehnstünder',    desc: '10 Stunden gelesen',          threshold: 36000  },
-            { id: 'time_50h',  label: 'Ausdauerleser',  desc: '50 Stunden gelesen',          threshold: 180000 },
-            { id: 'time_200h', label: 'Vollzeit-Leser', desc: '200 Stunden gelesen',         threshold: 720000 },
-            { id: 'time_500h', label: 'Leselegende',    desc: '500 Stunden gelesen',         threshold: 1800000 },
+            { id: 'time_1h',   label: 'Erwacht',        desc: '1 Stunde gelesen',    threshold: 3600    },
+            { id: 'time_10h',  label: 'Im Fluss',       desc: '10 Stunden gelesen',  threshold: 36000   },
+            { id: 'time_50h',  label: 'Versunken',      desc: '50 Stunden gelesen',  threshold: 180000  },
+            { id: 'time_200h', label: 'Zeitlos',        desc: '200 Stunden gelesen', threshold: 720000  },
+            { id: 'time_500h', label: 'Jenseits der Uhr', desc: '500 Stunden gelesen', threshold: 1800000 },
         ],
     },
     {
@@ -83,11 +83,11 @@ export const BADGE_CATEGORIES = [
         name: 'Lesetage gesamt',
         icon: '📅',
         levels: [
-            { id: 'days_7',   label: 'Erste Woche',   desc: '7 Tage gelesen',    threshold: 7   },
-            { id: 'days_30',  label: 'Erster Monat',  desc: '30 Tage gelesen',   threshold: 30  },
-            { id: 'days_100', label: 'Hundert Tage',  desc: '100 Tage gelesen',  threshold: 100 },
-            { id: 'days_180', label: 'Halbes Jahr',   desc: '180 Tage gelesen',  threshold: 180 },
-            { id: 'days_365', label: 'Ein Jahr',      desc: '365 Tage gelesen',  threshold: 365 },
+            { id: 'days_7',   label: 'Erste Spuren',    desc: '7 Tage gelesen',    threshold: 7   },
+            { id: 'days_30',  label: 'Gewohnheit',      desc: '30 Tage gelesen',   threshold: 30  },
+            { id: 'days_100', label: 'Tiefe Wurzeln',   desc: '100 Tage gelesen',  threshold: 100 },
+            { id: 'days_180', label: 'Lebensweise',     desc: '180 Tage gelesen',  threshold: 180 },
+            { id: 'days_365', label: 'Teil von dir',    desc: '365 Tage gelesen',  threshold: 365 },
         ],
     },
     {
@@ -123,6 +123,14 @@ export function calculateStreak(allEntries) {
     return streak;
 }
 
+export function hasReadToday(allEntries) {
+    const todayKey = new Date().toISOString().substring(0, 10);
+    for (const e of allEntries) {
+        if ((e.readingLog || {})[todayKey]) return true;
+    }
+    return false;
+}
+
 export function calculateTotalReadingDays(allEntries) {
     const allDays = new Set();
     for (const e of allEntries) {
@@ -149,8 +157,9 @@ export async function computeAchievementValues() {
         return wc > 0 && ((e.lastIndex || 0) / wc) >= 0.99;
     }).length;
     const booksImported = books.length + archived.length;
-    const streak        = calculateStreak(allEntries);
-    const readingDays   = calculateTotalReadingDays(allEntries);
+    const streak      = calculateStreak(allEntries);
+    const readingDays = calculateTotalReadingDays(allEntries);
+    const readToday   = hasReadToday(allEntries);
 
     // Bestes avgWpm eines einzelnen Buches (mind. 3 Sessions = kein Zufallstreffer)
     const bestBookWpm = allEntries
@@ -159,6 +168,7 @@ export async function computeAchievementValues() {
 
     return {
         streak,
+        readToday,
         books_finished: booksFinished,
         books_imported: booksImported,
         words_read:     totalWords,
@@ -217,8 +227,18 @@ export async function renderAchievementsPanel() {
 
     const totalBadges = BADGE_CATEGORIES.reduce((s, c) => s + c.levels.length, 0);
     const pct = Math.round((unlocked.length / totalBadges) * 100);
-    const streakVal = values.streak;
+    const streakVal   = values.streak;
+    const readToday   = values.readToday;
     const streakFlame = streakVal >= 30 ? '🔥🔥🔥' : streakVal >= 7 ? '🔥🔥' : streakVal > 0 ? '🔥' : '💤';
+
+    let streakHint;
+    if (streakVal === 0) {
+        streakHint = 'Lies heute, um deinen Streak zu starten!';
+    } else if (readToday) {
+        streakHint = '✓ Heute bereits gelesen – lies morgen weiter, um den Streak zu halten!';
+    } else {
+        streakHint = 'Noch nicht heute gelesen – lies jetzt, um den Streak zu halten!';
+    }
 
     let html = `<div class="ach-wrap">`;
 
@@ -227,7 +247,7 @@ export async function renderAchievementsPanel() {
         <div class="ach-streak-flame">${streakFlame}</div>
         <div class="ach-streak-num">${streakVal}</div>
         <div class="ach-streak-lbl">Tage Streak</div>
-        <div class="ach-streak-hint">${streakVal === 0 ? 'Lies heute, um deinen Streak zu starten!' : 'Lies heute, um ihn am Leben zu halten!'}</div>
+        <div class="ach-streak-hint${readToday ? ' ach-streak-hint-done' : ''}">${streakHint}</div>
     </div>`;
 
 
