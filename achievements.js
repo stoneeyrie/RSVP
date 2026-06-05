@@ -288,13 +288,11 @@ export async function renderAchievementsPanel() {
 
     // ── Kategorien ────────────────────────────────────────────────────────────
     for (const cat of BADGE_CATEGORIES) {
-        const val = values[cat.id] || 0;
+        const val         = values[cat.id] || 0;
         const catUnlocked = cat.levels.filter(l => val >= l.threshold);
         const nextLevel   = cat.levels.find(l => val < l.threshold);
         const allDone     = catUnlocked.length === cat.levels.length;
-
-        // Kategorien ohne Fortschritt ausblenden
-        if (catUnlocked.length === 0) continue;
+        const nextIndex   = catUnlocked.length; // Index der nächsten gesperrten Stufe
 
         html += `<div class="ach-category">
             <div class="ach-cat-header">
@@ -303,6 +301,7 @@ export async function renderAchievementsPanel() {
                 <span class="ach-cat-count">${catUnlocked.length}/${cat.levels.length}</span>
             </div>`;
 
+        // Fortschrittsbalken zur nächsten Stufe
         if (nextLevel && !allDone) {
             const prog   = Math.min(1, val / nextLevel.threshold);
             const valFmt = formatAchievementValue(cat.id, val);
@@ -317,15 +316,33 @@ export async function renderAchievementsPanel() {
         }
 
         html += `<div class="ach-badge-grid">`;
-        for (const level of cat.levels) {
+        for (let i = 0; i < cat.levels.length; i++) {
+            const level      = cat.levels[i];
             const isUnlocked = val >= level.threshold;
+            const isNext     = i === nextIndex;       // direkt nächste Stufe
+            const isHidden   = !isUnlocked && !isNext; // alle weiteren gesperrten
             const isNew      = newBadges.some(b => b.id === level.id);
-            html += `<div class="ach-badge ${isUnlocked ? 'ach-badge-unlocked' : 'ach-badge-locked'}${isNew ? ' ach-badge-new' : ''}">
-                <div class="ach-badge-icon">${isUnlocked ? cat.icon : '🔒'}</div>
-                <div class="ach-badge-label">${level.label}</div>
-                <div class="ach-badge-desc">${level.desc}</div>
-                ${isUnlocked ? `<div class="ach-badge-check">✓</div>` : ''}
-            </div>`;
+
+            if (isUnlocked) {
+                html += `<div class="ach-badge ach-badge-unlocked${isNew ? ' ach-badge-new' : ''}">
+                    <div class="ach-badge-icon">${cat.icon}</div>
+                    <div class="ach-badge-label">${level.label}</div>
+                    <div class="ach-badge-desc">${level.desc}</div>
+                    <div class="ach-badge-check">✓</div>
+                </div>`;
+            } else if (isNext) {
+                html += `<div class="ach-badge ach-badge-next">
+                    <div class="ach-badge-icon">🔒</div>
+                    <div class="ach-badge-label">${level.label}</div>
+                    <div class="ach-badge-desc">${level.desc}</div>
+                </div>`;
+            } else {
+                html += `<div class="ach-badge ach-badge-hidden">
+                    <div class="ach-badge-icon">❓</div>
+                    <div class="ach-badge-label">${level.label}</div>
+                    <div class="ach-badge-desc">???</div>
+                </div>`;
+            }
         }
         html += `</div></div>`;
     }

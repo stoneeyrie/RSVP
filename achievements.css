@@ -338,6 +338,18 @@
     border: 1px solid rgba(52,152,219,0.3);
 }
 
+.ach-badge-next {
+    background: #181c28;
+    border: 1px solid rgba(52,152,219,0.15);
+    opacity: 0.75;
+}
+
+.ach-badge-hidden {
+    background: #131313;
+    border: 1px solid #1e1e1e;
+    opacity: 0.45;
+}
+
 .ach-badge-locked {
     background: #181818;
     border: 1px solid #222;
