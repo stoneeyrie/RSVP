@@ -123,6 +123,13 @@ export function switchUIMode(mode, targetPanel = '') {
                 renderStatsPanel();
             });
         }
+        if (targetPanel === 'achievements') {
+            authorLabel.innerText = '';
+            timeLabel.innerText   = 'Erfolge';
+            const dot = document.getElementById('achievements-menu-dot');
+            if (dot) dot.style.display = 'none';
+            import('./achievements.js').then(m => m.renderAchievementsPanel());
+        }
         percentLabel.innerText      = '0%';
         progressBar.style.width     = '0%';
         globalTimeCounter.innerHTML = '';

@@ -56,12 +56,13 @@ export const pageTextContent      = document.getElementById('page-text-content')
 export const readerModeToggle     = document.getElementById('reader-mode-toggle');
 
 export const appPanels = {
-    library:  document.getElementById('panel-library'),
-    settings: document.getElementById('panel-settings'),
-    stats:    document.getElementById('panel-stats'),
-    backup:   document.getElementById('panel-backup'),
-    about:    document.getElementById('panel-about'),
-    support:  document.getElementById('panel-support'),
+    library:      document.getElementById('panel-library'),
+    settings:     document.getElementById('panel-settings'),
+    stats:        document.getElementById('panel-stats'),
+    achievements: document.getElementById('panel-achievements'),
+    backup:       document.getElementById('panel-backup'),
+    about:        document.getElementById('panel-about'),
+    support:      document.getElementById('panel-support'),
 };
 export const navButtons = {
     faststart:  document.getElementById('nav-faststart'),

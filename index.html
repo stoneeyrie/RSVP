@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="achievements.css">
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -46,6 +47,11 @@
         <button id="nav-library" class="menu-item-btn" onclick="switchUIMode('library', 'library')">
             <svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
             Meine Bibliothek
+        </button>
+        <button id="nav-achievements" class="menu-item-btn" onclick="switchUIMode('library', 'achievements')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Erfolge
+            <span id="achievements-menu-dot" class="menu-item-badge-dot" style="display:none;"></span>
         </button>
         <button id="nav-stats" class="menu-item-btn" onclick="switchUIMode('library', 'stats')">
             <svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
@@ -574,6 +580,11 @@
             <div id="stats-content"></div>
         </div>
 
+        <!-- Erfolge Panel -->
+        <div id="panel-achievements" class="app-panel">
+            <div id="achievements-content"></div>
+        </div>
+
     </div>
 </div>
 <input type="file" id="file-input" accept=".txt,.epub,.pdf">
@@ -610,6 +621,7 @@ import { exportBackup, importBackup } from './backup.js';
 import { saveSettings, applySettingsToUI, updateResetButtonVisibility } from './settings.js';
 import { renderLibraryList, loadLibraryBook, finalizeBookImport, filterLibrary, toggleAuthorFilter, onAuthorSelectChange, populateAuthorDropdown, renderReaderChapterList } from './library.js';
 import { switchUIMode, openLeftMenu, closeLeftMenu, openRightMenu, closeRightMenu, closeAllMenus, navigateToFaststart, jumpToActiveBook, updateActiveBookMenuState, cleanBookTitle } from './ui.js';
+import { renderAchievementsPanel, checkForNewBadgesAfterSession, computeAchievementValues, getUnlockedBadges, getNewBadges } from './achievements.js';
 
 // ── Window-Bindungen für inline onclick-Handler ───────────────────────────────
 // Inline HTML-Handler (onclick="...") brauchen globalen Zugriff via window.*
@@ -633,6 +645,7 @@ window.statsSetMonthFilter  = statsSetMonthFilter;
 window.handleStatsDelete    = handleStatsDelete;
 window.showStatsTab         = showStatsTab;
 window.statsToggleDetail    = statsToggleDetail;
+window.renderAchievementsPanel = renderAchievementsPanel;
 
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
@@ -1140,6 +1153,14 @@ async function init() {
     }
     
     switchUIMode('reader');
+
+    // Achievements-Dot prüfen: neue Badges → grüner Punkt im Menü
+    computeAchievementValues().then(values => {
+        const unlocked = getUnlockedBadges(values);
+        const newOnes  = getNewBadges(unlocked);
+        const dot = document.getElementById('achievements-menu-dot');
+        if (dot) dot.style.display = newOnes.length > 0 ? 'inline-block' : 'none';
+    });
 }
 
 mainBtn.onclick = start;

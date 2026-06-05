@@ -497,6 +497,9 @@ export async function saveSessionStats() {
     }
     totalSessionSeconds = 0;
     sessionWordsDisplayed = 0;
+
+    // Badge-Check nach jeder Session
+    import('./achievements.js').then(m => m.checkForNewBadgesAfterSession()).catch(() => {});
 }
 
 
