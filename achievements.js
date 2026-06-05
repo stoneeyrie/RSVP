@@ -198,7 +198,7 @@ export function markBadgesAsSeen(badges) {
 // ── Formatierung ──────────────────────────────────────────────────────────────
 export function formatAchievementValue(categoryId, value) {
     switch (categoryId) {
-        case 'words_read':   return value >= 1000000 ? `${(value/1000000).toFixed(1)}M` : value >= 1000 ? `${Math.round(value/1000)}k` : `${value}`;
+        case 'words_read':   return value.toLocaleString('de-DE');
         case 'reading_time': { const h = Math.floor(value/3600), m = Math.floor((value%3600)/60); return h >= 1 ? `${h}h ${m}m` : `${m}m`; }
         case 'wpm_speed':    return `${value} WPM (bestes Buch)`;
         default:             return `${value}`;
@@ -232,9 +232,7 @@ export async function renderAchievementsPanel() {
     </div>`;
 
     // ── Gesamt-Fortschritt ────────────────────────────────────────────────────
-    const wordsStr = values.words_read >= 1000000
-        ? `${(values.words_read/1000000).toFixed(2)}M`
-        : values.words_read >= 1000 ? `${Math.round(values.words_read/1000)}k` : `${values.words_read}`;
+    const wordsStr = values.words_read.toLocaleString('de-DE');
     const timeH = Math.floor(values.reading_time / 3600);
     const timeM = Math.floor((values.reading_time % 3600) / 60);
     const timeStr = timeH >= 1 ? `${timeH}h ${timeM}m` : `${timeM}m`;
