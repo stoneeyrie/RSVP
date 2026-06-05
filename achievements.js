@@ -51,7 +51,7 @@ export const BADGE_CATEGORIES = [
             { id: 'words_50k',  label: 'Kurzgeschichte', desc: '50.000 Wörter gelesen',       threshold: 50000   },
             { id: 'words_250k', label: 'Roman',          desc: '250.000 Wörter gelesen',      threshold: 250000  },
             { id: 'words_1m',   label: 'Millionär',      desc: '1.000.000 Wörter gelesen',    threshold: 1000000 },
-            { id: 'words_5m',   label: 'Wortgigant',     desc: '5.000.000 Wörter gelesen',    threshold: 5000000 },
+            { id: 'words_3m',   label: 'Wortgigant',     desc: '3.000.000 Wörter gelesen',    threshold: 3000000 },
         ],
     },
     {
@@ -59,11 +59,11 @@ export const BADGE_CATEGORIES = [
         name: 'Gesamte Lesezeit',
         icon: '⏱️',
         levels: [
-            { id: 'time_1h',    label: 'Erste Stunde',   desc: '1 Stunde gelesen',            threshold: 3600    },
-            { id: 'time_10h',   label: 'Zehnstünder',    desc: '10 Stunden gelesen',          threshold: 36000   },
-            { id: 'time_50h',   label: 'Ausdauerleser',  desc: '50 Stunden gelesen',          threshold: 180000  },
-            { id: 'time_200h',  label: 'Vollzeit-Leser', desc: '200 Stunden gelesen',         threshold: 720000  },
-            { id: 'time_1000h', label: 'Zehntausender',  desc: '1000 Stunden gelesen',        threshold: 3600000 },
+            { id: 'time_1h',   label: 'Erste Stunde',   desc: '1 Stunde gelesen',            threshold: 3600   },
+            { id: 'time_10h',  label: 'Zehnstünder',    desc: '10 Stunden gelesen',          threshold: 36000  },
+            { id: 'time_50h',  label: 'Ausdauerleser',  desc: '50 Stunden gelesen',          threshold: 180000 },
+            { id: 'time_200h', label: 'Vollzeit-Leser', desc: '200 Stunden gelesen',         threshold: 720000 },
+            { id: 'time_500h', label: 'Leselegende',    desc: '500 Stunden gelesen',         threshold: 1800000 },
         ],
     },
     {
@@ -71,11 +71,12 @@ export const BADGE_CATEGORIES = [
         name: 'Lesegeschwindigkeit',
         icon: '⚡',
         levels: [
-            { id: 'wpm_300',  label: 'Durchschnittsleser', desc: 'Ø 300 WPM erreicht',        threshold: 300  },
-            { id: 'wpm_400',  label: 'Schnellleser',       desc: 'Ø 400 WPM erreicht',        threshold: 400  },
-            { id: 'wpm_500',  label: 'RSVP-Einsteiger',    desc: 'Ø 500 WPM erreicht',        threshold: 500  },
-            { id: 'wpm_700',  label: 'RSVP-Profi',         desc: 'Ø 700 WPM erreicht',        threshold: 700  },
-            { id: 'wpm_1000', label: 'Speedreader',        desc: 'Ø 1000 WPM erreicht',       threshold: 1000 },
+            { id: 'wpm_300', label: 'Durchschnittsleser', desc: '300 WPM bei einem Buch erreicht', threshold: 300 },
+            { id: 'wpm_400', label: 'Schnellleser',       desc: '400 WPM bei einem Buch erreicht', threshold: 400 },
+            { id: 'wpm_500', label: 'RSVP-Einsteiger',    desc: '500 WPM bei einem Buch erreicht', threshold: 500 },
+            { id: 'wpm_600', label: 'RSVP-Fortgeschritten', desc: '600 WPM bei einem Buch erreicht', threshold: 600 },
+            { id: 'wpm_700', label: 'RSVP-Profi',         desc: '700 WPM bei einem Buch erreicht', threshold: 700 },
+            { id: 'wpm_800', label: 'Speedreader',        desc: '800 WPM bei einem Buch erreicht', threshold: 800 },
         ],
     },
     {
@@ -83,11 +84,11 @@ export const BADGE_CATEGORIES = [
         name: 'Lesetage gesamt',
         icon: '📅',
         levels: [
-            { id: 'days_7',    label: 'Erste Woche',     desc: '7 Tage gelesen',              threshold: 7    },
-            { id: 'days_30',   label: 'Erster Monat',    desc: '30 Tage gelesen',             threshold: 30   },
-            { id: 'days_100',  label: 'Hundert Tage',    desc: '100 Tage gelesen',            threshold: 100  },
-            { id: 'days_365',  label: 'Ein Jahr',        desc: '365 Tage gelesen',            threshold: 365  },
-            { id: 'days_1000', label: 'Tausend Tage',    desc: '1000 Tage gelesen',           threshold: 1000 },
+            { id: 'days_7',   label: 'Erste Woche',   desc: '7 Tage gelesen',    threshold: 7   },
+            { id: 'days_30',  label: 'Erster Monat',  desc: '30 Tage gelesen',   threshold: 30  },
+            { id: 'days_100', label: 'Hundert Tage',  desc: '100 Tage gelesen',  threshold: 100 },
+            { id: 'days_180', label: 'Halbes Jahr',   desc: '180 Tage gelesen',  threshold: 180 },
+            { id: 'days_365', label: 'Ein Jahr',      desc: '365 Tage gelesen',  threshold: 365 },
         ],
     },
     {
@@ -152,11 +153,10 @@ export async function computeAchievementValues() {
     const streak        = calculateStreak(allEntries);
     const readingDays   = calculateTotalReadingDays(allEntries);
 
-    const wpmEntries = allEntries.filter(e => e.avgWpm && e.sessionCount);
-    const avgWpm = wpmEntries.length > 0
-        ? Math.round(wpmEntries.reduce((s, e) => s + e.avgWpm * e.sessionCount, 0)
-            / wpmEntries.reduce((s, e) => s + e.sessionCount, 0))
-        : 0;
+    // Bestes avgWpm eines einzelnen Buches (mind. 3 Sessions = kein Zufallstreffer)
+    const bestBookWpm = allEntries
+        .filter(e => e.avgWpm && (e.sessionCount || 0) >= 3)
+        .reduce((best, e) => Math.max(best, e.avgWpm), 0);
 
     return {
         streak,
@@ -164,7 +164,7 @@ export async function computeAchievementValues() {
         books_imported: booksImported,
         words_read:     totalWords,
         reading_time:   totalSecs,
-        wpm_speed:      avgWpm,
+        wpm_speed:      bestBookWpm,
         reading_days:   readingDays,
         sessions:       totalSessions,
     };
@@ -200,7 +200,7 @@ export function formatAchievementValue(categoryId, value) {
     switch (categoryId) {
         case 'words_read':   return value >= 1000000 ? `${(value/1000000).toFixed(1)}M` : value >= 1000 ? `${Math.round(value/1000)}k` : `${value}`;
         case 'reading_time': { const h = Math.floor(value/3600), m = Math.floor((value%3600)/60); return h >= 1 ? `${h}h ${m}m` : `${m}m`; }
-        case 'wpm_speed':    return `${value} WPM`;
+        case 'wpm_speed':    return `${value} WPM (bestes Buch)`;
         default:             return `${value}`;
     }
 }
@@ -232,6 +232,14 @@ export async function renderAchievementsPanel() {
     </div>`;
 
     // ── Gesamt-Fortschritt ────────────────────────────────────────────────────
+    const wordsStr = values.words_read >= 1000000
+        ? `${(values.words_read/1000000).toFixed(2)}M`
+        : values.words_read >= 1000 ? `${Math.round(values.words_read/1000)}k` : `${values.words_read}`;
+    const timeH = Math.floor(values.reading_time / 3600);
+    const timeM = Math.floor((values.reading_time % 3600) / 60);
+    const timeStr = timeH >= 1 ? `${timeH}h ${timeM}m` : `${timeM}m`;
+    const bestWpm = values.wpm_speed > 0 ? `${values.wpm_speed} WPM` : '–';
+
     html += `<div class="ach-progress-section">
         <div class="ach-progress-row">
             <span class="ach-progress-label">Badges freigeschaltet</span>
@@ -239,6 +247,12 @@ export async function renderAchievementsPanel() {
         </div>
         <div class="ach-progress-bar-bg">
             <div class="ach-progress-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="ach-stats-row">
+            <div class="ach-stat-chip">📖 ${wordsStr} Wörter</div>
+            <div class="ach-stat-chip">⏱️ ${timeStr}</div>
+            <div class="ach-stat-chip">⚡ ${bestWpm}</div>
+            <div class="ach-stat-chip">🔥 ${values.streak} Tage</div>
         </div>
     </div>`;
 
