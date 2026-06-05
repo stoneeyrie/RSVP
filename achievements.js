@@ -71,12 +71,11 @@ export const BADGE_CATEGORIES = [
         name: 'Lesegeschwindigkeit',
         icon: '⚡',
         levels: [
-            { id: 'wpm_300', label: 'Durchschnittsleser', desc: '300 WPM bei einem Buch erreicht', threshold: 300 },
-            { id: 'wpm_400', label: 'Schnellleser',       desc: '400 WPM bei einem Buch erreicht', threshold: 400 },
-            { id: 'wpm_500', label: 'RSVP-Einsteiger',    desc: '500 WPM bei einem Buch erreicht', threshold: 500 },
+            { id: 'wpm_300', label: 'Durchschnittsleser',   desc: '300 WPM bei einem Buch erreicht', threshold: 300 },
+            { id: 'wpm_400', label: 'Schnellleser',         desc: '400 WPM bei einem Buch erreicht', threshold: 400 },
+            { id: 'wpm_500', label: 'RSVP-Einsteiger',      desc: '500 WPM bei einem Buch erreicht', threshold: 500 },
             { id: 'wpm_600', label: 'RSVP-Fortgeschritten', desc: '600 WPM bei einem Buch erreicht', threshold: 600 },
-            { id: 'wpm_700', label: 'RSVP-Profi',         desc: '700 WPM bei einem Buch erreicht', threshold: 700 },
-            { id: 'wpm_800', label: 'Speedreader',        desc: '800 WPM bei einem Buch erreicht', threshold: 800 },
+            { id: 'wpm_700', label: 'RSVP-Profi',           desc: '700 WPM bei einem Buch erreicht', threshold: 700 },
         ],
     },
     {
@@ -231,26 +230,14 @@ export async function renderAchievementsPanel() {
         <div class="ach-streak-hint">${streakVal === 0 ? 'Lies heute, um deinen Streak zu starten!' : 'Lies heute, um ihn am Leben zu halten!'}</div>
     </div>`;
 
-    // ── Gesamt-Fortschritt ────────────────────────────────────────────────────
-    const wordsStr = values.words_read.toLocaleString('de-DE');
-    const timeH = Math.floor(values.reading_time / 3600);
-    const timeM = Math.floor((values.reading_time % 3600) / 60);
-    const timeStr = timeH >= 1 ? `${timeH}h ${timeM}m` : `${timeM}m`;
-    const bestWpm = values.wpm_speed > 0 ? `${values.wpm_speed} WPM` : '–';
 
     html += `<div class="ach-progress-section">
         <div class="ach-progress-row">
-            <span class="ach-progress-label">Badges freigeschaltet</span>
+            <span class="ach-progress-label">Erfolge erreicht</span>
             <span class="ach-progress-count">${unlocked.length} / ${totalBadges}</span>
         </div>
         <div class="ach-progress-bar-bg">
             <div class="ach-progress-bar-fill" style="width:${pct}%"></div>
-        </div>
-        <div class="ach-stats-row">
-            <div class="ach-stat-chip">📖 ${wordsStr} Wörter</div>
-            <div class="ach-stat-chip">⏱️ ${timeStr}</div>
-            <div class="ach-stat-chip">⚡ ${bestWpm}</div>
-            <div class="ach-stat-chip">🔥 ${values.streak} Tage</div>
         </div>
     </div>`;
 
@@ -338,7 +325,7 @@ export async function renderAchievementsPanel() {
                 </div>`;
             } else {
                 html += `<div class="ach-badge ach-badge-hidden">
-                    <div class="ach-badge-icon">❓</div>
+                    <div class="ach-badge-icon">🔒</div>
                     <div class="ach-badge-label">${level.label}</div>
                     <div class="ach-badge-desc">???</div>
                 </div>`;

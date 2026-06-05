@@ -378,13 +378,18 @@
 }
 
 .ach-badge-label {
-    font-size: 10.5px;
-    font-weight: 600;
-    color: #ccc;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ddd;
     line-height: 1.2;
 }
 
-.ach-badge-locked .ach-badge-label {
+.ach-badge-locked .ach-badge-label,
+.ach-badge-next .ach-badge-label {
+    color: #777;
+}
+
+.ach-badge-hidden .ach-badge-label {
     color: #555;
 }
 
