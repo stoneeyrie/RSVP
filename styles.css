@@ -776,7 +776,7 @@ body.amoled-mode .ss-heatmap-grid-wrap { background: #030303; }
 /* ── URL-Import Panel ────────────────────────────────────────────────────── */
 .floating-btn-group {
     position: absolute; top: 8px; right: 10px;
-    display: flex; gap: 5px; z-index: 10;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 5px; z-index: 10;
 }
 .floating-action-btn {
     background: rgba(0,0,0,0.65); border: 1px solid var(--border-color);
