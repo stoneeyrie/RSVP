@@ -93,6 +93,89 @@ export function setCurrentAuthorFilter(v)    { currentAuthorFilter = v; }
 const measurer = document.createElement("canvas").getContext("2d");
 const ORP_TABLE = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];
 
+// ── Silbentrennung via Hypher (TeX-Algorithmus, Deutsch) ──────────────────────
+// Wird lazy geladen beim ersten langen Wort. Hypher + de-Muster ~15 KB.
+let _hypher = null;
+let _hypherLoading = false;
+
+async function loadHypher() {
+    if (_hypher) return _hypher;
+    if (_hypherLoading) return null;
+    _hypherLoading = true;
+    try {
+        // Hypher UMD-Bundle
+        await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/hypher@0.2.2/dist/hypher.js';
+            s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+        });
+        // Deutsches Trennmuster
+        const resp = await fetch('https://cdn.jsdelivr.net/npm/@hypher/lang-de@1.0.0/index.js');
+        const text = await resp.text();
+        // Das Paket exportiert ein Objekt – wir evaluieren es isoliert
+        const mod = new Function('exports', text + '; return exports;')({});
+        const patterns = mod.default || mod;
+        _hypher = new window.Hypher(patterns);
+    } catch (e) {
+        console.warn('Hypher konnte nicht geladen werden:', e);
+        _hypher = null;
+    }
+    _hypherLoading = false;
+    return _hypher;
+}
+
+// Gibt Silben zurück, z.B. "Dampfschiff" → ["Dampf","schiff"]
+// Fallback: Trennung in der Mitte wenn Hypher nicht verfügbar
+function getSyllables(word) {
+    if (_hypher) {
+        const sylls = _hypher.hyphenate(word);
+        return sylls.length > 1 ? sylls : null;
+    }
+    return null;
+}
+
+// Bester Trennpunkt: Silben so aufteilen dass beide Hälften möglichst gleich lang
+function splitAtBestSyllable(syllables) {
+    const total = syllables.join('').length;
+    let best = 1, bestDiff = Infinity, len = 0;
+    for (let i = 0; i < syllables.length - 1; i++) {
+        len += syllables[i].length;
+        const diff = Math.abs(len - total / 2);
+        if (diff < bestDiff) { bestDiff = diff; best = i + 1; }
+    }
+    const left  = syllables.slice(0, best).join('') + '-';
+    const right = syllables.slice(best).join('');
+    return [left, right];
+}
+
+// Prüft ob ein Wort bei aktueller Schriftgröße zu breit für den Reader ist
+function isTooWide(word) {
+    measurer.font = `bold ${fsIn.value}px 'Segoe UI', Arial`;
+    const w = measurer.measureText(word).width;
+    const available = (canvas.parentElement?.getBoundingClientRect().width || 360) * 0.88;
+    return w > available;
+}
+
+// Haupt-Funktion: gibt [teil1, teil2] zurück wenn Trennung nötig, sonst null
+function autoSplitLongWord(word) {
+    if (!isTooWide(word)) return null;
+    // 1. Vorhandene Bindestriche nutzen
+    if (word.includes('-') && word.length > 5) {
+        const parts = word.split(/(?<=-)/);
+        if (parts.length >= 2) return splitAtBestSyllable(parts.map(p => p.replace(/-$/, ''))).map((p, i) => i === 0 ? p : p);
+    }
+    // 2. Hypher-Silbentrennung
+    const sylls = getSyllables(word.replace(/[^a-zA-ZäöüÄÖÜß]/g, ''));
+    if (sylls && sylls.length >= 2) {
+        const [l, r] = splitAtBestSyllable(sylls);
+        return [l, r];
+    }
+    // 3. Fallback: in der Mitte trennen
+    const mid = Math.floor(word.length / 2);
+    return [word.slice(0, mid) + '-', word.slice(mid)];
+}
+
 
 export function buildBookData(htmlString, startIdx) {
     let tempDiv = document.createElement('div');
@@ -323,6 +406,19 @@ export function render() {
         hyphenFragments = null;
     }
 
+    // ── Automatische Silbentrennung bei zu breiten Wörtern ────────────────────
+    // Greift nur wenn kein anderes hyphenFragment aktiv ist und das Wort zu breit
+    if (!hyphenFragments && wordStr.length > 8) {
+        const split = autoSplitLongWord(wordStr);
+        if (split) {
+            hyphenFragments  = split;
+            hyphenFragmentIdx = 0;
+            wordStr = hyphenFragments[0];
+            // Hypher lazy nachladen für nächste Wörter
+            if (!_hypher && !_hypherLoading) loadHypher();
+        }
+    }
+
     const wordToMeasure = wordStr.replace(/\n/g, '');
 
     // ORP nach O'Regan & Rayner:
@@ -430,14 +526,15 @@ export function step() {
 export function start() {
     if(isPlaying) { 
         stopEngineOnly();
-        // Index zurücksetzen auf das zuletzt angezeigte Wort
         if (currentIndex > 0) currentIndex--;
-        isCurrentlyInRSVPFlow = false; // RSVP ist nicht mehr aktiv
+        isCurrentlyInRSVPFlow = false;
         if (rewindMode.checked) saveAppState('rsvp-rewind-permitted-' + activeBookId, true); 
         updateProgressUI(true); 
         return; 
     }
-    isCurrentlyInRSVPFlow = true; 
+    isCurrentlyInRSVPFlow = true;
+    // Hypher vorausladen für automatische Silbentrennung
+    if (!_hypher && !_hypherLoading) loadHypher(); 
     if (window.closeRightMenu) window.closeRightMenu(); 
     if (activeBookId === "schnellstart") { let data = buildBookData(input.value, 0); words = data.words; }
     if(words.length === 0) return;
