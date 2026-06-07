@@ -1241,16 +1241,33 @@ document.getElementById('btn-back').onclick = async () => {
 };
 
 document.getElementById('btn-fwd-1').onclick = async () => {
-    setHyphenFragments(null);
-    setCurrentIndex(Math.min(words.length - 1, currentIndex + 1));
+    if (hyphenFragments) {
+        // Innerhalb des aktuellen Wortes: nächstes Fragment
+        const nextIdx = hyphenFragmentIdx + 1;
+        if (nextIdx < hyphenFragments.length) {
+            setHyphenFragmentIdx(nextIdx);
+        } else {
+            // Letztes Fragment: weiter zum nächsten Wort
+            setHyphenFragments(null);
+            setCurrentIndex(Math.min(words.length - 1, currentIndex + 1));
+        }
+    } else {
+        setCurrentIndex(Math.min(words.length - 1, currentIndex + 1));
+    }
     await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
     if(sideChapterPanel.classList.contains('active')) renderReaderChapterList();
     render();
 };
 
 document.getElementById('btn-back-1').onclick = async () => {
-    setHyphenFragments(null);
-    setCurrentIndex(Math.max(0, currentIndex - 1));
+    if (hyphenFragments && hyphenFragmentIdx > 0) {
+        // Innerhalb des aktuellen Wortes: vorheriges Fragment
+        setHyphenFragmentIdx(hyphenFragmentIdx - 1);
+    } else {
+        // Erstes Fragment oder kein Fragment: zurück zum vorherigen Wort
+        setHyphenFragments(null);
+        setCurrentIndex(Math.max(0, currentIndex - 1));
+    }
     await saveAppState('rsvp-rewind-permitted-' + activeBookId, false);
     if(sideChapterPanel.classList.contains('active')) renderReaderChapterList();
     render();

@@ -103,17 +103,25 @@ async function loadHypher() {
     if (_hypherLoading) return null;
     _hypherLoading = true;
     try {
+        // Hypher UMD-Bundle laden
         await new Promise((res, rej) => {
+            if (window.Hypher) { res(); return; }
             const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/hypher@0.2.2/dist/hypher.js';
+            s.src = 'https://cdn.jsdelivr.net/npm/hypher@0.2.2/lib/hypher.js';
             s.onload = res; s.onerror = rej;
             document.head.appendChild(s);
         });
-        const resp = await fetch('https://cdn.jsdelivr.net/npm/@hypher/lang-de@1.0.0/index.js');
+
+        // Deutsche Trennmuster aus dem Paket (CommonJS format → direkt evaluieren)
+        const resp = await fetch('https://cdn.jsdelivr.net/npm/hypher@0.2.2/test/de.js');
         const text = await resp.text();
-        const mod = new Function('exports', text + '; return exports;')({});
-        const patterns = mod.default || mod;
-        _hypher = new window.Hypher(patterns);
+        // Format: module.exports = { id:'de', leftmin:2, rightmin:2, patterns:{...} }
+        const patterns = new Function('module', 'exports', text + '; return module.exports;')(
+            { exports: {} }, {}
+        );
+        if (patterns && patterns.patterns && window.Hypher) {
+            _hypher = new window.Hypher(patterns);
+        }
     } catch (e) {
         console.warn('Hypher konnte nicht geladen werden:', e);
         _hypher = null;
