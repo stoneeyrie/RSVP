@@ -94,7 +94,7 @@ const measurer = document.createElement("canvas").getContext("2d");
 const ORP_TABLE = [0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];
 
 // ── Silbentrennung via Hypher (TeX-Algorithmus, Deutsch) ──────────────────────
-// Wird lazy geladen beim ersten langen Wort. Hypher + de-Muster ~15 KB.
+// Wird beim Modulstart sofort geladen (~15 KB) damit es beim ersten Wort bereit ist.
 let _hypher = null;
 let _hypherLoading = false;
 
@@ -103,17 +103,14 @@ async function loadHypher() {
     if (_hypherLoading) return null;
     _hypherLoading = true;
     try {
-        // Hypher UMD-Bundle
         await new Promise((res, rej) => {
             const s = document.createElement('script');
             s.src = 'https://cdn.jsdelivr.net/npm/hypher@0.2.2/dist/hypher.js';
             s.onload = res; s.onerror = rej;
             document.head.appendChild(s);
         });
-        // Deutsches Trennmuster
         const resp = await fetch('https://cdn.jsdelivr.net/npm/@hypher/lang-de@1.0.0/index.js');
         const text = await resp.text();
-        // Das Paket exportiert ein Objekt – wir evaluieren es isoliert
         const mod = new Function('exports', text + '; return exports;')({});
         const patterns = mod.default || mod;
         _hypher = new window.Hypher(patterns);
@@ -124,6 +121,9 @@ async function loadHypher() {
     _hypherLoading = false;
     return _hypher;
 }
+
+// Sofort beim Modulstart laden
+loadHypher();
 
 // Gibt Silben zurück, z.B. "Dampfschiff" → ["Dampf","schiff"]
 // Fallback: Trennung in der Mitte wenn Hypher nicht verfügbar
@@ -157,23 +157,54 @@ function isTooWide(word) {
     return w > available;
 }
 
-// Haupt-Funktion: gibt [teil1, teil2] zurück wenn Trennung nötig, sonst null
+// Normalisiert alle Bindestrichvarianten auf einfaches '-'
+function normalizeDashes(word) {
+    return word.replace(/[\u2013\u2014\u2012\u2015]/g, '-');
+}
+
+// Haupt-Funktion: gibt [teil1, teil2, ...] zurück wenn Trennung nötig, sonst null
 function autoSplitLongWord(word) {
     if (!isTooWide(word)) return null;
-    // 1. Vorhandene Bindestriche nutzen
-    if (word.includes('-') && word.length > 5) {
-        const parts = word.split(/(?<=-)/);
-        if (parts.length >= 2) return splitAtBestSyllable(parts.map(p => p.replace(/-$/, ''))).map((p, i) => i === 0 ? p : p);
+
+    // 1. En-Dash / Em-Dash normalisieren → echte Bindestriche
+    const normalized = normalizeDashes(word);
+
+    // 2. Vorhandene Bindestriche nutzen (inkl. normalisierte Dashes)
+    if (normalized.includes('-') && normalized.length > 5) {
+        const parts = normalized.split('-').filter(p => p.length > 0);
+        if (parts.length >= 2) {
+            // Passenden Splitpunkt finden sodass jedes Fragment passt
+            const fragments = [];
+            let current = parts[0];
+            for (let i = 1; i < parts.length; i++) {
+                const candidate = current + '-' + parts[i];
+                if (isTooWide(candidate)) {
+                    fragments.push(current + '-');
+                    current = parts[i];
+                } else {
+                    current = candidate;
+                }
+            }
+            fragments.push(current);
+            if (fragments.length >= 2) return fragments;
+        }
     }
-    // 2. Hypher-Silbentrennung
-    const sylls = getSyllables(word.replace(/[^a-zA-ZäöüÄÖÜß]/g, ''));
+
+    // 3. Hypher-Silbentrennung (nur reinen Buchstabenanteil übergeben)
+    const cleanWord = word.replace(/[^a-zA-ZäöüÄÖÜß]/g, '');
+    const sylls = getSyllables(cleanWord);
     if (sylls && sylls.length >= 2) {
+        // Mehrfach splitten wenn nötig: solange noch Fragmente zu breit sind
         const [l, r] = splitAtBestSyllable(sylls);
         return [l, r];
     }
-    // 3. Fallback: in der Mitte trennen
-    const mid = Math.floor(word.length / 2);
-    return [word.slice(0, mid) + '-', word.slice(mid)];
+
+    // 4. Fallback: an Wortlänge orientiert (kein blindes Mittensplit mehr)
+    // Mindestens 3 Zeichen pro Fragment
+    const minLen = 3;
+    let splitAt = Math.floor(word.length / 2);
+    while (splitAt > minLen && isTooWide(word.slice(0, splitAt) + '-')) splitAt--;
+    return [word.slice(0, splitAt) + '-', word.slice(splitAt)];
 }
 
 
@@ -419,7 +450,6 @@ export function render() {
                 hyphenFragments   = split;
                 hyphenFragmentIdx = 0;
                 wordStr = hyphenFragments[0];
-                if (!_hypher && !_hypherLoading) loadHypher();
             }
         }
     }
@@ -538,8 +568,6 @@ export function start() {
         return; 
     }
     isCurrentlyInRSVPFlow = true;
-    // Hypher vorausladen für automatische Silbentrennung
-    if (!_hypher && !_hypherLoading) loadHypher(); 
     if (window.closeRightMenu) window.closeRightMenu(); 
     if (activeBookId === "schnellstart") { let data = buildBookData(input.value, 0); words = data.words; }
     if(words.length === 0) return;
