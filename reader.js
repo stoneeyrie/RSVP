@@ -387,35 +387,40 @@ export function render() {
     if (currentIndex >= words.length) { currentIndex = words.length; stopEngineOnly(); updateProgressUI(true); return; }
     
     let wordStr = words[currentIndex] || "";
-    if (hyphenMode.checked && wordStr.length > 5) {
-        const hasHyphen = wordStr.includes('-');
-        const hasSlash  = !hasHyphen && wordStr.includes('/');
-        const hasCamel  = !hasHyphen && !hasSlash && /[a-zäöüß\d][A-ZÄÖÜ]/u.test(wordStr);
-        if (hasHyphen || hasSlash || hasCamel) {
-            if (!hyphenFragments) {
+
+    // ── Fragment-Handling: manuelle Silbentrennung + Auto-Split ───────────────
+    // hyphenFragments kann von zwei Quellen kommen:
+    //   1. hyphenMode (Bindestrich, Slash, CamelCase)
+    //   2. autoSplitLongWord (zu breites Wort)
+    // Wir dürfen hyphenFragments nur nullen wenn KEIN Fragment mehr aktiv ist.
+
+    if (hyphenFragments) {
+        // Aktives Fragment: einfach weiter anzeigen
+        wordStr = hyphenFragments[hyphenFragmentIdx] || wordStr;
+    } else {
+        // Kein aktives Fragment: prüfen ob neues nötig
+        if (hyphenMode.checked && wordStr.length > 5) {
+            const hasHyphen = wordStr.includes('-');
+            const hasSlash  = !hasHyphen && wordStr.includes('/');
+            const hasCamel  = !hasHyphen && !hasSlash && /[a-zäöüß\d][A-ZÄÖÜ]/u.test(wordStr);
+            if (hasHyphen || hasSlash || hasCamel) {
                 if      (hasHyphen) hyphenFragments = wordStr.split(/(?<=-)/);
                 else if (hasSlash)  hyphenFragments = wordStr.split(/(?=\/)/);
                 else                hyphenFragments = wordStr.split(/(?<=[a-zäöüß\d])(?=[A-ZÄÖÜ])/u);
                 hyphenFragmentIdx = 0;
+                wordStr = hyphenFragments[0];
             }
-            wordStr = hyphenFragments[hyphenFragmentIdx];
-        } else {
-            hyphenFragments = null;
         }
-    } else {
-        hyphenFragments = null;
-    }
 
-    // ── Automatische Silbentrennung bei zu breiten Wörtern ────────────────────
-    // Greift nur wenn kein anderes hyphenFragment aktiv ist und das Wort zu breit
-    if (!hyphenFragments && wordStr.length > 8) {
-        const split = autoSplitLongWord(wordStr);
-        if (split) {
-            hyphenFragments  = split;
-            hyphenFragmentIdx = 0;
-            wordStr = hyphenFragments[0];
-            // Hypher lazy nachladen für nächste Wörter
-            if (!_hypher && !_hypherLoading) loadHypher();
+        // Auto-Split bei zu breiten Wörtern (unabhängig von hyphenMode)
+        if (!hyphenFragments && wordStr.length > 8) {
+            const split = autoSplitLongWord(wordStr);
+            if (split) {
+                hyphenFragments   = split;
+                hyphenFragmentIdx = 0;
+                wordStr = hyphenFragments[0];
+                if (!_hypher && !_hypherLoading) loadHypher();
+            }
         }
     }
 
