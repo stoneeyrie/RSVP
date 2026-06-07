@@ -295,7 +295,7 @@ export function formatDuration(seconds) {
 // Baut einmalig ein kumulatives Zeitarray auf (ms von Wort 0 bis Wort i)
 // und cached es – wird automatisch bei Einstellungs- oder Buchänderung neu gebaut.
 function getEstimateKey() {
-    return `${wpmIn.value}|${pauseMode.checked}|${longWordMode.checked}|${longWordTrigger.value}|${hyphenMode.checked}`;
+    return `${wpmIn.value}|${pauseMode.checked}|${longWordMode.checked}|${longWordTrigger.value}|${hyphenMode.checked}|${fsIn.value}`;
 }
 
 export function buildEstimatedTimeCumulative() {
@@ -309,6 +309,13 @@ export function buildEstimatedTimeCumulative() {
     const lwTrigger  = parseInt(longWordTrigger.value) || 8;
     const isHyphen   = hyphenMode.checked;
 
+    // Breite einmal vorberechnen (nicht pro Wort)
+    const fontSize = parseInt(fsIn.value) || 50;
+    measurer.font = `bold ${fontSize}px 'Segoe UI', Arial`;
+    const available = (canvas.parentElement?.getBoundingClientRect().width || 360) * 0.88;
+    // Ab dieser Zeichenanzahl könnte ein Wort zu breit sein (konservative Schätzung: 0.6em pro Zeichen)
+    const minSuspectLen = Math.floor(available / (fontSize * 0.6));
+
     // cumul[i] = Gesamtdauer in ms von Index 0 bis (nicht einschließlich) Index i
     const cumul = new Array(words.length + 1);
     cumul[0] = 0;
@@ -316,18 +323,25 @@ export function buildEstimatedTimeCumulative() {
 
     for (let i = 0; i < words.length; i++) {
         const word = words[i];
-        // Silbentrennung: Wort mit "-" → mehrere Fragmente, jedes zählt als eigener Tick
         let fragments;
         if (isHyphen && word.includes('-') && word.length > 5) {
             fragments = word.split(/(?<=-)/);
         } else {
             fragments = [word];
         }
+        // Auto-Split: nur prüfen wenn Wort lang genug um verdächtig zu sein
+        if (fragments.length === 1 && word.length > minSuspectLen) {
+            const wordWidth = measurer.measureText(word).width;
+            if (wordWidth > available) {
+                const split = autoSplitLongWord(word);
+                if (split) fragments = split;
+            }
+        }
         for (const frag of fragments) {
             let ms = baseMs;
             if (isLongWord && frag.length > lwTrigger) ms *= 1.4;
             if (isPause && /[.!?]/.test(frag))         ms *= 1.8;
-            else if (isPause && /[,]/.test(frag))          ms *= 1.6;
+            else if (isPause && /[,]/.test(frag))      ms *= 1.6;
             running += ms;
         }
         cumul[i + 1] = running;
