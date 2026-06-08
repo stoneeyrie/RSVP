@@ -300,6 +300,13 @@
                 </div>
                 <div class="setting-toggle-card">
                     <div class="setting-text-group">
+                        <span class="setting-title">Dialogpausen</span>
+                        <span class="setting-desc">Verlängert die Anzeigezeit beim Beginn und Ende wörtlicher Rede (Anführungszeichen) um das <span class="inline-setting-input"><input type="number" id="dialog-pause-factor" value="1.5" min="1.0" max="5.0" step="0.1" style="width:3.5em;"></span>-fache.</span>
+                    </div>
+                    <label class="switch"><input type="checkbox" id="dialog-pause-mode"><span class="slider"></span></label>
+                </div>
+                <div class="setting-toggle-card">
+                    <div class="setting-text-group">
                         <span class="setting-title">Silbentrennung erlauben</span>
                         <span class="setting-desc">Trennt lange Wörter an Bindestrichen auf und zeigt sie Silbe für Silbe.</span>
                     </div>
@@ -1301,8 +1308,8 @@ input.oninput = () => {
     }
 };
 
-[wpmIn, fsIn, longWordTrigger, rewindAmount].forEach(el => el.oninput = () => { setEstimatedTimeCache(null); saveSettings(); });
-[pauseMode, hyphenMode, longWordMode, rewindMode, stopAtChapterEnd, showChapterTimeToggle, showChapterRemainingToggle, showBookTimeToggle, showBookRemainingToggle, showProgressBarToggle, amoledModeToggle, resumeToggle, document.getElementById('show-reset-button-toggle')].forEach(el => el.onchange = () => { setEstimatedTimeCache(null); saveSettings(); });
+[wpmIn, fsIn, longWordTrigger, rewindAmount, document.getElementById('dialog-pause-factor')].forEach(el => el.oninput = () => { setEstimatedTimeCache(null); saveSettings(); });
+[pauseMode, hyphenMode, longWordMode, rewindMode, stopAtChapterEnd, showChapterTimeToggle, showChapterRemainingToggle, showBookTimeToggle, showBookRemainingToggle, showProgressBarToggle, amoledModeToggle, resumeToggle, document.getElementById('show-reset-button-toggle'), document.getElementById('dialog-pause-mode')].forEach(el => el.onchange = () => { setEstimatedTimeCache(null); saveSettings(); });
 
 document.getElementById('btn-clear-floating').onclick = async () => {
     if(activeBookId === "schnellstart") {

@@ -8,6 +8,7 @@ import {
     showChapterTimeToggle, showChapterRemainingToggle,
     showBookTimeToggle, showBookRemainingToggle,
     showProgressBarToggle, amoledModeToggle, resumeToggle,
+    dialogPauseMode, dialogPauseFactor,
 } from './dom.js';
 
 // RSVP Speed Reader – settings.js
@@ -48,6 +49,8 @@ export function saveSettings() {
     localStorage.setItem('rsvp-amoled-mode',            amoledModeToggle.checked);
     localStorage.setItem('rsvp-show-reset-button',      document.getElementById('show-reset-button-toggle').checked);
     localStorage.setItem('rsvp-resume-enabled',         resumeToggle.checked);
+    localStorage.setItem('rsvp-dialog-pause-on',        dialogPauseMode?.checked   ?? false);
+    localStorage.setItem('rsvp-dialog-pause-factor',    dialogPauseFactor?.value   ?? '1.5');
     updateResetButtonVisibility();
     if (amoledModeToggle.checked) {
         document.body.classList.add('amoled-mode');
@@ -76,6 +79,12 @@ export function applySettingsToUI() {
     if (localStorage.getItem('rsvp-show-book-remaining'))    showBookRemainingToggle.checked    = localStorage.getItem('rsvp-show-book-remaining')    === 'true';
     if (localStorage.getItem('rsvp-show-progress-bar'))      showProgressBarToggle.checked      = localStorage.getItem('rsvp-show-progress-bar')      === 'true';
     if (localStorage.getItem('rsvp-resume-enabled'))         resumeToggle.checked               = localStorage.getItem('rsvp-resume-enabled')         === 'true';
+    if (localStorage.getItem('rsvp-dialog-pause-on')) {
+        if (dialogPauseMode) dialogPauseMode.checked = localStorage.getItem('rsvp-dialog-pause-on') === 'true';
+    }
+    if (localStorage.getItem('rsvp-dialog-pause-factor')) {
+        if (dialogPauseFactor) dialogPauseFactor.value = localStorage.getItem('rsvp-dialog-pause-factor');
+    }
     if (document.getElementById('show-reset-button-toggle')) {
         const saved = localStorage.getItem('rsvp-show-reset-button');
         document.getElementById('show-reset-button-toggle').checked = saved !== 'false';

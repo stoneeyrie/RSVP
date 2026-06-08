@@ -15,6 +15,7 @@ import {
     showBookTimeToggle, showBookRemainingToggle,
     showChapterTimeToggle, showChapterRemainingToggle,
     sideChapterPanel, readerModeToggle, textboxContainer, input,
+    dialogPauseMode, dialogPauseFactor,
 } from './dom.js';
 
 // ── Geteilter App-State ───────────────────────────────────────────────────────
@@ -343,8 +344,12 @@ export function buildEstimatedTimeCumulative() {
             if (isPause && /[.!?]/.test(frag))         ms *= 1.8;
             else if (isPause && /[,]/.test(frag))      ms *= 1.6;
             // Dialogpausen: öffnende Anführungszeichen am Anfang, schließende am Ende
-            if (isPause && /^[„"»"‟]/.test(frag))      ms *= 1.5;
-            else if (isPause && /["«"']$/.test(frag))   ms *= 1.5;
+            const isDialogPause = dialogPauseMode?.checked;
+            if (isDialogPause) {
+                const factor = parseFloat(dialogPauseFactor?.value) || 1.5;
+                if (/^[„"»"‟]/.test(frag))     ms *= factor;
+                else if (/["«"']$/.test(frag))  ms *= factor;
+            }
             running += ms;
         }
         cumul[i + 1] = running;
@@ -536,10 +541,12 @@ export function step() {
         else if (pauseMode.checked && /[,]/.test(currentRenderedString)) delay *= 1.6;
 
         // Dialogpausen: Verzögerung beim Beginn und Ende wörtlicher Rede
-        // Öffnende Anführungszeichen (Dialog-Start): aktuelles Wort beginnt damit
-        if (pauseMode.checked && /^[„"»"‟]/.test(currentRenderedString)) delay *= 1.5;
-        // Schließende Anführungszeichen (Dialog-Ende): aktuelles Wort endet damit
-        else if (pauseMode.checked && /["«"']$/.test(currentRenderedString)) delay *= 1.5;
+        if (dialogPauseMode?.checked) {
+            const factor = parseFloat(dialogPauseFactor?.value) || 1.5;
+            // Öffnende Anführungszeichen (Dialog-Start): aktuelles Wort beginnt damit
+            if (/^[„"»"‟]/.test(currentRenderedString)) delay *= factor;
+            else if (/["«"']$/.test(currentRenderedString)) delay *= factor;
+        }
     }
 
     // Stopp nach Kapitelende – Check VOR dem Increment:

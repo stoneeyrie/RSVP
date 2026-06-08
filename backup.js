@@ -98,6 +98,8 @@ export async function exportBackup() {
             amoledMode:           localStorage.getItem('rsvp-amoled-mode')            || null,
             showResetButton:      localStorage.getItem('rsvp-show-reset-button')      || null,
             resumeEnabled:        localStorage.getItem('rsvp-resume-enabled')         || null,
+            dialogPauseOn:        localStorage.getItem('rsvp-dialog-pause-on')        || null,
+            dialogPauseFactor:    localStorage.getItem('rsvp-dialog-pause-factor')    || null,
         },
         archivedStats: archived.map(a => ({
             id:               a.id,
@@ -298,6 +300,8 @@ export async function importBackup(event) {
             setLS('rsvp-amoled-mode',            s.amoledMode);
             setLS('rsvp-show-reset-button',      s.showResetButton);
             setLS('rsvp-resume-enabled',         s.resumeEnabled);
+            setLS('rsvp-dialog-pause-on',        s.dialogPauseOn);
+            setLS('rsvp-dialog-pause-factor',    s.dialogPauseFactor);
             applySettingsToUI();
             settingsRestored = true;
         }

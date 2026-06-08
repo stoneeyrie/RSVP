@@ -19,8 +19,10 @@ export const globalChapterCounter = document.getElementById('global-chapter-coun
 export const progressBar          = document.getElementById('progress-bar');
 export const progressRowContainer = document.getElementById('progress-row-container');
 
-export const pauseMode       = document.getElementById('pause-mode');
-export const hyphenMode      = document.getElementById('hyphen-mode');
+export const pauseMode         = document.getElementById('pause-mode');
+export const dialogPauseMode   = document.getElementById('dialog-pause-mode');
+export const dialogPauseFactor = document.getElementById('dialog-pause-factor');
+export const hyphenMode        = document.getElementById('hyphen-mode');
 export const longWordMode    = document.getElementById('long-word-mode');
 export const longWordTrigger = document.getElementById('long-word-trigger');
 export const rewindMode      = document.getElementById('rewind-mode');
