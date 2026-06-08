@@ -342,6 +342,9 @@ export function buildEstimatedTimeCumulative() {
             if (isLongWord && frag.length > lwTrigger) ms *= 1.4;
             if (isPause && /[.!?]/.test(frag))         ms *= 1.8;
             else if (isPause && /[,]/.test(frag))      ms *= 1.6;
+            // Dialogpausen: öffnende Anführungszeichen am Anfang, schließende am Ende
+            if (isPause && /^[„"»"‟]/.test(frag))      ms *= 1.5;
+            else if (isPause && /["«"']$/.test(frag))   ms *= 1.5;
             running += ms;
         }
         cumul[i + 1] = running;
@@ -531,6 +534,12 @@ export function step() {
         if (longWordMode.checked && currentRenderedString.length > (parseInt(longWordTrigger.value) || 8)) delay *= 1.4;
         if (pauseMode.checked && /[.!?]/.test(currentRenderedString)) delay *= 1.8;
         else if (pauseMode.checked && /[,]/.test(currentRenderedString)) delay *= 1.6;
+
+        // Dialogpausen: Verzögerung beim Beginn und Ende wörtlicher Rede
+        // Öffnende Anführungszeichen (Dialog-Start): aktuelles Wort beginnt damit
+        if (pauseMode.checked && /^[„"»"‟]/.test(currentRenderedString)) delay *= 1.5;
+        // Schließende Anführungszeichen (Dialog-Ende): aktuelles Wort endet damit
+        else if (pauseMode.checked && /["«"']$/.test(currentRenderedString)) delay *= 1.5;
     }
 
     // Stopp nach Kapitelende – Check VOR dem Increment:
